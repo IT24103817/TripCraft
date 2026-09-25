@@ -1,0 +1,36 @@
+{
+  "attractions": {
+    "kandy": [
+      {"id": "a-temple", "name": "Temple of the Tooth", "city": "Kandy", "category": "culture", "duration_minutes": 90, "entry_fee_lkr": 2000},
+      {"id": "a-kandy-lake", "name": "Kandy Lake", "city": "Kandy", "category": "nature", "duration_minutes": 45, "entry_fee_lkr": 0},
+      {"id": "a-peradeniya", "name": "Peradeniya Botanical Gardens", "city": "Kandy", "category": "nature", "duration_minutes": 120, "entry_fee_lkr": 3000},
+      {"id": "a-bahirawakanda", "name": "Bahirawakanda Buddha", "city": "Kandy", "category": "culture", "duration_minutes": 45, "entry_fee_lkr": 0}
+    ],
+    "ella": [
+      {"id": "a-nine-arch", "name": "Nine Arch Bridge", "city": "Ella", "category": "sightseeing", "duration_minutes": 60, "entry_fee_lkr": 0},
+      {"id": "a-little-adams", "name": "Little Adam's Peak", "city": "Ella", "category": "hike", "duration_minutes": 120, "entry_fee_lkr": 0},
+      {"id": "a-ravana-falls", "name": "Ravana Falls", "city": "Ella", "category": "nature", "duration_minutes": 45, "entry_fee_lkr": 0},
+      {"id": "a-ella-rock", "name": "Ella Rock", "city": "Ella", "category": "hike", "duration_minutes": 240, "entry_fee_lkr": 0}
+    ]
+  },
+  "distance": {"fromCity": "Kandy", "toCity": "Ella", "distanceKm": 140, "durationMinutes": 270},
+  "guides": [{"id": "g-1", "name": "Nimal Perera", "languages": ["en", "si"], "maxPax": 10}],
+  "vehicles": [{"id": "v-1", "registrationNo": "CAB-1234", "type": "Van", "seats": 6}],
+  "rooms": {
+    "kandy": [
+      {"hotelId": "h-kandy", "hotelName": "Kandy Hills", "roomTypeId": "rt-kandy-std", "roomTypeName": "Standard Double", "capacity": 2, "availableRooms": 5},
+      {"hotelId": "h-kandy", "hotelName": "Kandy Hills", "roomTypeId": "rt-kandy-bud", "roomTypeName": "Budget Double", "capacity": 2, "availableRooms": 5}
+    ],
+    "ella": [
+      {"hotelId": "h-ella", "hotelName": "Ella Gap", "roomTypeId": "rt-ella-std", "roomTypeName": "Standard Double", "capacity": 2, "availableRooms": 5},
+      {"hotelId": "h-ella", "hotelName": "Ella Gap", "roomTypeId": "rt-ella-bud", "roomTypeName": "Budget Double", "capacity": 2, "availableRooms": 5}
+    ]
+  },
+  "rate_card": {
+    "marginPct": 15,
+    "guideDayRates": {"g-1": 6000},
+    "vehicleKmRates": {"v-1": 120},
+    "roomNightRates": {"rt-kandy-std": 12000, "rt-kandy-bud": 4000, "rt-ella-std": 12000, "rt-ella-bud": 4000}
+  },
+  "fx": {"base": "USD", "quote": "LKR", "rate": 300, "asOf": "2026-10-01T00:00:00Z", "stale": false}
+}

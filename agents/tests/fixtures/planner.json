@@ -1,0 +1,17 @@
+{
+  "plan": [
+    {"step": 1, "agent": "itinerary", "task": "Fetch attractions for Kandy and Ella", "depends_on": []},
+    {"step": 2, "agent": "itinerary", "task": "Order cities and choose train for the hill-country leg", "depends_on": [1]},
+    {"step": 3, "agent": "itinerary", "task": "Attach weather per day", "depends_on": [2]},
+    {"step": 4, "agent": "resources", "task": "Find an English-speaking guide and a vehicle for 4", "depends_on": [2]},
+    {"step": 5, "agent": "resources", "task": "Find rooms for every night", "depends_on": [2]},
+    {"step": 6, "agent": "validation", "task": "Quote in LKR and USD and check rules and budget", "depends_on": [3, 4, 5]}
+  ],
+  "constraints": {
+    "cities": ["Kandy", "Ella"],
+    "guide_language": "en",
+    "transport_preference": "train",
+    "hotel_tier": "standard",
+    "max_stops_per_day": 3
+  }
+}

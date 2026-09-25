@@ -1,0 +1,15 @@
+{
+  "guide_id": "g-1",
+  "vehicle_id": "v-1",
+  "rooms": [
+    {"hotel_id": "h-kandy", "room_type_id": "rt-kandy-std", "night": "2026-10-10"},
+    {"hotel_id": "h-kandy", "room_type_id": "rt-kandy-std", "night": "2026-10-10"},
+    {"hotel_id": "h-kandy", "room_type_id": "rt-kandy-std", "night": "2026-10-11"},
+    {"hotel_id": "h-kandy", "room_type_id": "rt-kandy-std", "night": "2026-10-11"},
+    {"hotel_id": "h-ella", "room_type_id": "rt-ella-std", "night": "2026-10-12"},
+    {"hotel_id": "h-ella", "room_type_id": "rt-ella-std", "night": "2026-10-12"},
+    {"hotel_id": "h-ella", "room_type_id": "rt-ella-std", "night": "2026-10-13"},
+    {"hotel_id": "h-ella", "room_type_id": "rt-ella-std", "night": "2026-10-13"}
+  ],
+  "gaps": []
+}

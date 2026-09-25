@@ -1,0 +1,9 @@
+{
+  "days": [
+    {"day": 1, "city": "Kandy", "stops": ["a-temple", "a-kandy-lake"], "transport": "road"},
+    {"day": 2, "city": "Kandy", "stops": ["a-peradeniya", "a-bahirawakanda"], "transport": "road"},
+    {"day": 3, "city": "Ella", "stops": ["a-nine-arch"], "transport": "train"},
+    {"day": 4, "city": "Ella", "stops": ["a-little-adams", "a-ravana-falls"], "transport": "road"},
+    {"day": 5, "city": "Ella", "stops": ["a-ella-rock"], "transport": "road"}
+  ]
+}

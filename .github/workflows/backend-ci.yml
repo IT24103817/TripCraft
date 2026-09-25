@@ -1,0 +1,61 @@
+name: backend-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tripcraft_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: Host=localhost;Port=5432;Database=tripcraft_test;Username=postgres;Password=postgres
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Placeholder guard: skip everything until the solution is scaffolded.
+      - name: Report skipped build
+        if: hashFiles('backend/TripCraft.sln') == ''
+        working-directory: .
+        run: echo "backend/TripCraft.sln not found - skipping restore, build and test."
+
+      - name: Setup .NET 8
+        if: hashFiles('backend/TripCraft.sln') != ''
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        if: hashFiles('backend/TripCraft.sln') != ''
+        run: dotnet restore TripCraft.sln
+
+      - name: Build
+        if: hashFiles('backend/TripCraft.sln') != ''
+        run: dotnet build TripCraft.sln --no-restore --configuration Release
+
+      - name: Test
+        if: hashFiles('backend/TripCraft.sln') != ''
+        run: dotnet test TripCraft.sln --no-build --configuration Release --verbosity normal

@@ -107,3 +107,7 @@ mobile/build/
 Thumbs.db
 .idea/
 *.swp
+
+# ---------- Test evidence (generated) ----------
+docs/evidence/e2e/results/
+docs/evidence/e2e/report/

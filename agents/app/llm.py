@@ -26,6 +26,9 @@ def get_chat_model() -> BaseChatModel:
         from langchain_ollama import ChatOllama
 
         return ChatOllama(model=settings.ollama_model, format="json", temperature=0)
+    if settings.llm_provider == "fake":
+        # CI sets LLM_PROVIDER=fake: the tests replace get_chat_model with a FakeLLM, so no real model is ever built.
+        raise RuntimeError("LLM_PROVIDER=fake is for tests only; they inject a FakeLLM")
     raise ValueError(f"Unknown LLM_PROVIDER '{settings.llm_provider}' (use ollama or groq)")
 
 

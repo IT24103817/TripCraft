@@ -6,9 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
 
     services:
       postgres:
@@ -26,36 +33,34 @@ jobs:
           --health-retries 5
 
     env:
+      # CI-only throwaway credentials of the service container above — not a secret.
       DATABASE_URL: Host=localhost;Port=5432;Database=tripcraft_test;Username=postgres;Password=postgres
-
-    defaults:
-      run:
-        working-directory: backend
+      # The database tests (Tests/Shared/Database) create a fresh database per test class on this server.
+      TEST_DATABASE_URL: Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres
+      DOTNET_NOLOGO: true
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Placeholder guard: skip everything until the solution is scaffolded.
-      - name: Report skipped build
-        if: hashFiles('backend/TripCraft.sln') == ''
-        working-directory: .
-        run: echo "backend/TripCraft.sln not found - skipping restore, build and test."
-
-      - name: Setup .NET 8
-        if: hashFiles('backend/TripCraft.sln') != ''
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: 8.0.x
 
       - name: Restore
-        if: hashFiles('backend/TripCraft.sln') != ''
-        run: dotnet restore TripCraft.sln
+        run: dotnet restore
 
       - name: Build
-        if: hashFiles('backend/TripCraft.sln') != ''
-        run: dotnet build TripCraft.sln --no-restore --configuration Release
+        run: dotnet build --no-restore --configuration Release
 
       - name: Test
-        if: hashFiles('backend/TripCraft.sln') != ''
-        run: dotnet test TripCraft.sln --no-build --configuration Release --verbosity normal
+        run: >-
+          dotnet test --no-build --configuration Release
+          --logger "trx;LogFileName=backend-tests.trx"
+          --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: backend/TestResults/*.trx

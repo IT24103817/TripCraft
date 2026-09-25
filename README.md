@@ -1,5 +1,11 @@
 # TripCraft
 
+<!-- Replace OWNER/REPO with the GitHub repository (e.g. your-org/SE3090_G<nn>) once it exists. -->
+[![backend-ci](https://github.com/OWNER/REPO/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/backend-ci.yml)
+[![web-ci](https://github.com/OWNER/REPO/actions/workflows/web-ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/web-ci.yml)
+[![mobile-ci](https://github.com/OWNER/REPO/actions/workflows/mobile-ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/mobile-ci.yml)
+[![agents-ci](https://github.com/OWNER/REPO/actions/workflows/agents-ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/agents-ci.yml)
+
 Integrated tour-operator platform for Sri Lankan inbound tour operators. Tourists submit a trip objective from a Flutter app, four AI agents draft an itinerary, allocate guides, vehicles and hotel rooms and calculate a quotation, and the Operations Manager approves it in a React dashboard before any booking is held.
 
 SE3090 Assignment 1 — repository `SE3090_G<nn>`.

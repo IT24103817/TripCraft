@@ -11,6 +11,7 @@ from langgraph.graph import END, START, StateGraph
 
 from app.callbacks import post_proposal, post_step
 from app.config import get_settings
+from app.errors import ToolNotAllowed
 from app.nodes.common import failed_update
 from app.nodes.itinerary import itinerary_node
 from app.nodes.planner import planner_node
@@ -34,6 +35,9 @@ def guarded(name: str, node: NodeFn) -> NodeFn:
             update = await asyncio.wait_for(node(state), timeout=timeout)
         except asyncio.TimeoutError:
             update = failed_update(name, f"timed out after {timeout:g} s", [], started, 0, {})
+        except ToolNotAllowed as ex:  # a node asked for a tool outside its allow-list
+            logger.warning("tool not allowed", extra={"workflow_id": state["workflow_id"], "node": name})
+            update = failed_update(name, f"tool not allowed: {ex}", [], started, 0, {})
         except Exception as ex:  # a bug must still end the workflow safely, never crash it
             logger.exception("node crashed", extra={"workflow_id": state["workflow_id"], "node": name})
             update = failed_update(name, f"unexpected {type(ex).__name__}", [], started, 0, {})

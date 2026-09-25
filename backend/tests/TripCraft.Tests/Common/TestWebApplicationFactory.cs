@@ -38,10 +38,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<AppDbContext>>();
-            // InMemory has no real transactions; the approval flow still works because it saves once at the end.
-            services.AddDbContext<AppDbContext>(options => options
-                .UseInMemoryDatabase(_databaseName)
-                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning)));
+            ConfigureDatabase(services);
 
             services.RemoveAll<IAgentServiceClient>();
             services.AddSingleton<FakeAgentState>();
@@ -64,6 +61,15 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             services.AddScoped<IQuotationStore, FakeQuotationStore>();
         });
     }
+
+    /// <summary>
+    /// EF Core InMemory by default. InMemory has no real transactions; the approval flow still works because it
+    /// saves once at the end. PostgresWebApplicationFactory overrides this with a real database.
+    /// </summary>
+    protected virtual void ConfigureDatabase(IServiceCollection services) =>
+        services.AddDbContext<AppDbContext>(options => options
+            .UseInMemoryDatabase(_databaseName)
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning)));
 }
 
 internal static class ServiceCollectionExtensions

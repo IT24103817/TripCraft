@@ -1,9 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TripCraft.Application.Common;
+using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Identity;
+using TripCraft.Application.Trips;
+using TripCraft.Application.Workflows;
+using TripCraft.Infrastructure.ExternalApis.AgentService;
 using TripCraft.Infrastructure.Identity;
 using TripCraft.Infrastructure.Persistence;
+using TripCraft.Infrastructure.Persistence.Auditing;
 using TripCraft.Infrastructure.Persistence.Repositories;
 using TripCraft.Infrastructure.Persistence.Seeding;
 
@@ -25,7 +31,16 @@ public static class DependencyInjection
                    .UseSnakeCaseNamingConvention();
         });
 
+        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
+        services.AddScoped<IAuditLogger, AuditLogger>();
+
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ITripRequestRepository, TripRequestRepository>();
+        services.AddScoped<IAttractionRepository, AttractionRepository>();
+        services.AddScoped<IAgentWorkflowRepository, AgentWorkflowRepository>();
+
+        // TODO: swap for the real HttpClient-based client when the agent service is ready.
+        services.AddScoped<IAgentServiceClient, StubAgentServiceClient>();
         services.AddScoped<DataSeeder>();
 
         services.AddSingleton(jwtSettings);

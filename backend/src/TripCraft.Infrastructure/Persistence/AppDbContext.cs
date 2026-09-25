@@ -1,11 +1,14 @@
 using Microsoft.EntityFrameworkCore;
+using TripCraft.Application.Common;
+using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Entities;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Trips;
+using TripCraft.Application.Workflows;
 
 namespace TripCraft.Infrastructure.Persistence;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options), IUnitOfWork
 {
     public DbSet<User> Users => Set<User>();
 
@@ -16,6 +19,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Itinerary> Itineraries => Set<Itinerary>();
     public DbSet<ItineraryDay> ItineraryDays => Set<ItineraryDay>();
     public DbSet<ItineraryStop> ItineraryStops => Set<ItineraryStop>();
+
+    // Owned by Component C; created early for start-planning and audit rows.
+    public DbSet<AgentWorkflow> AgentWorkflows => Set<AgentWorkflow>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,6 +41,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         SetTimestamps();
         return base.SaveChangesAsync(cancellationToken);
     }
+
+    /// <summary>IUnitOfWork: one SaveChanges call is one database transaction.</summary>
+    Task IUnitOfWork.SaveChangesAsync(CancellationToken ct) => SaveChangesAsync(ct);
 
     public override int SaveChanges()
     {

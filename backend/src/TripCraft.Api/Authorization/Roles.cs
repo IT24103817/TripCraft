@@ -9,4 +9,7 @@ public static class Roles
     public const string Guide = nameof(UserRole.Guide);
     public const string OperationsManager = nameof(UserRole.OperationsManager);
     public const string Admin = nameof(UserRole.Admin);
+
+    // Comma-separated = "any of these roles".
+    public const string TouristOrOperationsManager = Tourist + "," + OperationsManager;
 }

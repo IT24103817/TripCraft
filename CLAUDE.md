@@ -1,0 +1,11 @@
+# TripCraft — rules for Claude Code
+- Read docs/PLAN.md before any task; it is the source of truth for entities, endpoints, agents and rules.
+- Stack: ASP.NET Core 8 Web API + EF Core + PostgreSQL (Npgsql); Python 3.11 FastAPI + LangGraph for agents; React 18 + Vite + React Router + Zustand + TanStack Query + Tailwind; Flutter 3 + Riverpod + go_router + dio.
+- React and Flutter call ONLY the ASP.NET Core API. The agent service is internal, called only by the API with header X-Internal-Key.
+- Backend layering: Controllers -> Application services -> Repositories/DbContext. Controllers return DTOs only. All endpoints async. FluentValidation on every request DTO. Global exception middleware returns RFC 7807 ProblemDetails.
+- Every entity has Guid Id, CreatedAt, UpdatedAt. Use uuid, timestamptz, numeric(12,2) in PostgreSQL.
+- Never hard-code secrets; read from environment variables / user secrets. Never write real keys into any file.
+- Every feature ships with tests in the same PR. Run the tests before saying a task is done and show me the output.
+- Keep files small and named by feature. Prefer boring, readable code over clever code — a student must explain every line at a viva.
+- Do not touch folders owned by another student (see README ownership table) unless the prompt says so explicitly.
+- Before finishing any task: list the files changed and one line on what each does.

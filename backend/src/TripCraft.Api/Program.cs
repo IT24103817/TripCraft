@@ -5,6 +5,7 @@ using TripCraft.Api.Middleware;
 using TripCraft.Api.Setup;
 using TripCraft.Application;
 using TripCraft.Infrastructure;
+using TripCraft.Infrastructure.Persistence.Seeding;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,8 +15,10 @@ builder.Host.UseSerilog((context, logger) => logger
     .Enrich.FromLogContext()
     .WriteTo.Console());
 
+var jwtSettings = AuthenticationSetup.ReadJwtSettings(builder.Configuration);
+
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, jwtSettings);
 
 builder.Services
     .AddControllers()
@@ -23,6 +26,8 @@ builder.Services
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddProblemDetails();
 
+builder.Services.AddJwtAuthentication(jwtSettings);
+builder.Services.AddLoginRateLimiting();
 builder.Services.AddFrontendCors(builder.Configuration);
 builder.Services.AddSwaggerWithJwt();
 
@@ -36,8 +41,16 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseCors(CorsSetup.PolicyName);
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    await scope.ServiceProvider.GetRequiredService<DataSeeder>().SeedAsync();
+}
 
 app.Run();
 

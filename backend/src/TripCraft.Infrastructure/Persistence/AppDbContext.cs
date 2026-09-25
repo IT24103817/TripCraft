@@ -1,10 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using TripCraft.Application.Common.Entities;
+using TripCraft.Application.Identity;
 
 namespace TripCraft.Infrastructure.Persistence;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    public DbSet<User> Users => Set<User>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Picks up every IEntityTypeConfiguration in Persistence/Configurations.

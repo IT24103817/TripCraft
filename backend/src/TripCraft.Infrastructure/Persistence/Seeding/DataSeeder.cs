@@ -6,8 +6,8 @@ using TripCraft.Application.Identity;
 namespace TripCraft.Infrastructure.Persistence.Seeding;
 
 /// <summary>
-/// Inserts 3 demo users per role when the users table is empty.
-/// Emails: tourist1@tripcraft.test ... admin3@tripcraft.test. Password: Passw0rd!
+/// Inserts demo data on startup. Each part only runs when its own table is empty, so it is safe to run every time.
+/// Users: 3 per role, tourist1@tripcraft.test ... admin3@tripcraft.test, password Passw0rd!
 /// </summary>
 public class DataSeeder(AppDbContext db, IPasswordHasher<User> passwordHasher, ILogger<DataSeeder> logger)
 {
@@ -22,6 +22,12 @@ public class DataSeeder(AppDbContext db, IPasswordHasher<User> passwordHasher, I
     ];
 
     public async Task SeedAsync(CancellationToken ct = default)
+    {
+        await SeedUsersAsync(ct);
+        await TripsSeeder.SeedAsync(db, logger, ct);
+    }
+
+    private async Task SeedUsersAsync(CancellationToken ct)
     {
         if (await db.Users.AnyAsync(ct))
             return;

@@ -4,6 +4,8 @@ using TripCraft.Api.Authorization;
 using TripCraft.Application.Common.Paging;
 using TripCraft.Application.Trips.Dtos;
 using TripCraft.Application.Trips.Services;
+using TripCraft.Application.Workflows.Dtos;
+using TripCraft.Application.Workflows.Services;
 
 namespace TripCraft.Api.Controllers;
 
@@ -16,7 +18,9 @@ namespace TripCraft.Api.Controllers;
 [Authorize(Roles = Roles.TouristOrOperationsManager)]
 public class TripRequestsController(
     ITripRequestService tripRequests,
-    ITripPlanningService planning) : ControllerBase
+    ITripPlanningService planning,
+    IPassportPhotoService passportPhotos,
+    IWorkflowQueryService workflows) : ControllerBase
 {
     /// <summary>Tourist submits a trip request (PLAN.md section 6, step 1–2).</summary>
     [HttpPost]
@@ -65,5 +69,26 @@ public class TripRequestsController(
     public async Task<ActionResult<ItineraryDto>> GetItinerary(Guid id, CancellationToken ct)
     {
         return Ok(await tripRequests.GetItineraryAsync(User.GetCurrentUser(), id, ct));
+    }
+
+    /// <summary>
+    /// Passport photo from the Flutter camera (multipart field "file"). Owner Tourist only; JPEG/PNG up to 5 MB,
+    /// checked by content, stored privately under a random name (PLAN.md section 10).
+    /// </summary>
+    [HttpPost("{id:guid}/passport-photo")]
+    [Authorize(Roles = Roles.Tourist)]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(PassportPhotoService.MaxBytes + 64 * 1024)]
+    public async Task<ActionResult<PassportPhotoResponse>> UploadPassportPhoto(Guid id, IFormFile file, CancellationToken ct)
+    {
+        await using var stream = file.OpenReadStream();
+        return Ok(await passportPhotos.UploadAsync(User.GetCurrentUser(), id, stream, file.ContentType, file.Length, ct));
+    }
+
+    /// <summary>The trip's newest agent workflow (status, itinerary proposal, quotation). 404 before planning starts.</summary>
+    [HttpGet("{id:guid}/workflow")]
+    public async Task<ActionResult<WorkflowDto>> GetWorkflow(Guid id, CancellationToken ct)
+    {
+        return Ok(await workflows.GetLatestForTripAsync(User.GetCurrentUser(), id, ct));
     }
 }

@@ -27,6 +27,19 @@ public class WorkflowQueryService(IAgentWorkflowRepository workflows, ITripReque
             (long)(end - workflow.StartedAt).TotalMilliseconds, steps.Count, steps.Sum(s => (long)s.DurationMs));
     }
 
+    public async Task<WorkflowDto> GetLatestForTripAsync(CurrentUser user, Guid tripRequestId, CancellationToken ct)
+    {
+        var trip = await trips.GetByIdAsync(tripRequestId, ct) ?? throw new NotFoundException("Trip request not found.");
+        TripRequestService.EnsureCanAccess(user, trip);
+        var workflowId = await workflows.Query()
+                             .Where(w => w.TripRequestId == tripRequestId)
+                             .OrderByDescending(w => w.StartedAt)
+                             .Select(w => (Guid?)w.Id)
+                             .FirstOrDefaultAsync(ct)
+                         ?? throw new NotFoundException("Planning has not started for this trip request.");
+        return await GetAsync(user, workflowId, ct);
+    }
+
     public async Task<IReadOnlyList<AgentStepDto>> ListStepsAsync(CurrentUser user, Guid id, CancellationToken ct)
     {
         await LoadForUserAsync(user, id, ct);

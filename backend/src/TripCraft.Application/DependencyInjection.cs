@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<ITripRequestService, TripRequestService>();
         services.AddScoped<ITripPlanningService, TripPlanningService>();
         services.AddScoped<IAttractionService, AttractionService>();
+        services.AddScoped<IPassportPhotoService, PassportPhotoService>();
 
         // Agent workflow integration and the approval gate
         services.AddSingleton<ProposalValidator>();

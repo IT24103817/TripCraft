@@ -15,6 +15,7 @@ Setup, user secrets, migrations and test accounts are in the [root README](../RE
 | `AGENT_CALLBACK_BASE_URL` | no | Base URL the agent service posts steps/proposals to; defaults to the agent's own `API_BASE_URL` |
 | `ORS_API_KEY` | no | OpenRouteService; without it the seeded `city_distances` table is used |
 | `OWM_API_KEY` | no | OpenWeatherMap; without it weather is skipped (advisory only) |
+| `UPLOADS_DIR` | no | Private folder for passport photos (default `uploads/` next to the app); never served as static files |
 | `FX_FALLBACK_LKR_PER_USD` | no | Rate used (flagged stale) if open.er-api.com fails before any success; default 300 |
 
 ## Startup order
@@ -44,6 +45,8 @@ end the workflow `FailedSafely`. The only **Soft** violation, `OVER_BUDGET`, giv
 | Method | Path | Roles |
 |--------|------|-------|
 | POST | `/api/trip-requests/{id}/start-planning` | Tourist (owner). 202; 409 if a workflow is already running |
+| POST | `/api/trip-requests/{id}/passport-photo` | Tourist (owner). Multipart `file`, JPEG/PNG by content, ≤ 5 MB; stored privately in `UPLOADS_DIR` under a random name |
+| GET | `/api/trip-requests/{id}/workflow` | Tourist (owner), OperationsManager — the trip's newest workflow; 404 before planning |
 | GET | `/api/workflows/{id}` | Tourist (owner), OperationsManager, Admin — status, plan, validation result, current step, outcome, timings |
 | GET | `/api/workflows/{id}/steps` | same — ordered by `step_no` |
 | GET | `/api/workflows?status=&page=&pageSize=` | OperationsManager, Admin |

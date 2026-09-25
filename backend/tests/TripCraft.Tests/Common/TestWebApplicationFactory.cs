@@ -23,6 +23,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
     private readonly string _databaseName = $"tripcraft-tests-{Guid.NewGuid()}";
 
+    /// <summary>Private folder for uploaded passport photos, one per factory.</summary>
+    public string UploadsDir { get; } = Path.Combine(Path.GetTempPath(), "tripcraft-tests-uploads", Guid.NewGuid().ToString("N"));
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -30,6 +33,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("JWT_ISSUER", "tripcraft-tests");
         builder.UseSetting("DATABASE_URL", "Host=unused");
         builder.UseSetting("INTERNAL_AGENT_KEY", InternalKey);
+        builder.UseSetting("UPLOADS_DIR", UploadsDir);
 
         builder.ConfigureServices(services =>
         {

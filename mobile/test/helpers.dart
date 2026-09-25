@@ -1,0 +1,70 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:tripcraft_mobile/core/api/api_client.dart';
+import 'package:tripcraft_mobile/core/api/api_providers.dart';
+import 'package:tripcraft_mobile/core/storage/session_storage.dart';
+import 'package:tripcraft_mobile/shared/theme/app_theme.dart';
+
+class MockApiClient extends Mock implements ApiClient {}
+
+/// The two phone sizes the layouts are checked at (logical pixels).
+final phoneSizes = ValueVariant<Size>({
+  const Size(360, 640),
+  const Size(412, 915),
+});
+
+void usePhoneSize(WidgetTester tester, Size size) {
+  tester.view.devicePixelRatio = 3;
+  tester.view.physicalSize = size * 3;
+  addTearDown(tester.view.reset);
+}
+
+/// Pumps [child] inside a ProviderScope where the API client is [api] and storage is in memory.
+Future<void> pumpScreen(
+  WidgetTester tester,
+  Widget child, {
+  required MockApiClient api,
+  InMemorySessionStorage? storage,
+  List<dynamic> overrides = const [],
+}) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      retry: (_, _) => null,
+      overrides: [
+        apiClientProvider.overrideWithValue(api),
+        sessionStorageProvider.overrideWithValue(
+          storage ?? InMemorySessionStorage(),
+        ),
+        ...overrides.cast(),
+      ],
+      child: MaterialApp(theme: buildAppTheme(), home: child),
+    ),
+  );
+}
+
+Map<String, dynamic> pagedJson(List<Map<String, dynamic>> items) => {
+  'items': items,
+  'page': 1,
+  'pageSize': 100,
+  'total': items.length,
+};
+
+Map<String, dynamic> tripJson({
+  String id = 'trip-1',
+  String status = 'Submitted',
+  String objective = '5 days in Kandy and Ella with the train',
+}) => {
+  'id': id,
+  'touristId': 'tourist-1',
+  'objective': objective,
+  'startDate': '2026-10-10',
+  'endDate': '2026-10-14',
+  'pax': 4,
+  'budgetUsd': 1500,
+  'preferences': {'transport': 'train'},
+  'status': status,
+  'createdAt': '2026-09-26T08:00:00Z',
+  'updatedAt': '2026-09-26T08:00:00Z',
+};

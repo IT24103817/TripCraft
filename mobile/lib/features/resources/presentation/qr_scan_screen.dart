@@ -1,0 +1,90 @@
+import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+
+import '../../../core/auth/profile_button.dart';
+
+/// Scans a hotel voucher QR code with the camera (mobile_scanner asks for camera permission).
+class QrScanScreen extends StatefulWidget {
+  const QrScanScreen({super.key});
+
+  @override
+  State<QrScanScreen> createState() => _QrScanScreenState();
+}
+
+class _QrScanScreenState extends State<QrScanScreen> {
+  final _controller = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+  );
+  String? _code;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onDetect(BarcodeCapture capture) {
+    final value = capture.barcodes
+        .map((b) => b.rawValue)
+        .whereType<String>()
+        .firstOrNull;
+    if (value != null && value != _code) setState(() => _code = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Scan hotel voucher'),
+        actions: const [ProfileButton()],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: MobileScanner(
+              controller: _controller,
+              onDetect: _onDetect,
+              errorBuilder: (context, error) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    error.errorCode == MobileScannerErrorCode.permissionDenied
+                        ? 'Allow camera access in Settings to scan vouchers.'
+                        : 'The camera is not available.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _code == null
+                        ? 'Point the camera at the voucher QR code.'
+                        : 'Voucher: $_code',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Check-in with a voucher needs Resource Management (Student B): POST /api/check-ins.
+                const FilledButton(
+                  onPressed: null,
+                  child: Text('Check in with voucher'),
+                ),
+                const Text(
+                  'Available when the schedule service is live.',
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

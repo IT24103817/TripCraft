@@ -5,7 +5,7 @@ using TripCraft.Application.Workflows;
 
 namespace TripCraft.Infrastructure.Persistence.Configurations;
 
-/// <summary>agent_workflows (PLAN.md section 4). Owned by Component C, who may extend it.</summary>
+/// <summary>agent_workflows (PLAN.md section 4). Status is stored as text.</summary>
 public class AgentWorkflowConfiguration : IEntityTypeConfiguration<AgentWorkflow>
 {
     public void Configure(EntityTypeBuilder<AgentWorkflow> builder)
@@ -18,7 +18,13 @@ public class AgentWorkflowConfiguration : IEntityTypeConfiguration<AgentWorkflow
         builder.Property(w => w.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
         builder.Property(w => w.CurrentStep).HasMaxLength(100);
         builder.Property(w => w.FinalOutcome).HasColumnType("jsonb");
+        builder.Property(w => w.ValidationResult).HasColumnType("jsonb");
         builder.Property(w => w.ErrorSummary).HasColumnType("text");
+        builder.Ignore(w => w.IsActive);
+
+        // The approval inbox and workflow monitor filter by status and sort by start time.
+        builder.HasIndex(w => w.TripRequestId);
+        builder.HasIndex(w => new { w.Status, w.StartedAt });
 
         builder.HasOne<TripRequest>()
                .WithMany()

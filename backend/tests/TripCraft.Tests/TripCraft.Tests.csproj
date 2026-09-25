@@ -25,6 +25,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Real JSON captured from the Python agent service (agents/), used as a contract test. -->
+    <None Include="Workflows/Fixtures/*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\TripCraft.Api\TripCraft.Api.csproj" />
     <ProjectReference Include="..\..\src\TripCraft.Application\TripCraft.Application.csproj" />
     <ProjectReference Include="..\..\src\TripCraft.Infrastructure\TripCraft.Infrastructure.csproj" />

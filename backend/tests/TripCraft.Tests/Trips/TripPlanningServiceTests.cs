@@ -33,6 +33,8 @@ public class TripPlanningServiceTests
     {
         _attractions.Setup(a => a.ListActiveCitiesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(["Colombo", "Ella", "Galle", "Kandy"]);
+        _agent.Setup(a => a.StartAsync(It.IsAny<AgentWorkflow>(), It.IsAny<StartAgentWorkflowRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
     }
 
     private TripPlanningService CreateService() => new(
@@ -60,8 +62,8 @@ public class TripPlanningServiceTests
         var calls = new List<string>();
         _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .Callback(() => calls.Add("save")).Returns(Task.CompletedTask);
-        _agent.Setup(a => a.StartWorkflowAsync(It.IsAny<StartAgentWorkflowRequest>(), It.IsAny<CancellationToken>()))
-            .Callback(() => calls.Add("agent")).Returns(Task.CompletedTask);
+        _agent.Setup(a => a.StartAsync(It.IsAny<AgentWorkflow>(), It.IsAny<StartAgentWorkflowRequest>(), It.IsAny<CancellationToken>()))
+            .Callback(() => calls.Add("agent")).ReturnsAsync(true);
 
         var result = await CreateService().StartPlanningAsync(Manager, trip.Id, CancellationToken.None);
 

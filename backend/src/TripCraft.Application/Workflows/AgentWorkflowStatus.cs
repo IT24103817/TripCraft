@@ -1,10 +1,13 @@
 namespace TripCraft.Application.Workflows;
 
-/// <summary>Workflow states used so far. Component C adds the approval-side states.</summary>
+/// <summary>agent_workflows.status (PLAN.md sections 4–6). Stored as text.</summary>
 public enum AgentWorkflowStatus
 {
     Planning,
     PendingApproval,
+    RevisionRequested,
+    Approved,
+    Rejected,
     Completed,
     FailedSafely
 }

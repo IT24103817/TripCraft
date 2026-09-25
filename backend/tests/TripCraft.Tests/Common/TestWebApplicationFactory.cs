@@ -1,17 +1,26 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using TripCraft.Application.Workflows;
+using TripCraft.Application.Workflows.External;
+using TripCraft.Application.Workflows.Ports;
 using TripCraft.Infrastructure.Persistence;
+using TripCraft.Tests.Workflows.Fakes;
 
 namespace TripCraft.Tests.Common;
 
 /// <summary>
 /// Runs the real API in memory. PostgreSQL is swapped for EF Core InMemory so tests need no database.
 /// Each factory gets its own database, so test classes do not see each other's data.
+/// The agent service, the third-party APIs and the not-yet-merged Resource (B) and Quotation (C)
+/// components are replaced by fakes, so no test touches the network.
 /// </summary>
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
+    public const string InternalKey = "test-internal-key";
+
     private readonly string _databaseName = $"tripcraft-tests-{Guid.NewGuid()}";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -20,11 +29,35 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("JWT_SECRET", "test-secret-that-is-at-least-32-bytes-long!");
         builder.UseSetting("JWT_ISSUER", "tripcraft-tests");
         builder.UseSetting("DATABASE_URL", "Host=unused");
+        builder.UseSetting("INTERNAL_AGENT_KEY", InternalKey);
 
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<AppDbContext>>();
-            services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase(_databaseName));
+            // InMemory has no real transactions; the approval flow still works because it saves once at the end.
+            services.AddDbContext<AppDbContext>(options => options
+                .UseInMemoryDatabase(_databaseName)
+                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning)));
+
+            services.RemoveAll<IAgentServiceClient>();
+            services.AddSingleton<FakeAgentState>();
+            services.AddScoped<IAgentServiceClient, FakeAgentServiceClient>();
+
+            services.RemoveAll<IExchangeRateService>();
+            services.RemoveAll<IDistanceService>();
+            services.RemoveAll<IWeatherService>();
+            services.AddScoped<IExchangeRateService, FakeExchangeRateService>();
+            services.AddScoped<IDistanceService, FakeDistanceService>();
+            services.AddScoped<IWeatherService, FakeWeatherService>();
+
+            services.RemoveAll<IResourceCatalog>();
+            services.RemoveAll<IResourceHoldService>();
+            services.RemoveAll<IQuotationStore>();
+            services.AddSingleton<FakeResourcesState>();
+            services.AddSingleton<FakeQuotationsState>();
+            services.AddScoped<IResourceCatalog, FakeResourceCatalog>();
+            services.AddScoped<IResourceHoldService, FakeResourceHoldService>();
+            services.AddScoped<IQuotationStore, FakeQuotationStore>();
         });
     }
 }

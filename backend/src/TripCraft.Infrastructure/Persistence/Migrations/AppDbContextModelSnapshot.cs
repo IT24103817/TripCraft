@@ -435,6 +435,79 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TripCraft.Application.Workflows.AgentStep", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AgentName")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("agent_name");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("DurationMs")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_ms");
+
+                    b.Property<string>("InputSummary")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("input_summary");
+
+                    b.Property<string>("OutputSummary")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("output_summary");
+
+                    b.Property<int>("Retries")
+                        .HasColumnType("integer")
+                        .HasColumnName("retries");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<int>("StepNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("step_no");
+
+                    b.Property<string>("ToolName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("tool_name");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("ValidationResult")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("validation_result");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workflow_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_agent_steps");
+
+                    b.HasIndex("WorkflowId", "StepNo")
+                        .IsUnique()
+                        .HasDatabaseName("ix_agent_steps_workflow_id_step_no");
+
+                    b.ToTable("agent_steps", (string)null);
+                });
+
             modelBuilder.Entity("TripCraft.Application.Workflows.AgentWorkflow", b =>
                 {
                     b.Property<Guid>("Id")
@@ -491,13 +564,69 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
+                    b.Property<string>("ValidationResult")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("validation_result");
+
                     b.HasKey("Id")
                         .HasName("pk_agent_workflows");
 
                     b.HasIndex("TripRequestId")
                         .HasDatabaseName("ix_agent_workflows_trip_request_id");
 
+                    b.HasIndex("Status", "StartedAt")
+                        .HasDatabaseName("ix_agent_workflows_status_started_at");
+
                     b.ToTable("agent_workflows", (string)null);
+                });
+
+            modelBuilder.Entity("TripCraft.Application.Workflows.External.CityDistance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<decimal>("DistanceKm")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("distance_km");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_minutes");
+
+                    b.Property<string>("FromCity")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("from_city");
+
+                    b.Property<string>("ToCity")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("to_city");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_city_distances");
+
+                    b.HasIndex("FromCity", "ToCity")
+                        .IsUnique()
+                        .HasDatabaseName("ix_city_distances_from_city_to_city");
+
+                    b.ToTable("city_distances", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_city_distances_positive", "distance_km > 0 AND duration_minutes > 0");
+                        });
                 });
 
             modelBuilder.Entity("TripCraft.Application.Trips.Itinerary", b =>
@@ -561,6 +690,16 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_trip_requests_tourists_tourist_id");
 
                     b.Navigation("Tourist");
+                });
+
+            modelBuilder.Entity("TripCraft.Application.Workflows.AgentStep", b =>
+                {
+                    b.HasOne("TripCraft.Application.Workflows.AgentWorkflow", null)
+                        .WithMany()
+                        .HasForeignKey("WorkflowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_agent_steps_agent_workflows_workflow_id");
                 });
 
             modelBuilder.Entity("TripCraft.Application.Workflows.AgentWorkflow", b =>

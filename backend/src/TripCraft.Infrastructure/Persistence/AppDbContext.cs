@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using TripCraft.Application.Common;
 using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Entities;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Trips;
 using TripCraft.Application.Workflows;
+using TripCraft.Application.Workflows.External;
 
 namespace TripCraft.Infrastructure.Persistence;
 
@@ -22,7 +24,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     // Owned by Component C; created early for start-planning and audit rows.
     public DbSet<AgentWorkflow> AgentWorkflows => Set<AgentWorkflow>();
+    public DbSet<AgentStep> AgentSteps => Set<AgentStep>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
+    // Static fallback for the distance provider (PLAN.md section 9).
+    public DbSet<CityDistance> CityDistances => Set<CityDistance>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -44,6 +50,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     /// <summary>IUnitOfWork: one SaveChanges call is one database transaction.</summary>
     Task IUnitOfWork.SaveChangesAsync(CancellationToken ct) => SaveChangesAsync(ct);
+
+    async Task<IUnitOfWorkTransaction> IUnitOfWork.BeginTransactionAsync(CancellationToken ct) =>
+        new EfTransaction(await Database.BeginTransactionAsync(ct));
+
+    void IUnitOfWork.DiscardChanges() => ChangeTracker.Clear();
+
+    /// <summary>Wraps an EF Core transaction. Disposing it without CommitAsync rolls back.</summary>
+    private sealed class EfTransaction(IDbContextTransaction transaction) : IUnitOfWorkTransaction
+    {
+        public Task CommitAsync(CancellationToken ct) => transaction.CommitAsync(ct);
+        public ValueTask DisposeAsync() => transaction.DisposeAsync();
+    }
 
     public override int SaveChanges()
     {

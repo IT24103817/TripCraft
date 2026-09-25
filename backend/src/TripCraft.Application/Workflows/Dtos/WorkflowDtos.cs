@@ -1,0 +1,46 @@
+using System.Text.Json;
+using TripCraft.Application.Common.Paging;
+
+namespace TripCraft.Application.Workflows.Dtos;
+
+/// <summary>GET /api/workflows/{id}: status, plan, validation, current step, outcome and timings.</summary>
+public record WorkflowDto(
+    Guid Id,
+    Guid TripRequestId,
+    string Status,
+    string? CurrentStep,
+    JsonElement Plan,
+    JsonElement? ValidationResult,
+    JsonElement? FinalOutcome,
+    string? ErrorSummary,
+    DateTime StartedAt,
+    DateTime? FinishedAt,
+    long? ElapsedMs,
+    int StepCount,
+    long TotalStepDurationMs);
+
+public record WorkflowSummaryDto(Guid Id, Guid TripRequestId, string Status, string? CurrentStep,
+    DateTime StartedAt, DateTime? FinishedAt, string? ErrorSummary);
+
+public record AgentStepDto(
+    Guid Id,
+    int StepNo,
+    string AgentName,
+    string? ToolName,
+    JsonElement InputSummary,
+    JsonElement OutputSummary,
+    JsonElement ValidationResult,
+    int DurationMs,
+    int Retries,
+    string Status,
+    DateTime CreatedAt);
+
+/// <summary>GET /api/workflows?status=&amp;page=&amp;pageSize= (staff only).</summary>
+public class WorkflowListQuery
+{
+    public AgentWorkflowStatus? Status { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+
+    public const int MaxPageSize = PagedQuery.MaxPageSize;
+}

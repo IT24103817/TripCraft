@@ -50,13 +50,14 @@ public class TripRequestsController(
     /// <summary>
     /// Business operation: validates passport/dates, builds the day-by-day skeleton, creates the
     /// agent workflow and hands it to the agent service. 202 because planning continues in the background.
+    /// Tourist owner only (checked in the service); 409 if a workflow is already running.
     /// </summary>
     [HttpPost("{id:guid}/start-planning")]
+    [Authorize(Roles = Roles.Tourist)]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<ActionResult<StartPlanningResponse>> StartPlanning(Guid id, CancellationToken ct)
     {
         var result = await planning.StartPlanningAsync(User.GetCurrentUser(), id, ct);
-        // TODO(Component C): GET /api/workflows/{id} is implemented by Quotation & Approval.
         return Accepted($"/api/workflows/{result.WorkflowId}", result);
     }
 

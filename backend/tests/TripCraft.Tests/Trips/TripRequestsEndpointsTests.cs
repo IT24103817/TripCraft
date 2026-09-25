@@ -170,7 +170,7 @@ public class TripRequestsEndpointsTests(TestWebApplicationFactory factory) : ICl
     public async Task Start_planning_returns_202_and_saves_workflow_status_and_audit()
     {
         var trip = await CreateTripAsync("tourist1@tripcraft.test");
-        var client = await factory.CreateClientAsAsync(Manager);
+        var client = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
 
         var response = await client.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
 
@@ -195,7 +195,7 @@ public class TripRequestsEndpointsTests(TestWebApplicationFactory factory) : ICl
     public async Task Starting_planning_twice_returns_409()
     {
         var trip = await CreateTripAsync("tourist1@tripcraft.test");
-        var client = await factory.CreateClientAsAsync(Manager);
+        var client = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
         await client.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
 
         var second = await client.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
@@ -207,8 +207,9 @@ public class TripRequestsEndpointsTests(TestWebApplicationFactory factory) : ICl
     public async Task Editing_a_trip_that_is_being_planned_returns_409()
     {
         var trip = await CreateTripAsync("tourist1@tripcraft.test");
+        var tourist = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
+        await tourist.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
         var client = await factory.CreateClientAsAsync(Manager);
-        await client.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
         var update = new UpdateTripRequestRequest(trip.Objective, trip.StartDate, trip.EndDate, 2, 900, null);
 
         var response = await client.PutAsJsonAsync($"/api/trip-requests/{trip.Id}", update);
@@ -220,7 +221,7 @@ public class TripRequestsEndpointsTests(TestWebApplicationFactory factory) : ICl
     public async Task Start_planning_without_a_known_city_returns_400()
     {
         var trip = await CreateTripAsync("tourist1@tripcraft.test", NewTrip("Somewhere sunny with good food please"));
-        var client = await factory.CreateClientAsAsync(Manager);
+        var client = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
 
         var response = await client.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
 

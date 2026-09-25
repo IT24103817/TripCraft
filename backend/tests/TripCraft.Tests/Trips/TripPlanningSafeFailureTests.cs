@@ -19,9 +19,16 @@ public class TripPlanningSafeFailureTests
     public async Task Agent_service_failure_marks_workflow_failed_safely_and_restores_trip_status()
     {
         var failingAgent = new Mock<IAgentServiceClient>();
+        // The real client never throws: it marks the workflow FailedSafely and returns false.
         failingAgent
-            .Setup(a => a.StartWorkflowAsync(It.IsAny<StartAgentWorkflowRequest>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new AgentServiceException("connection refused"));
+            .Setup(a => a.StartAsync(It.IsAny<AgentWorkflow>(), It.IsAny<StartAgentWorkflowRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<AgentWorkflow, StartAgentWorkflowRequest, CancellationToken>((w, _, _) =>
+            {
+                w.Status = AgentWorkflowStatus.FailedSafely;
+                w.ErrorSummary = "Agent service unavailable: connection refused";
+                w.FinishedAt = DateTime.UtcNow;
+            })
+            .ReturnsAsync(false);
 
         await using var factory = new TestWebApplicationFactory();
         var app = factory.WithWebHostBuilder(b => b.ConfigureServices(s =>

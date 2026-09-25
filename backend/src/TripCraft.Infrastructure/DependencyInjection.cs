@@ -6,12 +6,13 @@ using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Trips;
 using TripCraft.Application.Workflows;
-using TripCraft.Infrastructure.ExternalApis.AgentService;
+using TripCraft.Infrastructure.External;
 using TripCraft.Infrastructure.Identity;
 using TripCraft.Infrastructure.Persistence;
 using TripCraft.Infrastructure.Persistence.Auditing;
 using TripCraft.Infrastructure.Persistence.Repositories;
 using TripCraft.Infrastructure.Persistence.Seeding;
+using TripCraft.Infrastructure.Workflows;
 
 namespace TripCraft.Infrastructure;
 
@@ -39,8 +40,8 @@ public static class DependencyInjection
         services.AddScoped<IAttractionRepository, AttractionRepository>();
         services.AddScoped<IAgentWorkflowRepository, AgentWorkflowRepository>();
 
-        // TODO: swap for the real HttpClient-based client when the agent service is ready.
-        services.AddScoped<IAgentServiceClient, StubAgentServiceClient>();
+        services.AddWorkflows(configuration);
+        services.AddExternalServices(configuration);
         services.AddScoped<DataSeeder>();
 
         services.AddSingleton(jwtSettings);

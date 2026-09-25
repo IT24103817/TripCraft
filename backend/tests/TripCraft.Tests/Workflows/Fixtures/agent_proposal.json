@@ -1,0 +1,299 @@
+{
+  "plan": {
+    "plan": [
+      {
+        "step": 1,
+        "agent": "itinerary",
+        "task": "Fetch attractions for Kandy and Ella",
+        "depends_on": []
+      },
+      {
+        "step": 2,
+        "agent": "itinerary",
+        "task": "Order cities and choose train for the hill-country leg",
+        "depends_on": [
+          1
+        ]
+      },
+      {
+        "step": 3,
+        "agent": "itinerary",
+        "task": "Attach weather per day",
+        "depends_on": [
+          2
+        ]
+      },
+      {
+        "step": 4,
+        "agent": "resources",
+        "task": "Find an English-speaking guide and a vehicle for 4",
+        "depends_on": [
+          2
+        ]
+      },
+      {
+        "step": 5,
+        "agent": "resources",
+        "task": "Find rooms for every night",
+        "depends_on": [
+          2
+        ]
+      },
+      {
+        "step": 6,
+        "agent": "validation",
+        "task": "Quote in LKR and USD and check rules and budget",
+        "depends_on": [
+          3,
+          4,
+          5
+        ]
+      }
+    ],
+    "constraints": {
+      "cities": [
+        "Kandy",
+        "Ella"
+      ],
+      "guide_language": "en",
+      "transport_preference": "train",
+      "hotel_tier": "standard",
+      "max_stops_per_day": 3
+    },
+    "dates": [
+      "2026-10-10",
+      "2026-10-11",
+      "2026-10-12",
+      "2026-10-13",
+      "2026-10-14"
+    ]
+  },
+  "days": [
+    {
+      "day": 1,
+      "date": "2026-10-10",
+      "city": "Kandy",
+      "stops": [
+        {
+          "attraction_id": "a-temple",
+          "name": "Temple of the Tooth",
+          "entry_fee_lkr": 2000.0
+        },
+        {
+          "attraction_id": "a-kandy-lake",
+          "name": "Kandy Lake",
+          "entry_fee_lkr": 0.0
+        }
+      ],
+      "transport": "road",
+      "transfer_km": 0.0,
+      "driving_minutes": 0,
+      "weather": "light rain"
+    },
+    {
+      "day": 2,
+      "date": "2026-10-11",
+      "city": "Kandy",
+      "stops": [
+        {
+          "attraction_id": "a-peradeniya",
+          "name": "Peradeniya Botanical Gardens",
+          "entry_fee_lkr": 3000.0
+        },
+        {
+          "attraction_id": "a-bahirawakanda",
+          "name": "Bahirawakanda Buddha",
+          "entry_fee_lkr": 0.0
+        }
+      ],
+      "transport": "road",
+      "transfer_km": 0.0,
+      "driving_minutes": 0,
+      "weather": "light rain"
+    },
+    {
+      "day": 3,
+      "date": "2026-10-12",
+      "city": "Ella",
+      "stops": [
+        {
+          "attraction_id": "a-nine-arch",
+          "name": "Nine Arch Bridge",
+          "entry_fee_lkr": 0.0
+        }
+      ],
+      "transport": "train",
+      "transfer_km": 140.0,
+      "driving_minutes": 0,
+      "weather": "light rain"
+    },
+    {
+      "day": 4,
+      "date": "2026-10-13",
+      "city": "Ella",
+      "stops": [
+        {
+          "attraction_id": "a-little-adams",
+          "name": "Little Adam's Peak",
+          "entry_fee_lkr": 0.0
+        },
+        {
+          "attraction_id": "a-ravana-falls",
+          "name": "Ravana Falls",
+          "entry_fee_lkr": 0.0
+        }
+      ],
+      "transport": "road",
+      "transfer_km": 0.0,
+      "driving_minutes": 0,
+      "weather": "light rain"
+    },
+    {
+      "day": 5,
+      "date": "2026-10-14",
+      "city": "Ella",
+      "stops": [
+        {
+          "attraction_id": "a-ella-rock",
+          "name": "Ella Rock",
+          "entry_fee_lkr": 0.0
+        }
+      ],
+      "transport": "road",
+      "transfer_km": 0.0,
+      "driving_minutes": 0,
+      "weather": "light rain"
+    }
+  ],
+  "resources": {
+    "guide_id": "g-1",
+    "vehicle_id": "v-1",
+    "rooms": [
+      {
+        "hotel_id": "h-kandy",
+        "room_type_id": "rt-kandy-std",
+        "night": "2026-10-10"
+      },
+      {
+        "hotel_id": "h-kandy",
+        "room_type_id": "rt-kandy-std",
+        "night": "2026-10-10"
+      },
+      {
+        "hotel_id": "h-kandy",
+        "room_type_id": "rt-kandy-std",
+        "night": "2026-10-11"
+      },
+      {
+        "hotel_id": "h-kandy",
+        "room_type_id": "rt-kandy-std",
+        "night": "2026-10-11"
+      },
+      {
+        "hotel_id": "h-ella",
+        "room_type_id": "rt-ella-std",
+        "night": "2026-10-12"
+      },
+      {
+        "hotel_id": "h-ella",
+        "room_type_id": "rt-ella-std",
+        "night": "2026-10-12"
+      },
+      {
+        "hotel_id": "h-ella",
+        "room_type_id": "rt-ella-std",
+        "night": "2026-10-13"
+      },
+      {
+        "hotel_id": "h-ella",
+        "room_type_id": "rt-ella-std",
+        "night": "2026-10-13"
+      }
+    ],
+    "gaps": [],
+    "guide_languages": [
+      "en",
+      "si"
+    ],
+    "vehicle_seats": 6,
+    "room_capacity": {
+      "rt-kandy-std": 2,
+      "rt-kandy-bud": 2,
+      "rt-ella-std": 2,
+      "rt-ella-bud": 2
+    },
+    "rate_card": {
+      "margin_pct": 15.0,
+      "guide_day_rates": {
+        "g-1": 6000.0
+      },
+      "vehicle_km_rates": {
+        "v-1": 120.0
+      },
+      "room_night_rates": {
+        "rt-kandy-std": 12000.0,
+        "rt-kandy-bud": 4000.0,
+        "rt-ella-std": 12000.0,
+        "rt-ella-bud": 4000.0
+      }
+    }
+  },
+  "quotation": {
+    "lines": [
+      {
+        "line_type": "guide",
+        "description": "Guide g-1",
+        "qty": 5.0,
+        "unit_lkr": 6000.0,
+        "amount_lkr": 30000.0
+      },
+      {
+        "line_type": "vehicle",
+        "description": "Vehicle v-1",
+        "qty": 140.0,
+        "unit_lkr": 120.0,
+        "amount_lkr": 16800.0
+      },
+      {
+        "line_type": "room",
+        "description": "Room type rt-ella-std",
+        "qty": 4.0,
+        "unit_lkr": 12000.0,
+        "amount_lkr": 48000.0
+      },
+      {
+        "line_type": "room",
+        "description": "Room type rt-kandy-std",
+        "qty": 4.0,
+        "unit_lkr": 12000.0,
+        "amount_lkr": 48000.0
+      },
+      {
+        "line_type": "entry",
+        "description": "Temple of the Tooth (day 1)",
+        "qty": 4.0,
+        "unit_lkr": 2000.0,
+        "amount_lkr": 8000.0
+      },
+      {
+        "line_type": "entry",
+        "description": "Peradeniya Botanical Gardens (day 2)",
+        "qty": 4.0,
+        "unit_lkr": 3000.0,
+        "amount_lkr": 12000.0
+      }
+    ],
+    "subtotal_lkr": 162800.0,
+    "margin_pct": 15.0,
+    "margin_lkr": 24420.0,
+    "total_lkr": 187220.0,
+    "fx_rate": 300.0,
+    "fx_as_of": "2026-10-01T00:00:00Z",
+    "fx_stale": false,
+    "total_usd": 624.07
+  },
+  "violations": [],
+  "status": "PendingApproval",
+  "replans": 0,
+  "error_summary": null
+}

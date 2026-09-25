@@ -42,6 +42,8 @@ public class TripPlanningService(
         // 2. Status must allow planning.
         if (!PlannableStatuses.Contains(trip.Status))
             throw new ConflictException($"Planning cannot start while the trip request is {trip.Status}.");
+        if (await workflows.HasActiveForTripAsync(trip.Id, ct))
+            throw new ConflictException("An agent workflow is already running for this trip request.");
 
         // 3. Pure business rules.
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -82,30 +84,28 @@ public class TripPlanningService(
         await unitOfWork.SaveChangesAsync(ct);
 
         // 5. Hand over to the agents. Never hold a DB transaction open during an HTTP call.
-        try
+        // The client never throws: on failure it has already set the workflow to FailedSafely.
+        var started = await agentService.StartAsync(workflow, new StartAgentWorkflowRequest(
+            workflow.Id, trip.Id, trip.Objective, trip.StartDate, trip.EndDate,
+            trip.Pax, trip.BudgetUsd, trip.Preferences, skeleton), ct);
+        if (!started)
         {
-            await agentService.StartWorkflowAsync(new StartAgentWorkflowRequest(
-                workflow.Id, trip.Id, trip.Objective, trip.StartDate, trip.EndDate,
-                trip.Pax, trip.BudgetUsd, trip.Preferences, skeleton), ct);
-        }
-        catch (AgentServiceException ex)
-        {
-            logger.LogWarning(ex, "Agent service failed for workflow {WorkflowId}", workflow.Id);
-            await RecordSafeFailureAsync(user, trip, workflow, previousStatus, ex.Message, ct);
+            logger.LogWarning("Agent service failed for workflow {WorkflowId}", workflow.Id);
+            await RecordSafeFailureAsync(user, trip, workflow, previousStatus, ct);
         }
 
         return new StartPlanningResponse(
             workflow.Id, trip.Id, workflow.Status.ToString(), trip.Status.ToString(), skeleton, workflow.ErrorSummary);
     }
 
-    /// <summary>PLAN.md section 5 safe failure: workflow ends FailedSafely with a summary; the trip can be retried.</summary>
+    /// <summary>
+    /// PLAN.md section 5 safe failure: the agent client already set the workflow to FailedSafely with a
+    /// summary; here the trip goes back to its previous status so it can be retried, and both are audited.
+    /// </summary>
     private async Task RecordSafeFailureAsync(
         CurrentUser user, TripRequest trip, AgentWorkflow workflow, TripRequestStatus previousStatus,
-        string reason, CancellationToken ct)
+        CancellationToken ct)
     {
-        workflow.Status = AgentWorkflowStatus.FailedSafely;
-        workflow.ErrorSummary = $"Agent service unavailable: {reason}";
-        workflow.FinishedAt = DateTime.UtcNow;
         trip.Status = previousStatus;
 
         audit.Record(user.Id, "AgentWorkflowFailedSafely", nameof(AgentWorkflow), workflow.Id,

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TripCraft.Application.Identity;
+using TripCraft.Infrastructure.Workflows;
 
 namespace TripCraft.Infrastructure.Persistence.Seeding;
 
@@ -25,6 +26,7 @@ public class DataSeeder(AppDbContext db, IPasswordHasher<User> passwordHasher, I
     {
         await SeedUsersAsync(ct);
         await TripsSeeder.SeedAsync(db, logger, ct);
+        await WorkflowsSeeder.SeedAsync(db, logger, ct);
     }
 
     private async Task SeedUsersAsync(CancellationToken ct)

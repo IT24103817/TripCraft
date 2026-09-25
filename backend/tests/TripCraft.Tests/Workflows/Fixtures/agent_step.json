@@ -1,0 +1,42 @@
+{
+  "agent_name": "planner",
+  "tool_calls": [
+    {
+      "tool": "parse_dates",
+      "args": {
+        "start_date": "2026-10-10",
+        "end_date": "2026-10-14"
+      },
+      "ok": true,
+      "duration_ms": 0,
+      "error": null
+    },
+    {
+      "tool": "list_agents",
+      "args": {},
+      "ok": true,
+      "duration_ms": 0,
+      "error": null
+    }
+  ],
+  "input_summary": {
+    "pax": 4,
+    "budget_usd": 1500.0,
+    "is_replan": false
+  },
+  "output_summary": {
+    "steps": 6,
+    "cities": [
+      "Kandy",
+      "Ella"
+    ],
+    "hotel_tier": "standard"
+  },
+  "validation_result": {
+    "ok": true,
+    "schema": "PlannerOutput"
+  },
+  "duration_ms": 0,
+  "retries": 0,
+  "status": "Succeeded"
+}

@@ -1,12 +1,12 @@
+using TripCraft.Application.Quotations;
 using TripCraft.Application.Workflows.Dtos;
 using TripCraft.Application.Workflows.Ports;
 
 namespace TripCraft.Application.Workflows;
 
 /// <summary>
-/// Recomputes the quotation total server-side from database prices, with the same formula as the
-/// agent's calculate_quotation tool (agents/README.md). Student C's QuotationCalculator must give the
-/// same result; when it exists this class should call it instead.
+/// Recomputes the quotation total server-side from database prices with Component C's QuotationCalculator
+/// (the same formula as the agent's calculate_quotation tool, agents/README.md):
 ///   guide = day rate x trip days;  vehicle = km rate x total transfer km;
 ///   rooms = night rate x room-nights;  entry = entry fee x pax for each stop;
 ///   total = subtotal + subtotal x margin% / 100. Every amount rounded to 2 decimals, half away from zero.
@@ -26,26 +26,23 @@ public static class ProposalQuotationCheck
         if (!card.VehicleKmRates.TryGetValue(vehicleId, out var kmRate))
             return (null, $"No km rate for vehicle {vehicleId}.");
 
-        var subtotal = Round(guideRate * days.Count);
-        subtotal += Round(kmRate * days.Sum(d => d.TransferKm));
-
+        var items = new List<PriceItem>
+        {
+            new("guide", "Guide", days.Count, guideRate),
+            new("vehicle", "Vehicle", days.Sum(d => d.TransferKm), kmRate)
+        };
         foreach (var group in roomTypePerRoomNight.GroupBy(id => id))
         {
             if (!card.RoomNightRates.TryGetValue(group.Key, out var nightRate))
                 return (null, $"No night rate for room type {group.Key}.");
-            subtotal += Round(nightRate * group.Count());
+            items.Add(new PriceItem("room", "Room", group.Count(), nightRate));
         }
-
         foreach (var stop in days.SelectMany(d => d.Stops ?? []))
-        {
-            var fee = facts.AttractionEntryFeesLkr[Guid.Parse(stop.AttractionId)];
-            if (fee > 0)
-                subtotal += Round(fee * pax);
-        }
+            items.Add(new PriceItem("entry", stop.Name, pax, facts.AttractionEntryFeesLkr[Guid.Parse(stop.AttractionId)]));
 
-        var margin = Round(subtotal * card.MarginPct / 100);
-        return (subtotal + margin, null);
+        // The exchange rate does not change the LKR total, so 1 is passed here.
+        return (QuotationCalculator.Calculate(items, card.MarginPct, 1m).TotalLkr, null);
     }
 
-    public static decimal Round(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+    public static decimal Round(decimal value) => QuotationCalculator.Round(value);
 }

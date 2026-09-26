@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TripCraft.Application.Identity;
+using TripCraft.Infrastructure.Quotations;
 using TripCraft.Infrastructure.Resources;
 using TripCraft.Infrastructure.Trips;
 using TripCraft.Infrastructure.Workflows;
@@ -29,6 +30,7 @@ public class DataSeeder(AppDbContext db, IPasswordHasher<User> passwordHasher, I
         await SeedUsersAsync(ct);
         await TripsSeeder.SeedAsync(db, logger, ct);
         await ResourcesSeeder.SeedAsync(db, logger, ct);
+        await QuotationsSeeder.SeedAsync(db, logger, ct);
         await WorkflowsSeeder.SeedAsync(db, logger, ct);
     }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:tripcraft_mobile/features/quotations/application/status_watcher.dart';
 import 'package:tripcraft_mobile/features/quotations/data/quotation_models.dart';
 import 'package:tripcraft_mobile/features/quotations/presentation/quotation_screen.dart';
@@ -90,5 +91,89 @@ void main() {
     expect(changes.single.tripId, 't1');
     expect(changes.single.from, 'Planning');
     expect(changes.single.to, 'PendingApproval');
+  });
+
+  Map<String, dynamic> stored(String status, {String? acceptedAt}) => {
+    'id': 'q1',
+    'status': status,
+    'acceptedAt': acceptedAt,
+    'lines': [
+      {
+        'lineType': 'guide',
+        'description': 'Guide Nimal Perera, 5 days',
+        'qty': 5,
+        'unitLkr': 6000,
+        'amountLkr': 30000,
+      },
+    ],
+    'subtotalLkr': 30000,
+    'marginPct': 15,
+    'marginLkr': 4500,
+    'totalLkr': 34500,
+    'fxRate': 300,
+    'fxAsOf': '2026-10-01T00:00:00Z',
+    'fxStale': false,
+    'totalUsd': 115,
+  };
+
+  MockApiClient apiWith(Map<String, dynamic> quotation) {
+    final api = MockApiClient();
+    when(() => api.get('/api/trip-requests/trip-1/workflow')).thenAnswer(
+      (_) async => {
+        'id': 'wf-1',
+        'status': 'Completed',
+        'finalOutcome': {
+          'proposal': {'quotationId': 'q1'},
+        },
+      },
+    );
+    when(() => api.get('/api/quotations/q1'))
+        .thenAnswer((_) async => quotation);
+    return api;
+  }
+
+  testWidgets('an approved quotation can be accepted from the phone', (
+    tester,
+  ) async {
+    final api = apiWith(stored('Approved'));
+    when(() => api.post('/api/quotations/q1/accept')).thenAnswer(
+      (_) async => stored('Approved', acceptedAt: '2026-10-02T09:00:00Z'),
+    );
+
+    await pumpScreen(tester, const QuotationScreen(tripId: 'trip-1'), api: api);
+    await tester.pumpAndSettle();
+    expect(find.text('Guide Nimal Perera, 5 days'), findsOneWidget);
+    expect(
+      find.text('Your operator approved this price. Accept it to confirm.'),
+      findsOneWidget,
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('Accept quotation'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Accept quotation'));
+    await tester.pumpAndSettle();
+
+    verify(() => api.post('/api/quotations/q1/accept')).called(1);
+    expect(find.text('Quotation accepted.'), findsOneWidget);
+  });
+
+  testWidgets('a pending or already accepted quotation cannot be accepted', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      const QuotationScreen(tripId: 'trip-1'),
+      api: apiWith(stored('Approved', acceptedAt: '2026-10-02T09:00:00Z')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('You accepted this price on'), findsOneWidget);
+    final button = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Accept quotation'),
+    );
+    expect(button.onPressed, isNull);
   });
 }

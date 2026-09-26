@@ -68,7 +68,9 @@ describe('WorkflowDetailPage', () => {
               isValid: false,
               hasHard: true,
               hasSoft: false,
-              violations: [{ code: 'AGENT_FAILED', message: 'resources: tool returned 503', severity: 'Hard' }],
+              violations: [
+                { code: 'AGENT_FAILED', message: 'resources: tool returned 503', severity: 'Hard' },
+              ],
             },
           }),
         ),

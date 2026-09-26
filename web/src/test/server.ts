@@ -8,4 +8,9 @@ export const API = 'http://api.test';
 export const server = setupServer(
   http.get(`${API}/api/workflows`, () => HttpResponse.json(paged([]))),
   http.get(`${API}/api/trip-requests`, () => HttpResponse.json(paged([]))),
+  http.get(`${API}/api/reports/:report`, () => HttpResponse.json([])),
+  // No stored quotation yet: the review page falls back to the agents' proposal.
+  http.get(`${API}/api/quotations/:id`, () =>
+    HttpResponse.json({ title: 'Not found', status: 404 }, { status: 404 }),
+  ),
 );

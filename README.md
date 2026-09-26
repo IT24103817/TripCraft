@@ -319,6 +319,11 @@ Swagger UI: `http://localhost:5080/swagger` locally, `https://<api>/swagger` whe
 | | `POST /api/check-ins` | Guide | business op: GPS within 500 m; Confirmed → InProgress → Completed |
 | Workflows (C) | `GET /api/workflows?status=&page=&pageSize=` | Manager, Admin | newest first |
 | | `GET /api/workflows/{id}`, `GET /api/workflows/{id}/steps` | Tourist (owner), Manager, Admin | status, plan, validation, outcome, timings; steps in order |
+| Quotations (C) | `GET /api/quotations?status=&from=&to=&minTotalUsd=&search=&sort=&page=&pageSize=` | Manager | every version; search the trip objective |
+| | `GET /api/quotations/{id}` | Manager, Tourist (owner) | lines, LKR/USD, FX, decisions |
+| | `POST /api/quotations/{id}/calculate` | Manager | business op: re-price a Pending quotation with today's rates and FX |
+| | `POST /api/quotations/{id}/accept` | Tourist (owner) | accept an Approved price once |
+| Reports (C) | `GET /api/reports/revenue`, `/utilisation`, `/trips-by-status` `?from=&to=` | Manager | at most one year |
 | Approval (C) | `POST /api/quotations/{id}/approve` | Manager | one transaction; 409 + rollback on any failure |
 | | `POST /api/quotations/{id}/reject`, `POST /api/quotations/{id}/request-revision` | Manager | revision needs a comment and calls the agents' `/replan` |
 | Internal (agents only) | `GET /api/internal/attractions`, `distance`, `weather`, `availability/guides`, `availability/vehicles`, `availability/rooms`, `rates` (alias `rate-card`), `fx-rate` | `X-Internal-Key` | no JWT |
@@ -326,9 +331,6 @@ Swagger UI: `http://localhost:5080/swagger` locally, `https://<api>/swagger` whe
 
 Agent service (internal, `http://127.0.0.1:8001`): `POST /run-workflow`, `POST /replan` (with `X-Internal-Key`),
 `GET /health`.
-
-Endpoints of Quotations/Reports (`GET /api/quotations`, `/api/reports/*`) are designed in PLAN.md section 3 and
-**not built yet**.
 
 ## Tests
 

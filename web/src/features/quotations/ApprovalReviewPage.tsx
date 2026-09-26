@@ -7,6 +7,8 @@ import { useTripSummary, useWorkflow } from './api';
 import { DecisionActions } from './DecisionActions';
 import { ProposedItinerary, ProposedResources } from './ProposalDetails';
 import { QuotationPanel } from './QuotationPanel';
+import { toPanelQuotation, useQuotation } from './quotationsApi';
+import { RepriceButton } from './RepriceButton';
 import { ValidationChecklist } from './ValidationChecklist';
 
 /** Everything the manager needs for the decision (PLAN.md section 6, step 9). :id is the workflow id. */
@@ -15,6 +17,8 @@ export default function ApprovalReviewPage() {
   const workflow = useWorkflow(id);
   const trip = useTripSummary(workflow.data?.tripRequestId);
   const proposal = workflow.data?.finalOutcome?.proposal;
+  // The stored quotation (quotations table) once it exists; the agent's proposal before that.
+  const stored = useQuotation(proposal?.quotationId);
 
   return (
     <PageState
@@ -91,8 +95,15 @@ export default function ApprovalReviewPage() {
                 )}
               </div>
               <div className="card lg:col-span-2">
-                <h2 className="mb-3 font-semibold text-slate-900">Quotation</h2>
-                {proposal?.quotation ? (
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="font-semibold text-slate-900">
+                    Quotation{stored.data ? ` v${stored.data.version} (${stored.data.status})` : ''}
+                  </h2>
+                  {stored.data?.status === 'Pending' && <RepriceButton quotationId={stored.data.id} />}
+                </div>
+                {stored.data ? (
+                  <QuotationPanel quotation={toPanelQuotation(stored.data)} />
+                ) : proposal?.quotation ? (
                   <QuotationPanel quotation={proposal.quotation} />
                 ) : (
                   <p className="text-sm">None.</p>

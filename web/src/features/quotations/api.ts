@@ -1,8 +1,7 @@
-import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { http } from '@/shared/api/http';
 import { queryRoots } from '@/shared/api/queryKeys';
 import type { PagedResult } from '@/shared/api/types';
-import { TRIP_STATUSES } from '@/shared/statuses';
 import type {
   AgentStepDto,
   QuotationDecisionResponse,
@@ -95,30 +94,7 @@ export function useQuotationDecision() {
       void client.invalidateQueries({ queryKey: [queryRoots.workflows] });
       void client.invalidateQueries({ queryKey: [queryRoots.trips] });
       void client.invalidateQueries({ queryKey: [queryRoots.reports] });
+      void client.invalidateQueries({ queryKey: ['quotations'] });
     },
-  });
-}
-
-/** Requests by status for trips starting in [from, to]: one count query per status (the API returns totals). */
-export function useTripStatusCounts(from: string, to: string) {
-  return useQueries({
-    queries: TRIP_STATUSES.map((status) => ({
-      queryKey: [queryRoots.reports, 'trips-by-status', status, from, to],
-      queryFn: async () =>
-        (
-          await http.get<PagedResult<unknown>>('/api/trip-requests', {
-            params: { status, from: from || undefined, to: to || undefined, pageSize: 1 },
-          })
-        ).data.total,
-    })),
-    combine: (results) => ({
-      data: results.every((r) => r.isSuccess)
-        ? TRIP_STATUSES.map((status, i) => ({ status, count: results[i]?.data ?? 0 }))
-        : undefined,
-      isLoading: results.some((r) => r.isLoading),
-      isError: results.some((r) => r.isError),
-      error: results.find((r) => r.error)?.error,
-      refetch: () => results.forEach((r) => void r.refetch()),
-    }),
   });
 }

@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Identity.Services;
 using TripCraft.Application.Quotations;
+using TripCraft.Application.Quotations.Reports;
+using TripCraft.Application.Quotations.Services;
 using TripCraft.Application.Resources.Services;
 using TripCraft.Application.Trips.Services;
 using TripCraft.Application.Workflows;
@@ -45,6 +47,12 @@ public static class DependencyInjection
         services.AddScoped<IWorkflowProposalService, WorkflowProposalService>();
         services.AddScoped<IWorkflowQueryService, WorkflowQueryService>();
         services.AddScoped<IQuotationApprovalService, QuotationApprovalService>();
+
+        // Component C — Quotation, Approval & Reporting. QuotationStore is also the IQuotationStore workflow port
+        // (registered in Infrastructure/Workflows/WorkflowsSetup).
+        services.AddScoped<QuotationStore>();
+        services.AddScoped<IQuotationService, QuotationService>();
+        services.AddScoped<IReportService, ReportService>();
 
         return services;
     }

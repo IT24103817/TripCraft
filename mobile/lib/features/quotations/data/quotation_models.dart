@@ -36,12 +36,16 @@ abstract class QuotationLine with _$QuotationLine {
       _$QuotationLineFromJson(json);
 }
 
-/// What the tourist sees: the quotation plus the workflow status it belongs to.
+/// What the tourist sees: the quotation plus the workflow status it belongs to, and (once the quotation is
+/// stored by the API) its id, status and when the tourist accepted it.
 @freezed
 abstract class QuotationView with _$QuotationView {
   const factory QuotationView({
     required String workflowStatus,
     Quotation? quotation,
+    String? quotationId,
+    String? quotationStatus,
+    String? acceptedAt,
   }) = _QuotationView;
 }
 

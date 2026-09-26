@@ -597,7 +597,7 @@ as double,
 /// @nodoc
 mixin _$QuotationView {
 
- String get workflowStatus; Quotation? get quotation;
+ String get workflowStatus; Quotation? get quotation; String? get quotationId; String? get quotationStatus; String? get acceptedAt;
 /// Create a copy of QuotationView
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -609,20 +609,20 @@ $QuotationViewCopyWith<QuotationView> get copyWith => _$QuotationViewCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as QuotationView;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuotationView&&(identical(other.workflowStatus, _this.workflowStatus) || other.workflowStatus == _this.workflowStatus)&&(identical(other.quotation, _this.quotation) || other.quotation == _this.quotation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuotationView&&(identical(other.workflowStatus, _this.workflowStatus) || other.workflowStatus == _this.workflowStatus)&&(identical(other.quotation, _this.quotation) || other.quotation == _this.quotation)&&(identical(other.quotationId, _this.quotationId) || other.quotationId == _this.quotationId)&&(identical(other.quotationStatus, _this.quotationStatus) || other.quotationStatus == _this.quotationStatus)&&(identical(other.acceptedAt, _this.acceptedAt) || other.acceptedAt == _this.acceptedAt));
 }
 
 
 @override
 int get hashCode {
   final _this = this as QuotationView;
-  return Object.hash(runtimeType,_this.workflowStatus,_this.quotation);
+  return Object.hash(runtimeType,_this.workflowStatus,_this.quotation,_this.quotationId,_this.quotationStatus,_this.acceptedAt);
 }
 
 @override
 String toString() {
   final _this = this as QuotationView;
-  return 'QuotationView(workflowStatus: ${_this.workflowStatus}, quotation: ${_this.quotation})';
+  return 'QuotationView(workflowStatus: ${_this.workflowStatus}, quotation: ${_this.quotation}, quotationId: ${_this.quotationId}, quotationStatus: ${_this.quotationStatus}, acceptedAt: ${_this.acceptedAt})';
 }
 
 
@@ -633,7 +633,7 @@ abstract mixin class $QuotationViewCopyWith<$Res>  {
   factory $QuotationViewCopyWith(QuotationView value, $Res Function(QuotationView) _then) = _$QuotationViewCopyWithImpl;
 @useResult
 $Res call({
- String workflowStatus, Quotation? quotation
+ String workflowStatus, Quotation? quotation, String? quotationId, String? quotationStatus, String? acceptedAt
 });
 
 
@@ -650,11 +650,14 @@ class _$QuotationViewCopyWithImpl<$Res>
 
 /// Create a copy of QuotationView
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? workflowStatus = null,Object? quotation = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? workflowStatus = null,Object? quotation = freezed,Object? quotationId = freezed,Object? quotationStatus = freezed,Object? acceptedAt = freezed,}) {
   return _then(QuotationView(
 workflowStatus: null == workflowStatus ? _self.workflowStatus : workflowStatus // ignore: cast_nullable_to_non_nullable
 as String,quotation: freezed == quotation ? _self.quotation : quotation // ignore: cast_nullable_to_non_nullable
-as Quotation?,
+as Quotation?,quotationId: freezed == quotationId ? _self.quotationId : quotationId // ignore: cast_nullable_to_non_nullable
+as String?,quotationStatus: freezed == quotationStatus ? _self.quotationStatus : quotationStatus // ignore: cast_nullable_to_non_nullable
+as String?,acceptedAt: freezed == acceptedAt ? _self.acceptedAt : acceptedAt // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 /// Create a copy of QuotationView
@@ -751,10 +754,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String workflowStatus,  Quotation? quotation)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String workflowStatus,  Quotation? quotation,  String? quotationId,  String? quotationStatus,  String? acceptedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _QuotationView() when $default != null:
-return $default(_that.workflowStatus,_that.quotation);case _:
+return $default(_that.workflowStatus,_that.quotation,_that.quotationId,_that.quotationStatus,_that.acceptedAt);case _:
   return orElse();
 
 }
@@ -772,10 +775,10 @@ return $default(_that.workflowStatus,_that.quotation);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String workflowStatus,  Quotation? quotation)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String workflowStatus,  Quotation? quotation,  String? quotationId,  String? quotationStatus,  String? acceptedAt)  $default,) {final _that = this;
 switch (_that) {
 case _QuotationView():
-return $default(_that.workflowStatus,_that.quotation);case _:
+return $default(_that.workflowStatus,_that.quotation,_that.quotationId,_that.quotationStatus,_that.acceptedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -792,10 +795,10 @@ return $default(_that.workflowStatus,_that.quotation);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String workflowStatus,  Quotation? quotation)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String workflowStatus,  Quotation? quotation,  String? quotationId,  String? quotationStatus,  String? acceptedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _QuotationView() when $default != null:
-return $default(_that.workflowStatus,_that.quotation);case _:
+return $default(_that.workflowStatus,_that.quotation,_that.quotationId,_that.quotationStatus,_that.acceptedAt);case _:
   return null;
 
 }
@@ -807,11 +810,14 @@ return $default(_that.workflowStatus,_that.quotation);case _:
 
 
 class _QuotationView implements QuotationView {
-  const _QuotationView({required this.workflowStatus, this.quotation});
+  const _QuotationView({required this.workflowStatus, this.quotation, this.quotationId, this.quotationStatus, this.acceptedAt});
   
 
 @override final  String workflowStatus;
 @override final  Quotation? quotation;
+@override final  String? quotationId;
+@override final  String? quotationStatus;
+@override final  String? acceptedAt;
 
 /// Create a copy of QuotationView
 /// with the given fields replaced by the non-null parameter values.
@@ -823,18 +829,18 @@ _$QuotationViewCopyWith<_QuotationView> get copyWith => __$QuotationViewCopyWith
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuotationView&&(identical(other.workflowStatus, workflowStatus) || other.workflowStatus == workflowStatus)&&(identical(other.quotation, quotation) || other.quotation == quotation));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuotationView&&(identical(other.workflowStatus, workflowStatus) || other.workflowStatus == workflowStatus)&&(identical(other.quotation, quotation) || other.quotation == quotation)&&(identical(other.quotationId, quotationId) || other.quotationId == quotationId)&&(identical(other.quotationStatus, quotationStatus) || other.quotationStatus == quotationStatus)&&(identical(other.acceptedAt, acceptedAt) || other.acceptedAt == acceptedAt));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,workflowStatus,quotation);
+    return Object.hash(runtimeType,workflowStatus,quotation,quotationId,quotationStatus,acceptedAt);
 }
 
 @override
 String toString() {
-    return 'QuotationView(workflowStatus: $workflowStatus, quotation: $quotation)';
+    return 'QuotationView(workflowStatus: $workflowStatus, quotation: $quotation, quotationId: $quotationId, quotationStatus: $quotationStatus, acceptedAt: $acceptedAt)';
 }
 
 
@@ -845,7 +851,7 @@ abstract mixin class _$QuotationViewCopyWith<$Res> implements $QuotationViewCopy
   factory _$QuotationViewCopyWith(_QuotationView value, $Res Function(_QuotationView) _then) = __$QuotationViewCopyWithImpl;
 @override @useResult
 $Res call({
- String workflowStatus, Quotation? quotation
+ String workflowStatus, Quotation? quotation, String? quotationId, String? quotationStatus, String? acceptedAt
 });
 
 
@@ -862,11 +868,14 @@ class __$QuotationViewCopyWithImpl<$Res>
 
 /// Create a copy of QuotationView
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? workflowStatus = null,Object? quotation = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? workflowStatus = null,Object? quotation = freezed,Object? quotationId = freezed,Object? quotationStatus = freezed,Object? acceptedAt = freezed,}) {
   return _then(_QuotationView(
 workflowStatus: null == workflowStatus ? _self.workflowStatus : workflowStatus // ignore: cast_nullable_to_non_nullable
 as String,quotation: freezed == quotation ? _self.quotation : quotation // ignore: cast_nullable_to_non_nullable
-as Quotation?,
+as Quotation?,quotationId: freezed == quotationId ? _self.quotationId : quotationId // ignore: cast_nullable_to_non_nullable
+as String?,quotationStatus: freezed == quotationStatus ? _self.quotationStatus : quotationStatus // ignore: cast_nullable_to_non_nullable
+as String?,acceptedAt: freezed == acceptedAt ? _self.acceptedAt : acceptedAt // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

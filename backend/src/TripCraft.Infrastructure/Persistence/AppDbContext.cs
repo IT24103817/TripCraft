@@ -6,6 +6,7 @@ using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Entities;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Identity;
+using TripCraft.Application.Quotations;
 using TripCraft.Application.Resources;
 using TripCraft.Application.Trips;
 using TripCraft.Application.Workflows;
@@ -39,6 +40,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ResourceHold> ResourceHolds => Set<ResourceHold>();
     public DbSet<RateCardEntry> RateCards => Set<RateCardEntry>();
     public DbSet<StopCheckIn> StopCheckIns => Set<StopCheckIn>();
+
+    // Component C — Quotation, Approval & Reporting
+    public DbSet<Quotation> Quotations => Set<Quotation>();
+    public DbSet<QuotationLine> QuotationLines => Set<QuotationLine>();
+    public DbSet<ApprovalDecision> ApprovalDecisions => Set<ApprovalDecision>();
 
     // Static fallback for the distance provider (PLAN.md section 9).
     public DbSet<CityDistance> CityDistances => Set<CityDistance>();

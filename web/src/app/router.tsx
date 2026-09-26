@@ -23,6 +23,7 @@ const ApprovalsPage = lazy(() => import('@/features/quotations/ApprovalsPage'));
 const ApprovalReviewPage = lazy(() => import('@/features/quotations/ApprovalReviewPage'));
 const WorkflowsPage = lazy(() => import('@/features/quotations/WorkflowsPage'));
 const WorkflowDetailPage = lazy(() => import('@/features/quotations/WorkflowDetailPage'));
+const QuotationsPage = lazy(() => import('@/features/quotations/QuotationsPage'));
 const ReportsPage = lazy(() => import('@/features/quotations/ReportsPage'));
 
 const MANAGER: Role[] = ['OperationsManager'];
@@ -60,6 +61,7 @@ export const routes: RouteObject[] = [
           { path: 'approvals/:id', element: guard(MANAGER, <ApprovalReviewPage />) },
           { path: 'workflows', element: guard(STAFF, <WorkflowsPage />) },
           { path: 'workflows/:id', element: guard(STAFF, <WorkflowDetailPage />) },
+          { path: 'quotations', element: guard(MANAGER, <QuotationsPage />) },
           { path: 'reports', element: guard(MANAGER, <ReportsPage />) },
           { path: 'admin/users', element: guard(ADMIN, <UsersPage />) },
           { path: 'admin/audit-logs', element: guard(ADMIN, <AuditLogPage />) },

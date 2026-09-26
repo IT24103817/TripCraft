@@ -181,3 +181,52 @@ export interface TripSummary {
   budgetUsd: number;
   status: TripRequestStatus;
 }
+
+/** GET /api/quotations/{id} (camelCase, from the quotations table). */
+export interface QuotationDto {
+  id: string;
+  tripRequestId: string;
+  workflowId: string | null;
+  version: number;
+  status: 'Pending' | 'Approved' | 'Rejected' | 'RevisionRequested';
+  subtotalLkr: number;
+  marginPct: number;
+  marginLkr: number;
+  totalLkr: number;
+  totalUsd: number;
+  fxRate: number;
+  fxAsOf: string;
+  fxStale: boolean;
+  acceptedAt: string | null;
+  lines: { lineType: string; description: string; qty: number; unitLkr: number; amountLkr: number }[];
+  decisions: { decision: string; comment: string | null; decidedAt: string }[];
+  createdAt: string;
+}
+
+export interface RecalculationDto {
+  quotation: QuotationDto;
+  previousTotalLkr: number;
+  previousTotalUsd: number;
+  changed: boolean;
+}
+
+export interface RevenueMonthDto {
+  month: string;
+  quotations: number;
+  totalLkr: number;
+  totalUsd: number;
+}
+
+export interface UtilisationDto {
+  resourceType: string;
+  resourceId: string;
+  name: string;
+  heldDays: number;
+  daysInRange: number;
+  utilisationPct: number;
+}
+
+export interface StatusCountDto {
+  status: string;
+  count: number;
+}

@@ -8,10 +8,13 @@ using TripCraft.Tests.Workflows;
 
 namespace TripCraft.Tests.Shared.Database;
 
-/// <summary>The API on PostgreSQL with Resource Management's real catalog and hold service (seeded guides, van, hotels).</summary>
+/// <summary>
+/// The API on PostgreSQL with the real Resource Management (seeded guides, van, hotels) and Quotation components.
+/// </summary>
 public class RealResourcesPostgresFactory(string connectionString) : PostgresWebApplicationFactory(connectionString)
 {
     protected override bool UseRealResourceManagement => true;
+    protected override bool UseRealQuotations => true;
 }
 
 /// <summary>
@@ -46,5 +49,16 @@ public class ApprovalWithRealResourcesPostgresTests(PostgresFixture postgres)
         holdsB.Should().Be(0);
         itinerariesB.Should().Be(0);
         statusB.Should().Be(TripRequestStatus.PendingApproval);
+
+        // Component C's rows: A approved with its decision; B still Pending with no decision.
+        var (statusA, decisionsA, quotationB, decisionsB) = await factory.QueryDbAsync(async db => (
+            (await db.Quotations.SingleAsync(q => q.Id == outcomeA.QuotationId)).Status,
+            await db.ApprovalDecisions.CountAsync(d => d.QuotationId == outcomeA.QuotationId),
+            (await db.Quotations.SingleAsync(q => q.Id == outcomeB.QuotationId)).Status,
+            await db.ApprovalDecisions.CountAsync(d => d.QuotationId == outcomeB.QuotationId)));
+        statusA.Should().Be(Application.Quotations.QuotationStatus.Approved);
+        decisionsA.Should().Be(1);
+        quotationB.Should().Be(Application.Quotations.QuotationStatus.Pending);
+        decisionsB.Should().Be(0);
     }
 }

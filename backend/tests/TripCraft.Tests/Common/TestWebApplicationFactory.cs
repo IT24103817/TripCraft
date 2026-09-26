@@ -60,8 +60,11 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 services.AddScoped<IResourceCatalog, FakeResourceCatalog>();
                 services.AddScoped<IResourceHoldService, FakeResourceHoldService>();
             }
-            services.RemoveAll<IQuotationStore>();
-            services.AddScoped<IQuotationStore, FakeQuotationStore>();
+            if (!UseRealQuotations)
+            {
+                services.RemoveAll<IQuotationStore>();
+                services.AddScoped<IQuotationStore, FakeQuotationStore>();
+            }
         });
     }
 
@@ -70,6 +73,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// availability. True: the real ResourceCatalog / ResourceHoldService over the database (end-to-end B tests).
     /// </summary>
     protected virtual bool UseRealResourceManagement => false;
+
+    /// <summary>False: quotations live in FakeQuotationsState. True: the real QuotationStore (quotations tables).</summary>
+    protected virtual bool UseRealQuotations => false;
 
     /// <summary>
     /// EF Core InMemory by default. InMemory has no real transactions; the approval flow still works because it

@@ -15,6 +15,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/resources/hotels', label: 'Hotels', roles: ['OperationsManager'] },
   { to: '/availability', label: 'Availability', roles: ['OperationsManager'] },
   { to: '/workflows', label: 'Agent workflows', roles: ['OperationsManager', 'Admin'] },
+  { to: '/quotations', label: 'Quotations', roles: ['OperationsManager'] },
   { to: '/reports', label: 'Reports', roles: ['OperationsManager'] },
   { to: '/admin/users', label: 'Users', roles: ['Admin'] },
   { to: '/admin/audit-logs', label: 'Audit log', roles: ['Admin'] },

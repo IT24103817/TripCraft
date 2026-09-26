@@ -8,7 +8,9 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/money_text.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../../shared/utils/friendly_error.dart';
 import '../application/quotation_providers.dart';
+import '../data/quotations_repository.dart';
 import '../data/quotation_models.dart';
 
 /// The quotation for a trip: lines, subtotal, margin and total in LKR and USD, with the FX rate.
@@ -36,6 +38,26 @@ class QuotationScreen extends ConsumerWidget {
           data: (v) => QuotationBody(
             quotation: v.quotation!,
             workflowStatus: v.workflowStatus,
+            quotationStatus: v.quotationStatus,
+            acceptedAt: v.acceptedAt,
+            onAccept: v.quotationId == null
+                ? null
+                : () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    try {
+                      await ref
+                          .read(quotationsRepositoryProvider)
+                          .accept(v.quotationId!);
+                      ref.invalidate(quotationViewProvider(tripId));
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Quotation accepted.')),
+                      );
+                    } catch (error) {
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(friendlyMessage(error))),
+                      );
+                    }
+                  },
           ),
         ),
       ),
@@ -49,10 +71,18 @@ class QuotationBody extends StatelessWidget {
     super.key,
     required this.quotation,
     required this.workflowStatus,
+    this.quotationStatus,
+    this.acceptedAt,
+    this.onAccept,
   });
 
   final Quotation quotation;
   final String workflowStatus;
+
+  /// Status of the stored quotation (Pending, Approved, ...); null while it only exists in the proposal.
+  final String? quotationStatus;
+  final String? acceptedAt;
+  final VoidCallback? onAccept;
 
   double _usd(double lkr) => lkr / quotation.fxRate;
 
@@ -120,12 +150,20 @@ class QuotationBody extends StatelessWidget {
             style: TextStyle(color: AppColors.warning),
           ),
         const SizedBox(height: 16),
-        // Accepting needs POST /api/quotations/{id}/accept from Quotations (Student C), which is not merged yet.
-        const FilledButton(onPressed: null, child: Text('Accept quotation')),
+        // The tourist may accept only after the operator approved the price (POST /api/quotations/{id}/accept).
+        FilledButton(
+          onPressed: quotationStatus == 'Approved' && acceptedAt == null
+              ? onAccept
+              : null,
+          child: const Text('Accept quotation'),
+        ),
         const SizedBox(height: 4),
         Text(
-          'Accepting will be available when the quotations service is live. '
-          'Until then an operator approves your trip.',
+          acceptedAt != null
+              ? 'You accepted this price on ${formatDateTime(acceptedAt)}.'
+              : quotationStatus == 'Approved'
+              ? 'Your operator approved this price. Accept it to confirm.'
+              : 'An operator is checking this quotation. You can accept it once it is approved.',
           style: theme.textTheme.bodySmall,
           textAlign: TextAlign.center,
         ),

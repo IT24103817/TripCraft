@@ -12,20 +12,57 @@ class QuotationsRepository {
 
   final ApiClient _api;
 
-  /// The quotation the agents proposed, read from GET /api/trip-requests/{id}/workflow
-  /// (finalOutcome.proposal.quotation). Student C's quotation endpoints will replace this read.
+  /// The trip's quotation: the stored one (GET /api/quotations/{id}) when it exists, otherwise the one inside
+  /// the agents' proposal (GET /api/trip-requests/{id}/workflow, finalOutcome.proposal.quotation).
   Future<QuotationView> quotationFor(String tripId) async {
     final workflow = await _api.get(
       '/api/trip-requests/$tripId/workflow',
     ) as Map<String, dynamic>;
     final outcome = workflow['finalOutcome'] as Map<String, dynamic>?;
     final proposal = outcome?['proposal'] as Map<String, dynamic>?;
-    final quotation = proposal?['quotation'] as Map<String, dynamic>?;
-    return QuotationView(
+    final proposed = proposal?['quotation'] as Map<String, dynamic>?;
+    final quotationId = proposal?['quotationId'] as String?;
+    final view = QuotationView(
       workflowStatus: workflow['status'] as String,
-      quotation: quotation == null ? null : Quotation.fromJson(quotation),
+      quotation: proposed == null ? null : Quotation.fromJson(proposed),
+      quotationId: quotationId,
+    );
+    if (quotationId == null) return view;
+
+    final stored =
+        await _api.get('/api/quotations/$quotationId') as Map<String, dynamic>;
+    return view.copyWith(
+      quotation: Quotation.fromJson(_toProposalShape(stored)),
+      quotationStatus: stored['status'] as String?,
+      acceptedAt: stored['acceptedAt'] as String?,
     );
   }
+
+  /// POST /api/quotations/{id}/accept — only after the operator approved it.
+  Future<void> accept(String quotationId) =>
+      _api.post('/api/quotations/$quotationId/accept');
+
+  /// The API's camelCase quotation in the agent's snake_case shape that [Quotation] reads.
+  static Map<String, dynamic> _toProposalShape(Map<String, dynamic> q) => {
+    'lines': [
+      for (final l in q['lines'] as List<dynamic>)
+        {
+          'line_type': l['lineType'],
+          'description': l['description'],
+          'qty': l['qty'],
+          'unit_lkr': l['unitLkr'],
+          'amount_lkr': l['amountLkr'],
+        },
+    ],
+    'subtotal_lkr': q['subtotalLkr'],
+    'margin_pct': q['marginPct'],
+    'margin_lkr': q['marginLkr'],
+    'total_lkr': q['totalLkr'],
+    'fx_rate': q['fxRate'],
+    'fx_as_of': q['fxAsOf'],
+    'fx_stale': q['fxStale'],
+    'total_usd': q['totalUsd'],
+  };
 
   /// Every trip of the signed-in tourist with its status (GET /api/trip-requests only returns their own).
   Future<List<TripStatusItem>> tripStatuses() async {

@@ -12,3 +12,11 @@ afterEach(() => {
   sessionStorage.clear();
 });
 afterAll(() => server.close());
+
+// jsdom has no ResizeObserver; recharts' ResponsiveContainer needs one to render a chart.
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver;

@@ -14,4 +14,5 @@ public static class Roles
     public const string TouristOrOperationsManager = Tourist + "," + OperationsManager;
     public const string Staff = OperationsManager + "," + Admin;
     public const string TouristOrStaff = Tourist + "," + OperationsManager + "," + Admin;
+    public const string GuideOrOperationsManager = Guide + "," + OperationsManager;
 }

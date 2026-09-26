@@ -78,7 +78,7 @@ public static class TripsSeeder
             Status = TripRequestStatus.Completed
         };
 
-        // TODO(Component B): set HotelId on each day once hotels are seeded.
+        // Hotels per day and the holds of this trip are added by Resources/ResourcesSeeder.
         var itinerary = new Itinerary
         {
             TripRequestId = trip.Id,

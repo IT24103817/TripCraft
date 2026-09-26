@@ -9,4 +9,5 @@ export const queryRoots = {
   reports: 'reports',
   users: 'users',
   auditLogs: 'auditLogs',
+  resources: 'resources',
 } as const;

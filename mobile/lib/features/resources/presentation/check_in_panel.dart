@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/utils/formatters.dart';
+import '../../../shared/utils/friendly_error.dart';
+import '../../../shared/utils/statuses.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../data/check_in.dart';
+import '../data/resources_repository.dart';
 
 /// Locate the guide, show the distance to the stop, and allow Check in only within 500 m.
+/// The API checks the same rule again and records the check-in (POST /api/check-ins).
 class CheckInPanel extends ConsumerStatefulWidget {
   const CheckInPanel({super.key, required this.stop});
 
@@ -16,8 +21,17 @@ class CheckInPanel extends ConsumerStatefulWidget {
 
 class _CheckInPanelState extends ConsumerState<CheckInPanel> {
   double? _distance;
+  LocationFix? _fix;
   String? _error;
+  String? _checkedInAt;
   bool _locating = false;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkedInAt = widget.stop.checkedInAt;
+  }
 
   Future<void> _locate() async {
     setState(() {
@@ -27,13 +41,14 @@ class _CheckInPanelState extends ConsumerState<CheckInPanel> {
     final location = ref.read(locationServiceProvider);
     try {
       final fix = await location.currentPosition();
-      setState(
-        () => _distance = location.distanceMeters(
+      setState(() {
+        _fix = fix;
+        _distance = location.distanceMeters(
           fix,
           widget.stop.latitude,
           widget.stop.longitude,
-        ),
-      );
+        );
+      });
     } on LocationUnavailable catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
@@ -45,19 +60,41 @@ class _CheckInPanelState extends ConsumerState<CheckInPanel> {
     }
   }
 
-  void _checkIn() {
-    // The check-in endpoint belongs to Resource Management (Student B) and is not merged yet.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'You are close enough. Check-in will be saved once the schedule service is live.',
+  Future<void> _checkIn() async {
+    final fix = _fix;
+    if (fix == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _saving = true);
+    try {
+      final result = await ref
+          .read(resourcesRepositoryProvider)
+          .checkIn(widget.stop.id, fix.latitude, fix.longitude);
+      ref.invalidate(myScheduleProvider);
+      setState(() => _checkedInAt = result.checkedInAt);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Checked in at ${widget.stop.name}. Trip is ${statusLabel(result.tripStatus).toLowerCase()}.',
+          ),
         ),
-      ),
-    );
+      );
+    } catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(friendlyMessage(error))));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final checkedInAt = _checkedInAt;
+    if (checkedInAt != null) {
+      return ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const Icon(Icons.check_circle, color: Colors.green),
+        title: Text('Checked in ${formatDateTime(checkedInAt)}'),
+      );
+    }
     final distance = _distance;
     final allowed = distance != null && CheckInRule.canCheckIn(distance);
     return Column(
@@ -85,7 +122,10 @@ class _CheckInPanelState extends ConsumerState<CheckInPanel> {
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         const SizedBox(height: 8),
-        PrimaryButton(label: 'Check in', onPressed: allowed ? _checkIn : null),
+        PrimaryButton(
+          label: _saving ? 'Checking in…' : 'Check in',
+          onPressed: allowed && !_saving ? _checkIn : null,
+        ),
       ],
     );
   }

@@ -3,19 +3,21 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'check_in.g.dart';
 
-/// A stop the guide can check in at.
+/// A stop the guide can check in at. [checkedInAt] is set once the API has recorded a check-in.
 class GuideStop {
   const GuideStop({
     required this.id,
     required this.name,
     required this.latitude,
     required this.longitude,
+    this.checkedInAt,
   });
 
   final String id;
   final String name;
   final double latitude;
   final double longitude;
+  final String? checkedInAt;
 }
 
 /// Operator rule: a guide may only check in when within 500 m of the stop.

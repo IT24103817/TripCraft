@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TripCraft.Application.Common;
 using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Identity;
+using TripCraft.Application.Resources;
 using TripCraft.Application.Trips;
 using TripCraft.Application.Workflows;
 using TripCraft.Infrastructure.External;
@@ -11,6 +12,7 @@ using TripCraft.Infrastructure.Identity;
 using TripCraft.Infrastructure.Persistence;
 using TripCraft.Infrastructure.Persistence.Auditing;
 using TripCraft.Infrastructure.Persistence.Seeding;
+using TripCraft.Infrastructure.Resources;
 using TripCraft.Infrastructure.Trips;
 using TripCraft.Infrastructure.Workflows;
 
@@ -42,6 +44,7 @@ public static class DependencyInjection
         services.AddScoped<IAttractionRepository, AttractionRepository>();
         services.AddSingleton<IPassportPhotoStore, LocalPassportPhotoStore>();
         services.AddScoped<IAgentWorkflowRepository, AgentWorkflowRepository>();
+        services.AddScoped<IResourceRepository, ResourceRepository>();
 
         services.AddWorkflows(configuration);
         services.AddExternalServices(configuration);

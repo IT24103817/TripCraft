@@ -51,16 +51,25 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             services.AddScoped<IDistanceService, FakeDistanceService>();
             services.AddScoped<IWeatherService, FakeWeatherService>();
 
-            services.RemoveAll<IResourceCatalog>();
-            services.RemoveAll<IResourceHoldService>();
-            services.RemoveAll<IQuotationStore>();
             services.AddSingleton<FakeResourcesState>();
             services.AddSingleton<FakeQuotationsState>();
-            services.AddScoped<IResourceCatalog, FakeResourceCatalog>();
-            services.AddScoped<IResourceHoldService, FakeResourceHoldService>();
+            if (!UseRealResourceManagement)
+            {
+                services.RemoveAll<IResourceCatalog>();
+                services.RemoveAll<IResourceHoldService>();
+                services.AddScoped<IResourceCatalog, FakeResourceCatalog>();
+                services.AddScoped<IResourceHoldService, FakeResourceHoldService>();
+            }
+            services.RemoveAll<IQuotationStore>();
             services.AddScoped<IQuotationStore, FakeQuotationStore>();
         });
     }
+
+    /// <summary>
+    /// False: the workflow uses fake Resource Management ports (FakeResourcesState), so workflow tests control
+    /// availability. True: the real ResourceCatalog / ResourceHoldService over the database (end-to-end B tests).
+    /// </summary>
+    protected virtual bool UseRealResourceManagement => false;
 
     /// <summary>
     /// EF Core InMemory by default. InMemory has no real transactions; the approval flow still works because it

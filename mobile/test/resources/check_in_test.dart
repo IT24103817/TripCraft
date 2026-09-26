@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:tripcraft_mobile/features/resources/data/check_in.dart';
 import 'package:tripcraft_mobile/features/resources/presentation/check_in_panel.dart';
 
@@ -28,16 +29,21 @@ const temple = GuideStop(
   longitude: 80.6413,
 );
 
-Future<void> locateAt(WidgetTester tester, double distance) async {
+Future<void> locateAt(
+  WidgetTester tester,
+  double distance, {
+  MockApiClient? api,
+  GuideStop stop = temple,
+}) async {
   await pumpScreen(
     tester,
-    const Scaffold(
+    Scaffold(
       body: Padding(
-        padding: EdgeInsets.all(16),
-        child: CheckInPanel(stop: temple),
+        padding: const EdgeInsets.all(16),
+        child: CheckInPanel(stop: stop),
       ),
     ),
-    api: MockApiClient(),
+    api: api ?? MockApiClient(),
     overrides: [
       locationServiceProvider.overrideWithValue(FakeLocation(distance)),
     ],
@@ -74,6 +80,66 @@ void main() {
       findsOneWidget,
     );
     expect(checkInButton(tester).onPressed, isNotNull);
+  });
+
+  testWidgets(
+    'Check in posts the GPS fix to the API and shows the new trip status',
+    (tester) async {
+      final api = MockApiClient();
+      when(() => api.post('/api/check-ins', body: any(named: 'body')))
+          .thenAnswer(
+            (_) async => {
+              'stopId': 's1',
+              'distanceMeters': 120,
+              'checkedInAt': '2026-10-10T05:00:00Z',
+              'tripStatus': 'InProgress',
+            },
+          );
+      await locateAt(tester, 120, api: api);
+
+      await tester.tap(find.text('Check in'));
+      await tester.pumpAndSettle();
+
+      final body =
+          verify(
+                () =>
+                    api.post('/api/check-ins', body: captureAny(named: 'body')),
+              ).captured.single
+              as Map<String, dynamic>;
+      expect(body, {
+        'itineraryStopId': 's1',
+        'latitude': 7.29,
+        'longitude': 80.64,
+      });
+      expect(
+        find.text('Checked in at Temple of the Tooth. Trip is in progress.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Checked in 10'), findsOneWidget);
+    },
+  );
+
+  testWidgets('a stop already checked in shows when, with no button', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      const Scaffold(
+        body: CheckInPanel(
+          stop: GuideStop(
+            id: 's1',
+            name: 'Temple of the Tooth',
+            latitude: 7.2936,
+            longitude: 80.6413,
+            checkedInAt: '2026-10-10T05:00:00Z',
+          ),
+        ),
+      ),
+      api: MockApiClient(),
+    );
+
+    expect(find.textContaining('Checked in'), findsOneWidget);
+    expect(find.text('Find my location'), findsNothing);
   });
 
   test('the 500 m rule includes the boundary', () {

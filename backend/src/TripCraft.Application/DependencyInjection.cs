@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Identity.Services;
 using TripCraft.Application.Quotations;
+using TripCraft.Application.Resources.Services;
 using TripCraft.Application.Trips.Services;
 using TripCraft.Application.Workflows;
 using TripCraft.Application.Workflows.Services;
@@ -26,6 +27,17 @@ public static class DependencyInjection
         services.AddScoped<ITripPlanningService, TripPlanningService>();
         services.AddScoped<IAttractionService, AttractionService>();
         services.AddScoped<IPassportPhotoService, PassportPhotoService>();
+
+        // Component B — Resource Management. ResourceCatalog and ResourceHoldService are also registered as the
+        // workflow ports (IResourceCatalog, IResourceHoldService) in Infrastructure/Workflows/WorkflowsSetup.
+        services.AddScoped<ResourceCatalog>();
+        services.AddScoped<ResourceHoldService>();
+        services.AddScoped<IGuideService, GuideService>();
+        services.AddScoped<IVehicleService, VehicleService>();
+        services.AddScoped<IHotelService, HotelService>();
+        services.AddScoped<IAvailabilityService, AvailabilityService>();
+        services.AddScoped<IResourceHoldAdminService, ResourceHoldAdminService>();
+        services.AddScoped<IGuideScheduleService, GuideScheduleService>();
 
         // Agent workflow integration and the approval gate
         services.AddSingleton<ProposalValidator>();

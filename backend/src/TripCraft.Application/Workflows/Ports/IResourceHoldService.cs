@@ -11,6 +11,9 @@ public interface IResourceHoldService
     Task CreateHoldAsync(ResourceHoldRequest hold, CancellationToken ct);
 }
 
-/// <summary>A hold for [From, To] inclusive. Rooms use one hold per room type and night with a quantity.</summary>
+/// <summary>
+/// A hold for [From, To] inclusive. Rooms use one hold per room type and night with a quantity.
+/// TripRequestId is Guid.Empty for a manual block (e.g. vehicle maintenance), which may carry a Note.
+/// </summary>
 public record ResourceHoldRequest(
-    ResourceType Type, Guid ResourceId, Guid TripRequestId, DateOnly From, DateOnly To, int Quantity);
+    ResourceType Type, Guid ResourceId, Guid TripRequestId, DateOnly From, DateOnly To, int Quantity, string? Note = null);

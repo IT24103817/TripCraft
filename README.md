@@ -310,6 +310,13 @@ Swagger UI: `http://localhost:5080/swagger` locally, `https://<api>/swagger` whe
 | | `GET /api/trip-requests/{id}/itinerary`, `GET /api/trip-requests/{id}/workflow` | Tourist (owner), Manager | 404 until they exist |
 | Attractions (A) | `GET /api/attractions`, `GET /api/attractions/{id}` | signed in | search, filter, sort, paging |
 | | `POST`, `PUT /{id}`, `DELETE /{id}` | Manager | 201 / 200 / 204 (soft delete) |
+| Resources (B) | `GET/POST /api/guides`, `GET/PUT/DELETE /api/guides/{id}`, `GET /api/guides/{id}/schedule` | Manager | search, `language`, `isActive`, sort, paging; soft delete, 409 while held |
+| | `GET /api/guides/me/schedule` | Guide | only trips the guide is held for |
+| | `GET/POST /api/vehicles`, `PUT/DELETE /api/vehicles/{id}` (`GET /{id}` also Guide) | Manager | unique registration (409) |
+| | `GET/POST /api/hotels`, `PUT/DELETE /api/hotels/{id}`, `POST /api/hotels/{id}/room-types`, `PUT/DELETE /api/hotels/{id}/room-types/{roomTypeId}` (`GET /{id}` also Guide) | Manager | city/stars filters; room totals never below held rooms (409) |
+| | `GET /api/availability?type=Guide\|Vehicle\|Room&from=&to=&language=&pax=&seats=&city=&rooms=` | Manager | business op: what is free, with rates |
+| | `GET /api/resource-holds?from=&to=&type=&status=`, `POST /api/resource-holds`, `POST /api/resource-holds/{id}/release` | Manager | calendar, manual block (409 on overlap), release |
+| | `POST /api/check-ins` | Guide | business op: GPS within 500 m; Confirmed → InProgress → Completed |
 | Workflows (C) | `GET /api/workflows?status=&page=&pageSize=` | Manager, Admin | newest first |
 | | `GET /api/workflows/{id}`, `GET /api/workflows/{id}/steps` | Tourist (owner), Manager, Admin | status, plan, validation, outcome, timings; steps in order |
 | Approval (C) | `POST /api/quotations/{id}/approve` | Manager | one transaction; 409 + rollback on any failure |
@@ -320,9 +327,8 @@ Swagger UI: `http://localhost:5080/swagger` locally, `https://<api>/swagger` whe
 Agent service (internal, `http://127.0.0.1:8001`): `POST /run-workflow`, `POST /replan` (with `X-Internal-Key`),
 `GET /health`.
 
-Endpoints of Resource Management (`/api/guides`, `/api/vehicles`, `/api/hotels`, `/api/availability`,
-`/api/resource-holds`) and of Quotations/Reports (`GET /api/quotations`, `/api/reports/*`) are designed in PLAN.md
-section 3 and **not built yet**.
+Endpoints of Quotations/Reports (`GET /api/quotations`, `/api/reports/*`) are designed in PLAN.md section 3 and
+**not built yet**.
 
 ## Tests
 

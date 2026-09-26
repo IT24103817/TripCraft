@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TripCraft.Application.Workflows;
+using TripCraft.Application.Resources.Services;
 using TripCraft.Application.Workflows.Ports;
 using TripCraft.Infrastructure.External;
 
@@ -21,9 +22,9 @@ public static class WorkflowsSetup
             })
             .AddRetryAndTimeout(AgentPerTryTimeout);
 
-        // TODO(Student B): replace with the real Resource Management services.
-        services.AddScoped<IResourceCatalog, PendingResourceCatalog>();
-        services.AddScoped<IResourceHoldService, PendingResourceHoldService>();
+        // Resource Management (Component B): the real catalog and hold service.
+        services.AddScoped<IResourceCatalog>(sp => sp.GetRequiredService<ResourceCatalog>());
+        services.AddScoped<IResourceHoldService>(sp => sp.GetRequiredService<ResourceHoldService>());
         // TODO(Student C): replace with the real quotation store.
         services.AddScoped<IQuotationStore, PendingQuotationStore>();
 

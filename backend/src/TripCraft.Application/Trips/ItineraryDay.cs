@@ -8,8 +8,7 @@ public class ItineraryDay : BaseEntity
     public int DayNumber { get; set; }
     public string City { get; set; } = string.Empty;
 
-    // TODO(Component B): hotels table is owned by Resource Management. Add the FK to hotels(id)
-    // once the Hotel entity exists; until then this is a plain nullable uuid column.
+    // FK to hotels(id), configured by Resource Management (Infrastructure/Resources/HotelConfiguration).
     public Guid? HotelId { get; set; }
 
     public string? Notes { get; set; }

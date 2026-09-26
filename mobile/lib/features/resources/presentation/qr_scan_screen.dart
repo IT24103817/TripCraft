@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../core/auth/profile_button.dart';
+import 'voucher_lookup.dart';
 
-/// Scans a hotel voucher QR code with the camera (mobile_scanner asks for camera permission).
+/// Scans a hotel voucher QR code with the camera (mobile_scanner asks for camera permission) and looks the hotel up.
 class QrScanScreen extends StatefulWidget {
   const QrScanScreen({super.key});
 
@@ -59,29 +60,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    _code == null
-                        ? 'Point the camera at the voucher QR code.'
-                        : 'Voucher: $_code',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Check-in with a voucher needs Resource Management (Student B): POST /api/check-ins.
-                const FilledButton(
-                  onPressed: null,
-                  child: Text('Check in with voucher'),
-                ),
-                const Text(
-                  'Available when the schedule service is live.',
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+            child: VoucherLookup(code: _code),
           ),
         ],
       ),

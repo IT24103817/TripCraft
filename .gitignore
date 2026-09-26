@@ -111,3 +111,7 @@ Thumbs.db
 # ---------- Test evidence (generated) ----------
 docs/evidence/e2e/results/
 docs/evidence/e2e/report/
+
+# ---------- Report build output ----------
+docs/report/report.md
+docs/report/*.pdf

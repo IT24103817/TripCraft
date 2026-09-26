@@ -22,11 +22,11 @@ where the screenshots for the report go. Counts are from the local run on 26 Sep
 | Backend | `Tests/Workflows` (+ `External`: third-party wrappers, agent client) | 46 + 18 | pass |
 | Backend | `Tests/Quotations` (approval gate) | 21 | pass |
 | Backend | `Tests/Identity` (auth, tokens, validators) | 16 | pass |
-| Backend | `Tests/Shared/Database` (real PostgreSQL) | 13 | pass |
-| Backend | `Tests/Common` | 5 | pass |
+| Backend | `Tests/Shared/Database` (real PostgreSQL) | 15 | pass |
+| Backend | `Tests/Common` (health, connection strings, timestamps) | 7 | pass |
 | Backend | `Tests/Resources` (Student B) | 0 | **not merged yet** |
-| **Backend total** | | **193** | **193 passed** (Release, PostgreSQL 16) |
-| Agents | `tests/golden` (7 cases) | 17 | pass |
+| **Backend total** | | **197** | **197 passed** (Release, PostgreSQL 16) |
+| Agents | `agents/tests/golden` (7 cases) | 17 | pass |
 | Agents | `tests/` unit (planner, itinerary, resources, validation, registry, LLM helper, auth) | 26 | pass |
 | **Agents total** | | **43** | **43 passed** |
 | React | `auth` 7, `features/trips` 11, `features/quotations` 6, `features/resources` 1 | 25 | **25 passed** |

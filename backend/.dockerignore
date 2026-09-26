@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+tests/
+TestResults/
+**/uploads/
+**/appsettings.Development.json
+**/*.user
+.vs/
+.vscode/
+*.md

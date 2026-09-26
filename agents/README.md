@@ -29,29 +29,71 @@ cp .env.example .env        # then fill in the values
 | `API_BASE_URL` | `http://localhost:5080` | ASP.NET Core API the tools call (`/api/internal/...`). |
 | `LLM_PROVIDER` | `ollama` | `ollama` or `groq`. |
 | `OLLAMA_MODEL` | `llama3.1:8b` | Model used with Ollama. |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Where Ollama listens (from Docker: `http://host.docker.internal:11434`). |
 | `GROQ_API_KEY` | _(none)_ | Only needed when `LLM_PROVIDER=groq`. |
 | `GROQ_MODEL` | `llama-3.1-8b-instant` | Model used with Groq. |
 | `NODE_TIMEOUT_SECONDS` | `30` | Timeout per agent node. |
 | `MAX_RETRIES` | `2` | Repair attempts when the LLM returns invalid JSON. |
 | `MAX_REPLANS` | `3` | Max budget re-plans per run. |
 
-## Run with Ollama (local, free)
+## Two ways to run it
+
+| | Mode A — local with Ollama (demo default) | Mode B — Render with Groq (optional) |
+|---|---|---|
+| Model | `llama3.1:8b` on your laptop, free, no key | `llama-3.1-8b-instant` on Groq's free tier |
+| Where | your laptop, `http://127.0.0.1:8001` | a free Render web service (`render.yaml`, commented block) |
+| API setting | `AGENT_SERVICE_URL` = a URL the API can reach (see below) | `AGENT_SERVICE_URL=https://tripcraft-agents.onrender.com` |
+| Callbacks | `API_BASE_URL` = the API (local or Render) | `API_BASE_URL=https://tripcraft-api.onrender.com` |
+
+PLAN.md section 12 allows the agent service to run locally during the demo. If the API is on Render and the
+agents are on your laptop, Render cannot call `localhost`: either run the API locally too for the demo, or
+expose port 8001 with a tunnel (e.g. `cloudflared tunnel --url http://localhost:8001`) and put that HTTPS URL
+in the API's `AGENT_SERVICE_URL`. The internal key protects the service either way.
+
+### Mode A — Ollama (local, free)
 
 ```bash
-brew install ollama          # or download from ollama.com
-ollama serve &               # starts on localhost:11434
-ollama pull llama3.1:8b
-export LLM_PROVIDER=ollama
+brew install ollama && brew services start ollama   # or download from ollama.com
+ollama pull llama3.1:8b                              # ~5 GB, once
+cd agents && source .venv/bin/activate
+INTERNAL_AGENT_KEY=<same as the API> API_BASE_URL=http://localhost:5080 LLM_PROVIDER=ollama \
+  uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
-## Run with Groq (faster on a slow laptop)
+### Mode B — Groq (on Render, or locally on a slow laptop)
 
-Create a free key at console.groq.com, then put it in `agents/.env` (never in a committed file):
+Create a free key at console.groq.com. Locally put it in `agents/.env` (never in a committed file):
 
 ```bash
 LLM_PROVIDER=groq
 GROQ_API_KEY=<your key>
 ```
+
+On Render, uncomment the `tripcraft-agents` service in `render.yaml` and enter `GROQ_API_KEY`,
+`INTERNAL_AGENT_KEY` and `API_BASE_URL` in the dashboard. Groq's free tier has rate limits; one workflow makes
+about four LLM calls (more when a repair is needed).
+
+### Docker
+
+```bash
+docker build -t tripcraft-agents agents
+docker run -p 8001:8001 -e INTERNAL_AGENT_KEY=… -e API_BASE_URL=http://host.docker.internal:5080 \
+  -e LLM_PROVIDER=ollama -e OLLAMA_BASE_URL=http://host.docker.internal:11434 tripcraft-agents
+```
+
+(With colima use `host.lima.internal` instead of `host.docker.internal`.) The image runs as a non-root user.
+
+## Startup order
+
+1. **PostgreSQL** (Neon, or local)
+2. **Ollama** (Mode A only) — `curl localhost:11434/api/version`
+3. **Agent service** — `curl localhost:8001/health` → `{"status":"ok"}`
+4. **API** — `curl <api>/health` → `{"status":"ok","db":"ok",…}`
+5. **Web** (Vercel or `npm run dev`)
+6. **Mobile** (APK built with `--dart-define=API_URL=<api>`)
+
+The API only calls the agent service when a tourist starts planning, so starting it before the agents is harmless;
+a planning request made while the agents are down ends `FailedSafely` and can be retried.
 
 ## Start the service
 

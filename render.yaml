@@ -1,0 +1,63 @@
+# Render Blueprint (https://render.com/docs/blueprint-spec). New > Blueprint > pick this repo.
+# Values marked `sync: false` are left blank here and entered once in the Render dashboard — never commit them.
+# Full guide: docs/DEPLOYMENT.md
+
+services:
+  - type: web
+    name: tripcraft-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PORT                    # Render routes traffic to this port (the image listens on 8080)
+        value: "8080"
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DATABASE_URL            # Neon connection string (postgresql://…?sslmode=require)
+        sync: false
+      - key: JWT_SECRET              # random, at least 32 bytes
+        sync: false
+      - key: JWT_ISSUER              # e.g. tripcraft-prod
+        sync: false
+      - key: INTERNAL_AGENT_KEY      # shared with the agent service
+        sync: false
+      - key: AGENT_SERVICE_URL       # where the agent service runs (see docs/DEPLOYMENT.md)
+        sync: false
+      - key: ORS_API_KEY             # OpenRouteService (optional)
+        sync: false
+      - key: OWM_API_KEY             # OpenWeatherMap (optional)
+        sync: false
+      - key: ALLOWED_ORIGINS         # the Vercel URL, comma-separated if several
+        sync: false
+      - key: RUN_MIGRATIONS          # "true" applies migrations and seeds on start
+        sync: false
+
+  # OPTIONAL: the agent service on Render with Groq (Ollama cannot run on the free tier).
+  # Uncomment to create it; then set the API's AGENT_SERVICE_URL to this service's URL.
+  # The free tier sleeps after 15 minutes: wake it before the demo (docs/DEPLOYMENT.md).
+  #
+  # - type: web
+  #   name: tripcraft-agents
+  #   runtime: docker
+  #   plan: free
+  #   region: singapore
+  #   dockerfilePath: ./agents/Dockerfile
+  #   dockerContext: ./agents
+  #   healthCheckPath: /health
+  #   envVars:
+  #     - key: LLM_PROVIDER
+  #       value: groq
+  #     - key: GROQ_MODEL
+  #       value: llama-3.1-8b-instant
+  #     - key: GROQ_API_KEY          # from console.groq.com
+  #       sync: false
+  #     - key: INTERNAL_AGENT_KEY    # same value as the API's
+  #       sync: false
+  #     - key: API_BASE_URL          # the API's Render URL, e.g. https://tripcraft-api.onrender.com
+  #       sync: false
+  #     - key: NODE_TIMEOUT_SECONDS
+  #       value: "60"

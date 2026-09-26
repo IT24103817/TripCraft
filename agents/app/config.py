@@ -12,6 +12,7 @@ class Settings:
     api_base_url: str
     llm_provider: str
     ollama_model: str
+    ollama_base_url: str
     groq_api_key: str
     groq_model: str
     node_timeout_seconds: float
@@ -28,6 +29,8 @@ def get_settings() -> Settings:
         api_base_url=os.getenv("API_BASE_URL", "http://localhost:5080").rstrip("/"),
         llm_provider=os.getenv("LLM_PROVIDER", "ollama").lower(),
         ollama_model=os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
+        # In Docker, Ollama on the host is e.g. http://host.docker.internal:11434.
+        ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
         groq_api_key=os.getenv("GROQ_API_KEY", ""),
         groq_model=os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
         node_timeout_seconds=float(os.getenv("NODE_TIMEOUT_SECONDS", "30")),

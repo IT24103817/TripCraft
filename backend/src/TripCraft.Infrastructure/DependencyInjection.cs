@@ -33,6 +33,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
+        services.AddScoped<IDatabaseHealth, DatabaseHealth>();
         services.AddScoped<IAuditLogger, AuditLogger>();
 
         services.AddScoped<IUserRepository, UserRepository>();

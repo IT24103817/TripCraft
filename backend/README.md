@@ -15,8 +15,15 @@ Setup, user secrets, migrations and test accounts are in the [root README](../RE
 | `AGENT_CALLBACK_BASE_URL` | no | Base URL the agent service posts steps/proposals to; defaults to the agent's own `API_BASE_URL` |
 | `ORS_API_KEY` | no | OpenRouteService; without it the seeded `city_distances` table is used |
 | `OWM_API_KEY` | no | OpenWeatherMap; without it weather is skipped (advisory only) |
+| `RUN_MIGRATIONS` | no | `true` applies EF migrations on start (Docker/Render); the seeder always runs and only fills empty tables |
 | `UPLOADS_DIR` | no | Private folder for passport photos (default `uploads/` next to the app); never served as static files |
 | `FX_FALLBACK_LKR_PER_USD` | no | Rate used (flagged stale) if open.er-api.com fails before any success; default 300 |
+
+## Docker and deployment
+
+`docker build -t tripcraft-api backend` builds the production image (non-root, port 8080). `GET /health` returns
+`{status, version, db}` with a real database ping (`503` when the database does not answer). Render, Neon and
+Vercel setup: [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md).
 
 ## Startup order
 

@@ -33,6 +33,7 @@ async def test_call_json_returns_parsed_model_and_retry_count(fake_llm):
 def test_factory_uses_json_mode_for_each_provider(monkeypatch):
     ollama = llm.get_chat_model()
     assert ollama.format == "json" and ollama.model == "llama3.1:8b"
+    assert ollama.base_url == "http://localhost:11434"
 
     monkeypatch.setenv("LLM_PROVIDER", "groq")
     monkeypatch.setenv("GROQ_API_KEY", "placeholder-not-a-real-key")

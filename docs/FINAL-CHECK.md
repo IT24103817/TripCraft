@@ -20,7 +20,7 @@ what B/C must deliver. Their code was not written for them (ownership kept).
 | B3 | `flutter test` | **PASS** | 45 passed |
 | B4 | `pytest` | **PASS** | 43 passed |
 | B5 | Playwright e2e (local) | **FAIL** | 6 tests: 4 passed (`roles.spec.ts`), 2 failed (`workflow.spec.ts`, `safe-failure.spec.ts`): `Agents failed safely: resources: GET /api/internal/availability/guides returned 503` → needs B's `IResourceCatalog` |
-| B6 | k6 `list-load.js` | **PASS** | 50 VUs × 60 s: 791,677 requests, p95 8.1 ms, 0.00 % errors (thresholds p95 < 500 ms, errors < 1 %) |
+| B6 | k6 `list-load.js` | **PASS** | 50 VUs × 60 s: 791,677 requests, p95 8.1 ms, 0.00 % errors (thresholds p95 < 800 ms, errors < 1 %) |
 | C1 | Roles in React + API | **PASS** | `tests/e2e/roles.spec.ts` 4/4: Manager sees operations screens, no Users, admin API 403; Admin sees Users/Workflows only, approve 403; Tourist and Guide sent to the mobile app |
 | C2 | Roles in Flutter | **PASS** | Emulator, all four seeded roles: `docs/evidence/screenshots/final-check-mobile-{tourist1,guide1,manager1,admin1}.png` |
 | C3 | 403s | **PASS** | Tourist approve → 403; OperationsManager `GET /api/admin/users` → 403; Guide `POST /api/attractions` → 403. Guide on *resource* CRUD cannot be checked: B's endpoints do not exist |
@@ -138,8 +138,8 @@ The following make B5, D3, D4, E, F1 and F3 pass. Register the real implementati
 **README.md:**
 - Line 3: replace `OWNER/REPO`.
 - Line 13: the group number.
-- Lines 349–352: the API health, Swagger, web app and APK release URLs.
-- Line 402: each student creates `docs/ai-log-<name>.md`.
+- Lines 352–355: the API health, Swagger, web app and APK release URLs.
+- Line 438: each student creates `docs/ai-log-<name>.md`.
 
 **docs/report (fill by hand, then `cd docs/report && GROUP=<nn> ./build.sh`):**
 

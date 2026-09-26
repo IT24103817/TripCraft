@@ -1,15 +1,23 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { getErrorMessage } from '@/shared/api/errors';
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { PageState } from '@/shared/components/PageState';
 import { StatusBadge } from '@/shared/components/StatusBadge';
+import { useToast } from '@/shared/components/Toast';
 import { formatDate, formatDateTime, formatUsd } from '@/shared/utils/format';
-import { useItinerary, useTrip } from './api';
+import { useCancelTrip, useItinerary, useTrip } from './api';
 import { StatusTimeline } from './StatusTimeline';
+import { TripHistory } from './TripHistory';
 
 export default function TripDetailPage() {
   const { id = '' } = useParams();
   const trip = useTrip(id);
   const itinerary = useItinerary(id);
+  const cancel = useCancelTrip(id);
+  const toast = useToast();
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   return (
     <PageState
@@ -24,9 +32,16 @@ export default function TripDetailPage() {
             title="Trip request"
             description={trip.data.objective}
             actions={
-              <Link to="/trips" className="btn-secondary">
-                Back to trips
-              </Link>
+              <>
+                <Link to="/trips" className="btn-secondary">
+                  Back to trips
+                </Link>
+                {trip.data.status === 'Submitted' && (
+                  <button type="button" className="btn-danger" onClick={() => setConfirmCancel(true)}>
+                    Cancel request
+                  </button>
+                )}
+              </>
             }
           />
 
@@ -94,6 +109,30 @@ export default function TripDetailPage() {
               </ol>
             </PageState>
           </div>
+
+          <div className="card">
+            <h2 className="mb-3 font-semibold text-slate-900">History</h2>
+            <TripHistory tripId={id} />
+          </div>
+
+          <ConfirmDialog
+            open={confirmCancel}
+            title="Cancel trip request"
+            message="Cancel this trip request? It can no longer be planned."
+            confirmLabel="Cancel request"
+            tone="danger"
+            isPending={cancel.isPending}
+            onCancel={() => setConfirmCancel(false)}
+            onConfirm={() =>
+              cancel.mutate(undefined, {
+                onSuccess: () => {
+                  toast.success('Trip request cancelled.');
+                  setConfirmCancel(false);
+                },
+                onError: (error) => toast.error(getErrorMessage(error)),
+              })
+            }
+          />
         </section>
       )}
     </PageState>

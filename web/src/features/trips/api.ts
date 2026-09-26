@@ -7,6 +7,7 @@ import type {
   AttractionListQuery,
   ItineraryDto,
   SaveAttractionRequest,
+  TripHistoryEntryDto,
   TripRequestDto,
   TripRequestListQuery,
 } from './types';
@@ -22,6 +23,7 @@ export const tripKeys = {
   list: (query: TripRequestListQuery) => [queryRoots.trips, 'list', query] as const,
   detail: (id: string) => [queryRoots.trips, 'detail', id] as const,
   itinerary: (id: string) => [queryRoots.trips, 'itinerary', id] as const,
+  history: (id: string) => [queryRoots.trips, 'history', id] as const,
 };
 
 export function useTrips(query: TripRequestListQuery) {
@@ -50,6 +52,23 @@ export function useItinerary(id: string) {
       });
       return response.status === 404 ? null : response.data;
     },
+  });
+}
+
+/** Audit events of the trip and its agent workflows, oldest first. */
+export function useTripHistory(id: string) {
+  return useQuery({
+    queryKey: tripKeys.history(id),
+    queryFn: async () => (await http.get<TripHistoryEntryDto[]>(`/api/trip-requests/${id}/history`)).data,
+  });
+}
+
+/** Submitted → Cancelled (409 in any other status). Refreshes the trip, its history and the lists. */
+export function useCancelTrip(id: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async () => (await http.post<TripRequestDto>(`/api/trip-requests/${id}/cancel`)).data,
+    onSuccess: () => client.invalidateQueries({ queryKey: [queryRoots.trips] }),
   });
 }
 

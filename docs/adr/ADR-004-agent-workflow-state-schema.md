@@ -36,7 +36,7 @@ input/output/validation summaries as jsonb).
 ## Where this shows in the code
 
 - `backend/src/TripCraft.Application/Workflows/AgentWorkflow.cs`, `AgentStep.cs`, `WorkflowOutcome.cs`
-- `backend/src/TripCraft.Infrastructure/Persistence/Configurations/AgentWorkflowConfiguration.cs`
+- `backend/src/TripCraft.Infrastructure/Workflows/AgentWorkflowConfiguration.cs`
 - `backend/src/TripCraft.Infrastructure/Workflows/AgentStepConfiguration.cs`
 - `backend/src/TripCraft.Infrastructure/Persistence/Migrations/20260925202645_AddAgentWorkflows.cs`
 - `backend/src/TripCraft.Application/Workflows/Validation/AgentStepReportRequestValidator.cs` — 8,000-character cap

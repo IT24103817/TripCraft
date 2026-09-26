@@ -179,3 +179,18 @@ abstract class ItineraryStop with _$ItineraryStop {
   factory ItineraryStop.fromJson(Map<String, dynamic> json) =>
       _$ItineraryStopFromJson(json);
 }
+
+/// One event of GET /api/trip-requests/{id}/history (TripHistoryEntryDto). Actor is a role or "System".
+@freezed
+abstract class TripHistoryEntry with _$TripHistoryEntry {
+  const factory TripHistoryEntry({
+    required String at,
+    required String action,
+    required String actor,
+    String? fromStatus,
+    String? toStatus,
+  }) = _TripHistoryEntry;
+
+  factory TripHistoryEntry.fromJson(Map<String, dynamic> json) =>
+      _$TripHistoryEntryFromJson(json);
+}

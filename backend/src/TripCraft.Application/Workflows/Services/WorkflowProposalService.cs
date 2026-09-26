@@ -72,7 +72,7 @@ public class WorkflowProposalService(
                     workflow.Status = onlySoft ? AgentWorkflowStatus.RevisionRequested : AgentWorkflowStatus.PendingApproval;
                     workflow.CurrentStep = "awaiting-manager";
                     trip.Status = onlySoft ? TripRequestStatus.RevisionRequested : TripRequestStatus.PendingApproval;
-                    quotationId = await quotations.AddVersionAsync(ToDraft(trip, workflow, proposal.Quotation!), ct);
+                    quotationId = await quotations.AddVersionAsync(ToDraft(trip, workflow, proposal.Quotation!, facts), ct);
                 }
             }
             catch (ComponentNotAvailableException ex)
@@ -155,8 +155,9 @@ public class WorkflowProposalService(
             await resources.GetRateCardAsync(ct));
     }
 
-    private static QuotationDraft ToDraft(TripRequest trip, AgentWorkflow workflow, ProposalQuotation q) => new(
+    private static QuotationDraft ToDraft(TripRequest trip, AgentWorkflow workflow, ProposalQuotation q, ProposalFacts facts) => new(
         trip.Id, workflow.Id, q.SubtotalLkr, q.MarginPct, q.TotalLkr, q.TotalUsd, q.FxRate, q.FxAsOf, q.FxStale,
-        (q.Lines ?? []).Select(l => new QuotationDraftLine(l.LineType, l.Description, l.Qty, l.UnitLkr, l.AmountLkr))
+        (q.Lines ?? []).Select(l => new QuotationDraftLine(
+                l.LineType, QuotationLineNames.Describe(l, facts), l.Qty, l.UnitLkr, l.AmountLkr))
             .ToList());
 }

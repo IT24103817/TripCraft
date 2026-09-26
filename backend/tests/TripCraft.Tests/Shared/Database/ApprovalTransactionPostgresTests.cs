@@ -45,6 +45,7 @@ public class ApprovalTransactionPostgresTests(PostgresFixture postgres)
         tripStatus.Should().Be(TripRequestStatus.PendingApproval);
         workflowStatus.Should().Be(AgentWorkflowStatus.PendingApproval);
         auditAfter.Should().Be(auditBefore);
+        (await factory.QueryDbAsync(db => db.Itineraries.CountAsync(i => i.TripRequestId == trip.Id))).Should().Be(0);
     }
 
     [Fact]
@@ -66,5 +67,8 @@ public class ApprovalTransactionPostgresTests(PostgresFixture postgres)
         workflow.Status.Should().Be(AgentWorkflowStatus.Completed);
         workflow.FinalOutcome.Should().Contain("\"decision\": \"Approved\"").And.Contain("\"holds\"");
         audited.Should().BeTrue();
+        var days = await factory.QueryDbAsync(db => db.ItineraryDays
+            .Where(d => db.Itineraries.Any(i => i.Id == d.ItineraryId && i.TripRequestId == trip.Id)).CountAsync());
+        days.Should().Be(5); // the saved itinerary was committed in the same transaction
     }
 }

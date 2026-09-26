@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using TripCraft.Application.Common;
 using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Exceptions;
@@ -7,12 +8,15 @@ using TripCraft.Application.Common.Paging;
 using TripCraft.Application.Common.Security;
 using TripCraft.Application.Trips.Dtos;
 using TripCraft.Application.Trips.Planning;
+using TripCraft.Application.Workflows;
 
 namespace TripCraft.Application.Trips.Services;
 
 public class TripRequestService(
     ITripRequestRepository trips,
+    IAgentWorkflowRepository workflows,
     IAuditLogger audit,
+    IAuditLogReader auditLogs,
     IUnitOfWork unitOfWork) : ITripRequestService
 {
     /// <summary>Whitelist for ?sort=. Anything else is rejected by the validator with 400.</summary>
@@ -118,6 +122,38 @@ public class TripRequestService(
         var itinerary = await trips.GetItineraryAsync(id, ct)
                         ?? throw new NotFoundException("This trip request has no itinerary yet.");
         return ItineraryDto.FromEntity(itinerary);
+    }
+
+    public async Task<IReadOnlyList<TripHistoryEntryDto>> GetHistoryAsync(CurrentUser user, Guid id, CancellationToken ct)
+    {
+        await LoadForUserAsync(user, id, ct);
+
+        // The trip's own rows plus the rows of every agent workflow run for it.
+        var workflowIds = await workflows.Query().Where(w => w.TripRequestId == id).Select(w => w.Id).ToListAsync(ct);
+        var entityIds = workflowIds.Append(id).ToList();
+
+        var rows = await auditLogs.Query()
+            .Where(a => entityIds.Contains(a.EntityId))
+            .OrderBy(a => a.At)
+            .ToListAsync(ct);
+        return rows.Select(TripHistoryEntryDto.FromAudit).ToList();
+    }
+
+    public async Task<TripRequestDto> CancelAsync(CurrentUser user, Guid id, CancellationToken ct)
+    {
+        var trip = await LoadForUserAsync(user, id, ct);
+
+        // Only before planning (or after a safe failure, which puts the trip back to Submitted).
+        // Later statuses involve a running workflow or a quotation, so they are not cancelled here.
+        if (trip.Status != TripRequestStatus.Submitted)
+            throw new ConflictException($"Only a Submitted trip request can be cancelled; this one is {trip.Status}.");
+
+        trip.Status = TripRequestStatus.Cancelled;
+        audit.Record(user.Id, "TripRequestStatusChanged", nameof(TripRequest), trip.Id,
+            new { Status = nameof(TripRequestStatus.Submitted) }, new { Status = trip.Status.ToString() });
+        await unitOfWork.SaveChangesAsync(ct);
+
+        return TripRequestDto.FromEntity(trip);
     }
 
     /// <summary>404 if the trip does not exist, 403 if a tourist asks for someone else's trip.</summary>

@@ -201,3 +201,21 @@ Map<String, dynamic> _$ItineraryStopToJson(_ItineraryStop instance) =>
       'attractionId': instance.attractionId,
       'attractionName': instance.attractionName,
     };
+
+_TripHistoryEntry _$TripHistoryEntryFromJson(Map<String, dynamic> json) =>
+    _TripHistoryEntry(
+      at: json['at'] as String,
+      action: json['action'] as String,
+      actor: json['actor'] as String,
+      fromStatus: json['fromStatus'] as String?,
+      toStatus: json['toStatus'] as String?,
+    );
+
+Map<String, dynamic> _$TripHistoryEntryToJson(_TripHistoryEntry instance) =>
+    <String, dynamic>{
+      'at': instance.at,
+      'action': instance.action,
+      'actor': instance.actor,
+      'fromStatus': instance.fromStatus,
+      'toStatus': instance.toStatus,
+    };

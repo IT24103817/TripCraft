@@ -33,6 +33,10 @@ Stream<TripWorkflow?> tripWorkflow(Ref ref, String tripId) async* {
 }
 
 @riverpod
+Future<List<TripHistoryEntry>> tripHistory(Ref ref, String tripId) =>
+    ref.watch(tripsRepositoryProvider).history(tripId);
+
+@riverpod
 Future<List<TripDay>> savedItinerary(Ref ref, String tripId) =>
     ref.watch(tripsRepositoryProvider).savedItinerary(tripId);
 

@@ -8,4 +8,5 @@ export const queryRoots = {
   workflows: 'workflows',
   reports: 'reports',
   users: 'users',
+  auditLogs: 'auditLogs',
 } as const;

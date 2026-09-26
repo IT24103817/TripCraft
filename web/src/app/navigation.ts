@@ -3,7 +3,7 @@ import type { NavItem } from '@/shared/components/Sidebar';
 /**
  * Sidebar links and who may open them (PLAN.md section 2, matched to the API's [Authorize] rules):
  * trips, resources, approvals and reports are Operations Manager work; workflows are readable by
- * Admins too; user management is Admin only (separation of duties).
+ * Admins too; user management and the audit log are Admin only (separation of duties).
  */
 export const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Dashboard', roles: ['OperationsManager', 'Admin'] },
@@ -17,4 +17,5 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/workflows', label: 'Agent workflows', roles: ['OperationsManager', 'Admin'] },
   { to: '/reports', label: 'Reports', roles: ['OperationsManager'] },
   { to: '/admin/users', label: 'Users', roles: ['Admin'] },
+  { to: '/admin/audit-logs', label: 'Audit log', roles: ['Admin'] },
 ];

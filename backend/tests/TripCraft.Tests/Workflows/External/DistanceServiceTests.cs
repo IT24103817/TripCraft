@@ -6,7 +6,7 @@ using TripCraft.Application.Trips;
 using TripCraft.Application.Workflows.External;
 using TripCraft.Infrastructure.External;
 using TripCraft.Infrastructure.Persistence;
-using TripCraft.Infrastructure.Persistence.Repositories;
+using TripCraft.Infrastructure.Trips;
 
 namespace TripCraft.Tests.Workflows.External;
 
@@ -47,6 +47,17 @@ public class DistanceServiceTests
             .GetDistanceAsync("Kandy", "Ella", CancellationToken.None);
 
         result!.Source.Should().Be("static-table");
+    }
+
+    [Fact]
+    public async Task Rate_limited_429_falls_back_to_the_static_table()
+    {
+        var handler = StubHandler.Status(HttpStatusCode.TooManyRequests);
+
+        var result = await Service(handler).GetDistanceAsync("Kandy", "Ella", CancellationToken.None);
+
+        result!.Source.Should().Be("static-table");
+        handler.Requests.Should().ContainSingle(); // no hammering a rate-limited provider
     }
 
     [Fact]

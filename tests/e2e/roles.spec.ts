@@ -37,15 +37,17 @@ test('Operations Manager sees operations screens, not user admin; admin API is 4
     await expect(nav(page).getByRole('link', { name: link })).toBeVisible();
   }
   await expect(nav(page).getByRole('link', { name: 'Users' })).toHaveCount(0);
+  await expect(nav(page).getByRole('link', { name: 'Audit log' })).toHaveCount(0);
   await page.goto('/admin/users');
   await expect(page.getByText('You do not have access to this page')).toBeVisible();
   expect(await status(page, 'GET', '/api/admin/users')).toBe(403);
+  expect(await status(page, 'GET', '/api/admin/audit-logs')).toBe(403);
 });
 
-test('Admin sees users and workflows only; the approval inbox is 403', async ({ page }) => {
+test('Admin sees users, audit log and workflows only; the approval inbox is 403', async ({ page }) => {
   await signIn(page, 'admin1@tripcraft.test');
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-  for (const link of ['Dashboard', 'Agent workflows', 'Users']) {
+  for (const link of ['Dashboard', 'Agent workflows', 'Users', 'Audit log']) {
     await expect(nav(page).getByRole('link', { name: link })).toBeVisible();
   }
   for (const link of ['Approvals', 'Trip requests', 'Attractions', 'Reports']) {
@@ -54,6 +56,7 @@ test('Admin sees users and workflows only; the approval inbox is 403', async ({ 
   await page.goto('/approvals');
   await expect(page.getByText('You do not have access to this page')).toBeVisible();
   expect(await status(page, 'POST', `/api/quotations/${crypto.randomUUID()}/approve`)).toBe(403);
+  expect(await status(page, 'GET', '/api/admin/audit-logs')).toBe(200);
 });
 
 test('Tourist is sent to the mobile app; staff pages and approve are 403', async ({ page }) => {

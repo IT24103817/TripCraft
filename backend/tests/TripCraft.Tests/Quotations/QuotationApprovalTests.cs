@@ -52,6 +52,13 @@ public class QuotationApprovalTests
         workflow.FinishedAt.Should().NotBeNull();
         workflow.FinalOutcome.Should().Contain("\"decision\":\"Approved\"");
         audit.Should().NotBeNull();
+
+        // Step 11: the tourist now sees the saved itinerary (5 days) instead of the proposal.
+        var tourist = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
+        var itinerary = await tourist.GetFromJsonAsync<Application.Trips.Dtos.ItineraryDto>(
+            $"/api/trip-requests/{trip.Id}/itinerary", TestJson.Options);
+        itinerary!.Days.Should().HaveCount(5);
+        itinerary.Days[0].Stops.Should().ContainSingle();
     }
 
     [Fact]

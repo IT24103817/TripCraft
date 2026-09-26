@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TripCraft.Application.Identity;
+using TripCraft.Infrastructure.Trips;
 using TripCraft.Infrastructure.Workflows;
 
 namespace TripCraft.Infrastructure.Persistence.Seeding;

@@ -13,6 +13,7 @@ import '../../../shared/widgets/status_timeline.dart';
 import '../application/trips_providers.dart';
 import '../data/trip_models.dart';
 import '../data/trips_repository.dart';
+import 'trip_history_section.dart';
 import 'trip_map.dart';
 
 /// The main path a tourist sees (PLAN.md section 6, steps 1, 3, 8 and 11).
@@ -41,6 +42,7 @@ class TripDetailScreen extends ConsumerWidget {
     ref.listen(tripWorkflowProvider(tripId), (previous, next) {
       if (previous?.value?.status != next.value?.status) {
         ref.invalidate(tripDetailProvider(tripId));
+        ref.invalidate(tripHistoryProvider(tripId));
       }
     });
 
@@ -48,6 +50,7 @@ class TripDetailScreen extends ConsumerWidget {
       ref.invalidate(tripWorkflowProvider(tripId));
       ref.invalidate(savedItineraryProvider(tripId));
       ref.invalidate(tripDetailProvider(tripId));
+      ref.invalidate(tripHistoryProvider(tripId));
       await ref.read(tripDetailProvider(tripId).future);
     }
 
@@ -62,6 +65,7 @@ class TripDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             children: [
               _Summary(trip: t),
+              if (t.status == 'Submitted') _CancelButton(tripId: t.id),
               const SizedBox(height: 12),
               if (t.status == 'PendingApproval') ...[
                 const _AwaitingApproval(),
@@ -78,6 +82,8 @@ class TripDetailScreen extends ConsumerWidget {
               _WorkflowSection(trip: t, workflow: workflow),
               const SizedBox(height: 12),
               _ItinerarySection(tripId: tripId, workflow: workflow.value),
+              const SizedBox(height: 12),
+              TripHistorySection(tripId: tripId),
             ],
           ),
         ),
@@ -295,6 +301,58 @@ class _StartPlanningButton extends ConsumerWidget {
         }
       },
       child: Text(label),
+    );
+  }
+}
+
+/// Submitted → Cancelled after a confirmation. The API refuses (409) once planning has started.
+class _CancelButton extends ConsumerWidget {
+  const _CancelButton({required this.tripId});
+
+  final String tripId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton.icon(
+        icon: const Icon(Icons.cancel_outlined),
+        label: const Text('Cancel request'),
+        onPressed: () async {
+          final messenger = ScaffoldMessenger.of(context);
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Cancel this trip request?'),
+              content: const Text('It can no longer be planned.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Keep it'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('Cancel request'),
+                ),
+              ],
+            ),
+          );
+          if (confirmed != true) return;
+          try {
+            await ref.read(tripsRepositoryProvider).cancel(tripId);
+            ref.invalidate(myTripsProvider);
+            ref.invalidate(tripDetailProvider(tripId));
+            ref.invalidate(tripHistoryProvider(tripId));
+            messenger.showSnackBar(
+              const SnackBar(content: Text('Trip request cancelled.')),
+            );
+          } catch (error) {
+            messenger.showSnackBar(
+              SnackBar(content: Text(friendlyMessage(error))),
+            );
+          }
+        },
+      ),
     );
   }
 }

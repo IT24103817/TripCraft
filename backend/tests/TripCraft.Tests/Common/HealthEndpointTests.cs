@@ -19,6 +19,7 @@ public class HealthEndpointTests(TestWebApplicationFactory factory) : IClassFixt
         var body = await response.Content.ReadFromJsonAsync<HealthResponse>(TestJson.Options);
         body!.Status.Should().Be("ok");
         body.Db.Should().Be("ok");
+        body.DbLatencyMs.Should().BeGreaterThanOrEqualTo(0); // read by tests/perf/db-response.js
         body.Version.Should().StartWith("1.0.0");
     }
 

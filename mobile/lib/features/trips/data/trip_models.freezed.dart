@@ -3991,4 +3991,286 @@ as String,
 
 }
 
+
+/// @nodoc
+mixin _$TripHistoryEntry {
+
+ String get at; String get action; String get actor; String? get fromStatus; String? get toStatus;
+/// Create a copy of TripHistoryEntry
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$TripHistoryEntryCopyWith<TripHistoryEntry> get copyWith => _$TripHistoryEntryCopyWithImpl<TripHistoryEntry>(this as TripHistoryEntry, _$identity);
+
+  /// Serializes this TripHistoryEntry to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as TripHistoryEntry;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripHistoryEntry&&(identical(other.at, _this.at) || other.at == _this.at)&&(identical(other.action, _this.action) || other.action == _this.action)&&(identical(other.actor, _this.actor) || other.actor == _this.actor)&&(identical(other.fromStatus, _this.fromStatus) || other.fromStatus == _this.fromStatus)&&(identical(other.toStatus, _this.toStatus) || other.toStatus == _this.toStatus));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as TripHistoryEntry;
+  return Object.hash(runtimeType,_this.at,_this.action,_this.actor,_this.fromStatus,_this.toStatus);
+}
+
+@override
+String toString() {
+  final _this = this as TripHistoryEntry;
+  return 'TripHistoryEntry(at: ${_this.at}, action: ${_this.action}, actor: ${_this.actor}, fromStatus: ${_this.fromStatus}, toStatus: ${_this.toStatus})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $TripHistoryEntryCopyWith<$Res>  {
+  factory $TripHistoryEntryCopyWith(TripHistoryEntry value, $Res Function(TripHistoryEntry) _then) = _$TripHistoryEntryCopyWithImpl;
+@useResult
+$Res call({
+ String at, String action, String actor, String? fromStatus, String? toStatus
+});
+
+
+
+
+}
+/// @nodoc
+class _$TripHistoryEntryCopyWithImpl<$Res>
+    implements $TripHistoryEntryCopyWith<$Res> {
+  _$TripHistoryEntryCopyWithImpl(this._self, this._then);
+
+  final TripHistoryEntry _self;
+  final $Res Function(TripHistoryEntry) _then;
+
+/// Create a copy of TripHistoryEntry
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? at = null,Object? action = null,Object? actor = null,Object? fromStatus = freezed,Object? toStatus = freezed,}) {
+  return _then(TripHistoryEntry(
+at: null == at ? _self.at : at // ignore: cast_nullable_to_non_nullable
+as String,action: null == action ? _self.action : action // ignore: cast_nullable_to_non_nullable
+as String,actor: null == actor ? _self.actor : actor // ignore: cast_nullable_to_non_nullable
+as String,fromStatus: freezed == fromStatus ? _self.fromStatus : fromStatus // ignore: cast_nullable_to_non_nullable
+as String?,toStatus: freezed == toStatus ? _self.toStatus : toStatus // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [TripHistoryEntry].
+extension TripHistoryEntryPatterns on TripHistoryEntry {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _TripHistoryEntry value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _TripHistoryEntry() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _TripHistoryEntry value)  $default,){
+final _that = this;
+switch (_that) {
+case _TripHistoryEntry():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _TripHistoryEntry value)?  $default,){
+final _that = this;
+switch (_that) {
+case _TripHistoryEntry() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String at,  String action,  String actor,  String? fromStatus,  String? toStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _TripHistoryEntry() when $default != null:
+return $default(_that.at,_that.action,_that.actor,_that.fromStatus,_that.toStatus);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String at,  String action,  String actor,  String? fromStatus,  String? toStatus)  $default,) {final _that = this;
+switch (_that) {
+case _TripHistoryEntry():
+return $default(_that.at,_that.action,_that.actor,_that.fromStatus,_that.toStatus);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String at,  String action,  String actor,  String? fromStatus,  String? toStatus)?  $default,) {final _that = this;
+switch (_that) {
+case _TripHistoryEntry() when $default != null:
+return $default(_that.at,_that.action,_that.actor,_that.fromStatus,_that.toStatus);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _TripHistoryEntry implements TripHistoryEntry {
+  const _TripHistoryEntry({required this.at, required this.action, required this.actor, this.fromStatus, this.toStatus});
+  factory _TripHistoryEntry.fromJson(Map<String, dynamic> json) => _$TripHistoryEntryFromJson(json);
+
+@override final  String at;
+@override final  String action;
+@override final  String actor;
+@override final  String? fromStatus;
+@override final  String? toStatus;
+
+/// Create a copy of TripHistoryEntry
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$TripHistoryEntryCopyWith<_TripHistoryEntry> get copyWith => __$TripHistoryEntryCopyWithImpl<_TripHistoryEntry>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$TripHistoryEntryToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripHistoryEntry&&(identical(other.at, at) || other.at == at)&&(identical(other.action, action) || other.action == action)&&(identical(other.actor, actor) || other.actor == actor)&&(identical(other.fromStatus, fromStatus) || other.fromStatus == fromStatus)&&(identical(other.toStatus, toStatus) || other.toStatus == toStatus));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,at,action,actor,fromStatus,toStatus);
+}
+
+@override
+String toString() {
+    return 'TripHistoryEntry(at: $at, action: $action, actor: $actor, fromStatus: $fromStatus, toStatus: $toStatus)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$TripHistoryEntryCopyWith<$Res> implements $TripHistoryEntryCopyWith<$Res> {
+  factory _$TripHistoryEntryCopyWith(_TripHistoryEntry value, $Res Function(_TripHistoryEntry) _then) = __$TripHistoryEntryCopyWithImpl;
+@override @useResult
+$Res call({
+ String at, String action, String actor, String? fromStatus, String? toStatus
+});
+
+
+
+
+}
+/// @nodoc
+class __$TripHistoryEntryCopyWithImpl<$Res>
+    implements _$TripHistoryEntryCopyWith<$Res> {
+  __$TripHistoryEntryCopyWithImpl(this._self, this._then);
+
+  final _TripHistoryEntry _self;
+  final $Res Function(_TripHistoryEntry) _then;
+
+/// Create a copy of TripHistoryEntry
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? at = null,Object? action = null,Object? actor = null,Object? fromStatus = freezed,Object? toStatus = freezed,}) {
+  return _then(_TripHistoryEntry(
+at: null == at ? _self.at : at // ignore: cast_nullable_to_non_nullable
+as String,action: null == action ? _self.action : action // ignore: cast_nullable_to_non_nullable
+as String,actor: null == actor ? _self.actor : actor // ignore: cast_nullable_to_non_nullable
+as String,fromStatus: freezed == fromStatus ? _self.fromStatus : fromStatus // ignore: cast_nullable_to_non_nullable
+as String?,toStatus: freezed == toStatus ? _self.toStatus : toStatus // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
 // dart format on

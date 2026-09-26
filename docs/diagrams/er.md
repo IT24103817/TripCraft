@@ -1,7 +1,7 @@
 # ER diagram
 
 Generated from the EF Core model (`backend/src/TripCraft.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs`
-and the configurations in `Persistence/Configurations/` and `Workflows/`). Every table has `id uuid` (PK),
+and the configurations in `Trips/`, `Identity/`, `Persistence/Auditing/` and `Workflows/`). Every table has `id uuid` (PK),
 `created_at` and `updated_at timestamptz`; money is `numeric(12,2)`; column names are snake_case.
 
 Tables of Resource Management (guides, guide_languages, vehicles, hotels, room_types, resource_holds, rate card)

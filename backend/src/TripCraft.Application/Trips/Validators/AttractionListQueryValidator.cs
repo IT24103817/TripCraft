@@ -1,4 +1,5 @@
 using FluentValidation;
+using TripCraft.Application.Common.Paging;
 using TripCraft.Application.Trips.Dtos;
 using TripCraft.Application.Trips.Services;
 

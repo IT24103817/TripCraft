@@ -11,6 +11,7 @@ const DashboardPage = lazy(() => import('./dashboard/DashboardPage'));
 const NotFoundPage = lazy(() => import('./NotFoundPage'));
 const MobileAppPage = lazy(() => import('@/auth/MobileAppPage'));
 const UsersPage = lazy(() => import('@/auth/users/UsersPage'));
+const AuditLogPage = lazy(() => import('@/auth/audit/AuditLogPage'));
 const TripsListPage = lazy(() => import('@/features/trips/TripsListPage'));
 const TripDetailPage = lazy(() => import('@/features/trips/TripDetailPage'));
 const AttractionsPage = lazy(() => import('@/features/trips/AttractionsPage'));
@@ -61,6 +62,7 @@ export const routes: RouteObject[] = [
           { path: 'workflows/:id', element: guard(STAFF, <WorkflowDetailPage />) },
           { path: 'reports', element: guard(MANAGER, <ReportsPage />) },
           { path: 'admin/users', element: guard(ADMIN, <UsersPage />) },
+          { path: 'admin/audit-logs', element: guard(ADMIN, <AuditLogPage />) },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

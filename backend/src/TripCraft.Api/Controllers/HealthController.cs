@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -5,8 +6,11 @@ using TripCraft.Application.Common;
 
 namespace TripCraft.Api.Controllers;
 
-/// <summary>{status, version, db} for Render's health check and the demo warm-up.</summary>
-public record HealthResponse(string Status, string Version, string Db, DateTime TimeUtc);
+/// <summary>
+/// {status, version, db, dbLatencyMs} for Render's health check and the demo warm-up. dbLatencyMs is the time of
+/// one database round trip, so k6 (tests/perf/db-response.js) can report database response time under load.
+/// </summary>
+public record HealthResponse(string Status, string Version, string Db, double DbLatencyMs, DateTime TimeUtc);
 
 [ApiController]
 [AllowAnonymous]
@@ -23,9 +27,12 @@ public class HealthController(IDatabaseHealth database) : ControllerBase
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(DbTimeout);
+        var stopwatch = Stopwatch.StartNew();
         var dbOk = await database.CanConnectAsync(timeout.Token);
+        var dbLatencyMs = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 1);
 
-        var body = new HealthResponse(dbOk ? "ok" : "degraded", AppVersion, dbOk ? "ok" : "fail", DateTime.UtcNow);
+        var body = new HealthResponse(dbOk ? "ok" : "degraded", AppVersion, dbOk ? "ok" : "fail", dbLatencyMs,
+            DateTime.UtcNow);
         return dbOk ? Ok(body) : StatusCode(StatusCodes.Status503ServiceUnavailable, body);
     }
 

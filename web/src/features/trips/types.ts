@@ -74,3 +74,13 @@ export interface AttractionListQuery {
 
 /** Body of POST and PUT /api/attractions. */
 export type SaveAttractionRequest = Omit<AttractionDto, 'id'>;
+
+/** One event from GET /api/trip-requests/{id}/history. Actor is a role or "System". */
+export interface TripHistoryEntryDto {
+  at: string;
+  action: string;
+  entity: string;
+  actor: string;
+  fromStatus: string | null;
+  toStatus: string | null;
+}

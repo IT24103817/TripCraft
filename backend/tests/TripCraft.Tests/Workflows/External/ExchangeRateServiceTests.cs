@@ -52,6 +52,15 @@ public class ExchangeRateServiceTests
     }
 
     [Fact]
+    public async Task Rate_limited_429_uses_the_fallback_rate_flagged_stale()
+    {
+        var rate = await Service(StubHandler.Status(HttpStatusCode.TooManyRequests)).GetUsdToLkrAsync(CancellationToken.None);
+
+        rate.Stale.Should().BeTrue();
+        rate.Rate.Should().Be(300m);
+    }
+
+    [Fact]
     public async Task Response_without_lkr_is_treated_as_a_failure()
     {
         var rate = await Service(StubHandler.Json("""{"result":"error"}""")).GetUsdToLkrAsync(CancellationToken.None);

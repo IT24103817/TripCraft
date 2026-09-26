@@ -10,8 +10,8 @@ using TripCraft.Infrastructure.External;
 using TripCraft.Infrastructure.Identity;
 using TripCraft.Infrastructure.Persistence;
 using TripCraft.Infrastructure.Persistence.Auditing;
-using TripCraft.Infrastructure.Persistence.Repositories;
 using TripCraft.Infrastructure.Persistence.Seeding;
+using TripCraft.Infrastructure.Trips;
 using TripCraft.Infrastructure.Workflows;
 
 namespace TripCraft.Infrastructure;
@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddScoped<IDatabaseHealth, DatabaseHealth>();
         services.AddScoped<IAuditLogger, AuditLogger>();
+        services.AddScoped<IAuditLogReader, AuditLogReader>();
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ITripRequestRepository, TripRequestRepository>();

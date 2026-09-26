@@ -1,7 +1,8 @@
 # Test evidence
 
 Maps every row of PLAN.md section 11 to the tests that prove it, how to run them, the latest counts, and
-where the screenshots for the report go. Counts are from the local run on 26 Sep 2026 (re-run for `docs/FINAL-CHECK.md`).
+where the screenshots for the report go. Counts are from the local run on 26 Sep 2026 on this branch (`docs/spec-compliance`). With Students B and C's
+draft branches stacked on top, every suite is larger and the workflow e2e passes — see `docs/COMPLIANCE.md`.
 
 ## How to run each suite
 
@@ -18,19 +19,19 @@ where the screenshots for the report go. Counts are from the local run on 26 Sep
 
 | Layer | Component / folder | Tests | Result |
 |-------|--------------------|------:|--------|
-| Backend | `Tests/Trips` (Student A) | 74 | pass |
-| Backend | `Tests/Workflows` (+ `External`: third-party wrappers, base-URL overrides, agent client) | 47 + 21 | pass |
+| Backend | `Tests/Trips` (Student A) | 86 | pass |
+| Backend | `Tests/Workflows` (+ `External`: third-party wrappers incl. 429, base-URL overrides, agent client) | 51 + 24 | pass |
 | Backend | `Tests/Quotations` (approval gate) | 21 | pass |
-| Backend | `Tests/Identity` (auth, tokens, validators) | 16 | pass |
-| Backend | `Tests/Shared/Database` (real PostgreSQL) | 15 | pass |
+| Backend | `Tests/Identity` (auth, tokens, validators, admin audit log) | 21 | pass |
+| Backend | `Tests/Shared/Database` (real PostgreSQL) | 18 | pass |
 | Backend | `Tests/Common` (health, connection strings, timestamps, error handling, Swagger responses) | 14 | pass |
 | Backend | `Tests/Resources` (Student B) | 0 | **not merged yet** |
-| **Backend total** | | **208** | **208 passed** (PostgreSQL 16) |
+| **Backend total** | | **235** | **235 passed** (PostgreSQL 16) |
 | Agents | `agents/tests/golden` (7 cases) | 17 | pass |
 | Agents | `tests/` unit (planner, itinerary, resources, validation, registry, LLM helper, auth) | 26 | pass |
 | **Agents total** | | **43** | **43 passed** |
-| React | `auth` 7, `features/trips` 10, `features/quotations` 7, `features/resources` 1 | 25 | **25 passed** |
-| Flutter | `core` 21, `trips` 15, `quotations` 3, `resources` 3, `shared` 3 | 45 | **45 passed** |
+| React | `auth` 10, `features/trips` 13, `features/quotations` 7, `features/resources` 1 | 31 | **31 passed** |
+| Flutter | `core` 21, `trips` 18, `quotations` 3, `resources` 3, `shared` 3 | 48 | **48 passed** |
 | E2E | `roles.spec.ts` (4), `workflow.spec.ts`, `safe-failure.spec.ts` | 6 | **4 passed, 2 failed** — see below |
 | Performance | `list-load`, `auth-load`, `agent-latency` | 3 | list-load and auth-load pass; agent-latency fails its PendingApproval check — see below |
 

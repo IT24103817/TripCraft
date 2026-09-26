@@ -30,6 +30,17 @@ public class WeatherServiceTests
     }
 
     [Fact]
+    public async Task Rate_limited_429_returns_null_so_planning_continues_without_weather()
+    {
+        var handler = StubHandler.Status(HttpStatusCode.TooManyRequests);
+
+        var result = await Service(handler).GetForecastAsync("Ella", Day, CancellationToken.None);
+
+        result.Should().BeNull();
+        handler.Requests.Should().ContainSingle();
+    }
+
+    [Fact]
     public async Task No_key_returns_null_without_calling_the_provider()
     {
         var handler = StubHandler.Json("{}");

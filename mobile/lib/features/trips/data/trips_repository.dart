@@ -53,6 +53,21 @@ class TripsRepository {
     await _api.postMultipart('/api/trip-requests/$tripId/passport-photo', form);
   }
 
+  /// POST /api/trip-requests/{id}/cancel: Submitted → Cancelled (409 in any other status).
+  Future<TripRequest> cancel(String tripId) async => TripRequest.fromJson(
+    await _api.post('/api/trip-requests/$tripId/cancel')
+        as Map<String, dynamic>,
+  );
+
+  /// GET /api/trip-requests/{id}/history: audited events, oldest first.
+  Future<List<TripHistoryEntry>> history(String tripId) async {
+    final json =
+        await _api.get('/api/trip-requests/$tripId/history') as List<dynamic>;
+    return json
+        .map((e) => TripHistoryEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<StartPlanningResult> startPlanning(String tripId) async =>
       StartPlanningResult.fromJson(
         await _api.post('/api/trip-requests/$tripId/start-planning')

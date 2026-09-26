@@ -13,6 +13,12 @@ public interface ITripRequestRepository
     Task<Tourist?> GetTouristByUserIdAsync(Guid userId, CancellationToken ct);
     void AddTourist(Tourist tourist);
 
+    /// <summary>True when the trip already has a saved itinerary.</summary>
+    Task<bool> HasItineraryAsync(Guid tripRequestId, CancellationToken ct);
+
+    /// <summary>Stages a new saved itinerary (with days and stops); the caller commits.</summary>
+    void AddItinerary(Itinerary itinerary);
+
     /// <summary>Loads the itinerary with days, stops and attractions, ordered for display.</summary>
     Task<Itinerary?> GetItineraryAsync(Guid tripRequestId, CancellationToken ct);
 }

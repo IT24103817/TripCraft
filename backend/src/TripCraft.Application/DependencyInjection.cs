@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserAdminService, UserAdminService>();
+        services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
 
         // Component A — Trip Requests & Itinerary
         services.AddScoped<ITripRequestService, TripRequestService>();

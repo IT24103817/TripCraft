@@ -4,6 +4,7 @@ using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Common.Security;
 using TripCraft.Application.Trips;
+using TripCraft.Application.Trips.Planning;
 using TripCraft.Application.Workflows;
 using TripCraft.Application.Workflows.Ports;
 
@@ -11,8 +12,8 @@ namespace TripCraft.Application.Quotations;
 
 /// <summary>
 /// The human approval gate (PLAN.md sections 3C, 5 and 6 step 9–10). Only an Operations Manager gets here.
-/// Approve runs one transaction: holds -> quotation Approved -> trip Confirmed -> workflow Completed ->
-/// approval decision -> audit -> commit. Any failure rolls everything back and returns 409.
+/// Approve runs one transaction: holds -> saved itinerary -> quotation Approved -> trip Confirmed ->
+/// workflow Completed -> approval decision -> audit -> commit. Any failure rolls everything back and returns 409.
 /// </summary>
 public class QuotationApprovalService(
     IQuotationStore quotations,
@@ -43,6 +44,11 @@ public class QuotationApprovalService(
             // 1. Holds, each through Resource Management's overlap check (ConflictException on overlap).
             foreach (var hold in holdRequests)
                 await holds.CreateHoldAsync(hold, ct);
+
+            // 1b. The approved days become the trip's saved itinerary (Component A tables), in the same transaction.
+            if (await trips.HasItineraryAsync(trip.Id, ct))
+                throw new ConflictException("This trip request already has a saved itinerary.");
+            trips.AddItinerary(ApprovedItinerary.Build(trip.Id, outcome.Proposal));
 
             // 2–4. Quotation, trip, workflow.
             await quotations.SetStatusAsync(quotation.Id, QuotationDecision.Approved, ct);

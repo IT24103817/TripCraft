@@ -26,8 +26,8 @@ which files below you wrote yourself, which you reviewed, and which were written
 - `agents/app/nodes/planner.py`
 - `agents/tests/test_itinerary.py`
 - `agents/tests/test_planner.py`
-- `backend/src/TripCraft.Api/Controllers/AttractionsController.cs`
-- `backend/src/TripCraft.Api/Controllers/TripRequestsController.cs`
+- `backend/src/TripCraft.Api/Controllers/Trips/AttractionsController.cs`
+- `backend/src/TripCraft.Api/Controllers/Trips/TripRequestsController.cs`
 - `backend/src/TripCraft.Application/Trips/Attraction.cs`
 - `backend/src/TripCraft.Application/Trips/Dtos/AttractionDto.cs`
 - `backend/src/TripCraft.Application/Trips/Dtos/AttractionListQuery.cs`
@@ -62,16 +62,16 @@ which files below you wrote yourself, which you reviewed, and which were written
 - `backend/src/TripCraft.Application/Trips/TripRequestStatus.cs`
 - `backend/src/TripCraft.Application/Trips/Validators/AttractionListQueryValidator.cs`
 - `backend/src/TripCraft.Application/Trips/Validators/CreateTripRequestRequestValidator.cs`
-- `backend/src/TripCraft.Application/Trips/Validators/PagedQueryRules.cs`
+- `backend/src/TripCraft.Application/Common/Paging/PagedQueryRules.cs`
 - `backend/src/TripCraft.Application/Trips/Validators/SaveAttractionRequestValidator.cs`
 - `backend/src/TripCraft.Application/Trips/Validators/TripDetailsValidator.cs`
 - `backend/src/TripCraft.Application/Trips/Validators/TripRequestListQueryValidator.cs`
 - `backend/src/TripCraft.Application/Trips/Validators/UpdateTripRequestRequestValidator.cs`
 - `backend/src/TripCraft.Infrastructure/External/WeatherService.cs`
-- `backend/src/TripCraft.Infrastructure/Persistence/LocalPassportPhotoStore.cs`
-- `backend/src/TripCraft.Infrastructure/Persistence/Repositories/AttractionRepository.cs`
-- `backend/src/TripCraft.Infrastructure/Persistence/Repositories/TripRequestRepository.cs`
-- `backend/src/TripCraft.Infrastructure/Persistence/Seeding/TripsSeeder.cs`
+- `backend/src/TripCraft.Infrastructure/Trips/LocalPassportPhotoStore.cs`
+- `backend/src/TripCraft.Infrastructure/Trips/AttractionRepository.cs`
+- `backend/src/TripCraft.Infrastructure/Trips/TripRequestRepository.cs`
+- `backend/src/TripCraft.Infrastructure/Trips/TripsSeeder.cs`
 - `backend/tests/TripCraft.Tests/Trips/AttractionsEndpointsTests.cs`
 - `backend/tests/TripCraft.Tests/Trips/PassportPhotoEndpointTests.cs`
 - `backend/tests/TripCraft.Tests/Trips/TripPlanningRulesTests.cs`
@@ -110,12 +110,12 @@ which files below you wrote yourself, which you reviewed, and which were written
 - `web/src/features/trips/api.ts`
 - `web/src/features/trips/attractionSchema.ts`
 - `web/src/features/trips/types.ts`
-- `backend/src/TripCraft.Infrastructure/Persistence/Configurations/AttractionConfiguration.cs`
-- `backend/src/TripCraft.Infrastructure/Persistence/Configurations/ItineraryConfiguration.cs`
-- `backend/src/TripCraft.Infrastructure/Persistence/Configurations/ItineraryDayConfiguration.cs`
-- `backend/src/TripCraft.Infrastructure/Persistence/Configurations/ItineraryStopConfiguration.cs`
-- `backend/src/TripCraft.Infrastructure/Persistence/Configurations/TouristConfiguration.cs`
-- `backend/src/TripCraft.Infrastructure/Persistence/Configurations/TripRequestConfiguration.cs`
+- `backend/src/TripCraft.Infrastructure/Trips/AttractionConfiguration.cs`
+- `backend/src/TripCraft.Infrastructure/Trips/ItineraryConfiguration.cs`
+- `backend/src/TripCraft.Infrastructure/Trips/ItineraryDayConfiguration.cs`
+- `backend/src/TripCraft.Infrastructure/Trips/ItineraryStopConfiguration.cs`
+- `backend/src/TripCraft.Infrastructure/Trips/TouristConfiguration.cs`
+- `backend/src/TripCraft.Infrastructure/Trips/TripRequestConfiguration.cs`
 
 TODO: for three of these files, explain the design in 3–5 sentences each (controller → service → repository, one
 migration/constraint, your agent's contract and tools).

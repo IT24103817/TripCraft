@@ -11,4 +11,10 @@ public interface ITripRequestService
     Task<TripRequestDto> GetAsync(CurrentUser user, Guid id, CancellationToken ct);
     Task<TripRequestDto> UpdateAsync(CurrentUser user, Guid id, UpdateTripRequestRequest request, CancellationToken ct);
     Task<ItineraryDto> GetItineraryAsync(CurrentUser user, Guid id, CancellationToken ct);
+
+    /// <summary>Audit events of the trip and its agent workflows, oldest first.</summary>
+    Task<IReadOnlyList<TripHistoryEntryDto>> GetHistoryAsync(CurrentUser user, Guid id, CancellationToken ct);
+
+    /// <summary>Submitted → Cancelled. 409 in any other status.</summary>
+    Task<TripRequestDto> CancelAsync(CurrentUser user, Guid id, CancellationToken ct);
 }

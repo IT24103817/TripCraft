@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tripcraft_mobile/core/api/user_facing_exception.dart';
@@ -24,6 +24,23 @@ void main() {
         });
     when(() => api.get('/api/trip-requests/trip-1/itinerary')).thenThrow(
       const UserFacingException('We could not find that.', statusCode: 404),
+    );
+    when(() => api.get('/api/trip-requests/trip-1/history')).thenAnswer(
+      (_) async => [
+        {
+          'at': '2026-09-26T04:12:54Z',
+          'action': 'TripRequestCreated',
+          'actor': 'Tourist',
+          'toStatus': 'Submitted',
+        },
+        {
+          'at': '2026-09-26T04:13:43Z',
+          'action': 'TripRequestStatusChanged',
+          'actor': 'System',
+          'fromStatus': 'Planning',
+          'toStatus': 'Submitted',
+        },
+      ],
     );
   }
 
@@ -189,6 +206,73 @@ void main() {
           .called(1);
     },
   );
+
+  testWidgets('shows the trip history oldest first with who made each change', (
+    tester,
+  ) async {
+    givenTrip('Submitted');
+
+    await pumpScreen(
+      tester,
+      const TripDetailScreen(tripId: 'trip-1'),
+      api: api,
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('History'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.scrollUntilVisible(
+      find.textContaining('Status changed'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.textContaining('Request submitted'), findsOneWidget);
+    expect(find.textContaining('by you'), findsOneWidget);
+    expect(find.textContaining('Status changed'), findsOneWidget);
+    expect(find.textContaining('by the system'), findsOneWidget);
+  });
+
+  testWidgets('a Submitted trip can be cancelled after confirming', (
+    tester,
+  ) async {
+    givenTrip('Submitted');
+    when(() => api.post('/api/trip-requests/trip-1/cancel'))
+        .thenAnswer((_) async => tripJson(status: 'Cancelled'));
+
+    await pumpScreen(
+      tester,
+      const TripDetailScreen(tripId: 'trip-1'),
+      api: api,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel request'));
+    await tester.pumpAndSettle();
+    expect(find.text('Cancel this trip request?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Cancel request'));
+    await tester.pumpAndSettle();
+
+    verify(() => api.post('/api/trip-requests/trip-1/cancel')).called(1);
+    expect(find.text('Trip request cancelled.'), findsOneWidget);
+  });
+
+  testWidgets('a trip past Submitted has no Cancel button', (tester) async {
+    givenTrip(
+      'PendingApproval',
+      workflow: {'id': 'wf-1', 'status': 'PendingApproval'},
+    );
+
+    await pumpScreen(
+      tester,
+      const TripDetailScreen(tripId: 'trip-1'),
+      api: api,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cancel request'), findsNothing);
+  });
 
   test('Approved is shown as Confirmed on the tourist timeline', () {
     expect(timelineStatus('Approved'), 'Confirmed');

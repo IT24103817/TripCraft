@@ -254,6 +254,83 @@ final class TripWorkflowFamily extends $Family
   String toString() => r'tripWorkflowProvider';
 }
 
+@ProviderFor(tripHistory)
+final tripHistoryProvider = TripHistoryFamily._();
+
+final class TripHistoryProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<TripHistoryEntry>>,
+          List<TripHistoryEntry>,
+          FutureOr<List<TripHistoryEntry>>
+        >
+    with
+        $FutureModifier<List<TripHistoryEntry>>,
+        $FutureProvider<List<TripHistoryEntry>> {
+  TripHistoryProvider._({
+    required TripHistoryFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'tripHistoryProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$tripHistoryHash();
+
+  @override
+  String toString() {
+    return r'tripHistoryProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<TripHistoryEntry>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<TripHistoryEntry>> create(Ref ref) {
+    final argument = this.argument as String;
+    return tripHistory(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TripHistoryProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$tripHistoryHash() => r'05defb0462e64f3e85c9993629c1a61deae040b2';
+
+final class TripHistoryFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<TripHistoryEntry>>, String> {
+  TripHistoryFamily._()
+    : super(
+        retry: null,
+        name: r'tripHistoryProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  TripHistoryProvider call(String tripId) =>
+      TripHistoryProvider._(argument: tripId, from: this);
+
+  @override
+  String toString() => r'tripHistoryProvider';
+}
+
 @ProviderFor(savedItinerary)
 final savedItineraryProvider = SavedItineraryFamily._();
 

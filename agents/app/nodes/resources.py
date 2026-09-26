@@ -15,6 +15,7 @@ from app.schemas import (
     ResourceActionOutput,
     ResourceInput,
     ResourceSelection,
+    RoomNight,
     WorkflowRequest,
 )
 from app.state import WorkflowState
@@ -34,6 +35,8 @@ RULES
 - vehicle_id must be the id of a vehicle in DATA.vehicles (they already have enough seats). null if the list is empty.
 - rooms: one entry per room per night, only from DATA.room_options for that night. Pick enough rooms so the
   total capacity each night is at least pax. Do not pick more rooms of a type than available_rooms.
+- DATA.suggested_rooms is a valid, cheapest room plan computed by code for exactly these nights. Copy it
+  unless the preferences clearly need other rooms that are also in DATA.room_options.
 - Prefer the cheapest options that meet the rules (rates are in DATA.rate_card, LKR).
 - gaps: one short sentence for every resource you could not find. Never invent ids.
 - Your allowed tools are check_guide_availability, check_vehicle_availability, check_room_availability and
@@ -68,6 +71,32 @@ def missing_resource_gaps(guides: list[GuideOption], vehicles: list[VehicleOptio
         if not options:
             gaps.append(f"No rooms available on {night.isoformat()}.")
     return gaps
+
+
+def suggest_rooms(room_options: dict[date, list[RoomOption]], pax: int, card: RateCard) -> list[RoomNight]:
+    """
+    Code's cheapest valid room plan: for each night, the room type that sleeps everyone for the least money
+    (rooms = ceil(pax / capacity), within the free rooms). A night with no such type gets the cheapest beds
+    per person until everyone sleeps, as far as rooms allow. Given to the model as a starting point.
+    """
+    def rate(o: RoomOption) -> Decimal:
+        return card.room_night_rates.get(o.room_type_id, Decimal("Infinity"))
+
+    plan: list[RoomNight] = []
+    for night, options in room_options.items():
+        whole = [(math.ceil(pax / o.capacity), o) for o in options if math.ceil(pax / o.capacity) <= o.available_rooms]
+        if whole:
+            count, best = min(whole, key=lambda c: c[0] * rate(c[1]))
+            plan += [RoomNight(hotel_id=best.hotel_id, room_type_id=best.room_type_id, night=night)] * count
+            continue
+        beds = 0
+        for o in sorted(options, key=lambda o: rate(o) / o.capacity):
+            taken = 0
+            while beds < pax and taken < o.available_rooms:
+                plan.append(RoomNight(hotel_id=o.hotel_id, room_type_id=o.room_type_id, night=night))
+                beds += o.capacity
+                taken += 1
+    return plan
 
 
 def drop_rooms_outside_stay(output: ResourceActionOutput, nights: set[date]) -> tuple[ResourceActionOutput, int]:
@@ -146,6 +175,7 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
             "room_options": {n.isoformat(): [o.model_dump(mode="json") for o in opts]
                              for n, opts in room_options.items()},
             "rate_card": card.model_dump(mode="json"),
+            "suggested_rooms": [r.model_dump(mode="json") for r in suggest_rooms(room_options, pax, card)],
         })
         dropped: list[int] = []
 

@@ -79,3 +79,30 @@ async def test_resources_dropping_never_hides_a_real_shortfall(fake_llm, api, de
     # Every room was on the departure day: after dropping them the nights have no beds, so the check fails.
     assert update["status"] == FAILED_SAFELY
     assert "need at least 4" in update["error_summary"]
+
+
+def test_suggested_rooms_are_the_cheapest_plan_that_sleeps_everyone():
+    from datetime import date
+    from decimal import Decimal
+
+    from app.nodes.resources import check_selection, suggest_rooms
+    from app.schemas import ResourceActionOutput
+    from app.tools.models import RateCard, RoomOption
+
+    night = date(2026, 10, 10)
+    double = RoomOption(hotel_id="h", hotel_name="H", room_type_id="dbl", room_type_name="Double", capacity=2,
+                        available_rooms=5)
+    family = RoomOption(hotel_id="h", hotel_name="H", room_type_id="fam", room_type_name="Family", capacity=4,
+                        available_rooms=1)
+    card = RateCard(margin_pct=Decimal(15), guide_day_rates={}, vehicle_km_rates={},
+                    room_night_rates={"dbl": Decimal(12000), "fam": Decimal(20000)})
+
+    plan = suggest_rooms({night: [double, family]}, 4, card)
+
+    assert [r.room_type_id for r in plan] == ["fam"]  # one family room (20000) beats two doubles (24000)
+    output = ResourceActionOutput(guide_id=None, vehicle_id=None, rooms=plan, gaps=[])
+    assert check_selection(output, [], [], {night: [double, family]}, 4) == []
+
+    tight = RoomOption(**{**double.model_dump(), "available_rooms": 1})
+    mixed = suggest_rooms({night: [tight, family]}, 6, card)
+    assert sorted(r.room_type_id for r in mixed) == ["dbl", "fam"]  # no single type fits 6: combine

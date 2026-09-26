@@ -22,6 +22,7 @@ public static class ResourcesSeeder
     public static readonly Guid EllaHotel = Guid.Parse("00000000-0000-0000-0000-00000000c002");
     public static readonly Guid EllaStandard = Guid.Parse("00000000-0000-0000-0000-00000000c021");
 
+    /// <remarks>Nimal (guide1's login) is the cheapest English guide, so the demo trip is visible on the guide's phone.</remarks>
     public static async Task SeedAsync(AppDbContext db, ILogger logger, CancellationToken ct)
     {
         if (await db.Guides.AnyAsync(ct))
@@ -35,7 +36,7 @@ public static class ResourcesSeeder
             Guide(NimalGuide, "Nimal Perera", "+94 77 123 4567", 6000, 10, UserAt(0), "en", "si"),
             Guide(Id("a002"), "Kumari Silva", "+94 71 222 3344", 6500, 8, UserAt(1), "en", "de"),
             Guide(Id("a003"), "Ruwan Fernando", "+94 76 555 0101", 7000, 12, UserAt(2), "en", "fr", "ja"),
-            Guide(Id("a004"), "Anjali Jayasinghe", "+94 70 888 9090", 5500, 6, null, "en", "zh"));
+            Guide(Id("a004"), "Anjali Jayasinghe", "+94 70 888 9090", 7500, 6, null, "en", "zh"));
 
         db.Vehicles.AddRange(
             new Vehicle { Id = VanSixSeats, RegistrationNo = "CAB-1234", Type = "Van", Seats = 6, RatePerKmLkr = 120 },

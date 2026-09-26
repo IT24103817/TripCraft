@@ -70,6 +70,16 @@ def missing_resource_gaps(guides: list[GuideOption], vehicles: list[VehicleOptio
     return gaps
 
 
+def drop_rooms_outside_stay(output: ResourceActionOutput, nights: set[date]) -> tuple[ResourceActionOutput, int]:
+    """
+    Enforced in code: rooms can only be booked for nights of the stay (every date except the departure day).
+    A small model sometimes adds the departure day; those entries are removed (never added), and the result is
+    still checked by check_selection. Returns the cleaned output and how many room-nights were dropped.
+    """
+    kept = [r for r in output.rooms if r.night in nights]
+    return output.model_copy(update={"rooms": kept}), len(output.rooms) - len(kept)
+
+
 def check_selection(output: ResourceActionOutput, guides: list[GuideOption], vehicles: list[VehicleOption],
                     room_options: dict[date, list[RoomOption]], pax: int) -> list[str]:
     """Enforced in code: only offered ids, no over-booking of a room type, enough beds where possible."""
@@ -137,8 +147,15 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
                              for n, opts in room_options.items()},
             "rate_card": card.model_dump(mode="json"),
         })
+        dropped: list[int] = []
+
+        def normalise(o: ResourceActionOutput) -> ResourceActionOutput:
+            cleaned, count = drop_rooms_outside_stay(o, set(room_options))
+            dropped.append(count)
+            return cleaned
+
         output, retries = await call_json(SYSTEM_PROMPT, user, ResourceActionOutput, check=lambda o: check_selection(
-            o, guides, vehicles, room_options, pax))
+            o, guides, vehicles, room_options, pax), normalise=normalise)
     except (ToolError, AgentOutputError) as ex:
         return failed_update(AGENT, str(ex), calls, started, failure_retries(ex), input_summary)
 
@@ -154,6 +171,7 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
     report = step_report(
         AGENT, calls, started, retries, "Succeeded", input_summary,
         {"guide_id": selection.guide_id, "vehicle_id": selection.vehicle_id,
-         "room_nights": len(selection.rooms), "gaps": gaps, "holds_created": 0},
+         "room_nights": len(selection.rooms), "gaps": gaps, "holds_created": 0,
+         "room_nights_dropped": dropped[-1] if dropped else 0},
         {"ok": True, "schema": "ResourceActionOutput"})
     return {"resources": selection.model_dump(mode="json"), "steps": [report]}

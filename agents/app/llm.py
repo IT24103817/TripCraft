@@ -33,11 +33,13 @@ def get_chat_model() -> BaseChatModel:
     raise ValueError(f"Unknown LLM_PROVIDER '{settings.llm_provider}' (use ollama or groq)")
 
 
-async def call_json(system: str, user: str, schema: type[T], check: RuleCheck | None = None) -> tuple[T, int]:
+async def call_json(system: str, user: str, schema: type[T], check: RuleCheck | None = None,
+                    normalise: Callable[[T], T] | None = None) -> tuple[T, int]:
     """
     Calls the model and parses its reply into `schema`.
-    If parsing (or the optional rule check) fails, sends one repair message with the error and tries again.
-    Returns (parsed result, number of retries used). Raises AgentOutputError after MAX_RETRIES repairs.
+    `normalise` (optional) may remove entries that are clearly outside the task before the rule check; it must
+    never add anything. If parsing (or the optional rule check) fails, sends one repair message with the error
+    and tries again. Returns (parsed result, number of retries used). Raises AgentOutputError after MAX_RETRIES.
     """
     max_retries = get_settings().max_retries
     model = get_chat_model()
@@ -53,6 +55,8 @@ async def call_json(system: str, user: str, schema: type[T], check: RuleCheck | 
         text = reply.content if isinstance(reply.content, str) else str(reply.content)
         try:
             result = schema.model_validate_json(text)
+            if normalise:
+                result = normalise(result)
             problems = check(result) if check else []
         except ValidationError as ex:
             problems = [f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in ex.errors()]

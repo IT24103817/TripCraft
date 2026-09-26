@@ -35,7 +35,7 @@ select * from resource_holds where trip_request_id = '<trip id>';   -- once Stud
 | 5:00–6:00 | A / B | Phone: pull to refresh → trip shows **Confirmed**. Log out → `guide1@tripcraft.test` → **Schedule** | Status timeline complete; guide schedule † |
 | 6:00–7:00 | C | Web or phone: new request with budget **400** → workflow ends *Revision requested* → review page shows "Total is within the tourist's budget — failed", Approve disabled → **Request revision** with a comment. Swagger: authorize as `tourist1@tripcraft.test`, `POST /api/quotations/{id}/approve` | Soft violation and re-plan; **403** for a tourist (separation of duties) |
 | 7:00–8:00 | A, B, C | Each: own list with search, sort (click a header), page size, next page — `/trips`, `/attractions`, resources pages, `/workflows`; Swagger endpoint groups | Server-side search/sort/paging; four page states |
-| 8:00–9:00 | all | Terminal: `dotnet test`, `pytest -q`, `npm test`, `flutter test`; GitHub Actions history; Insights → Contributors; live URLs | 197 / 43 / 25 / 44 tests; PRs per member |
+| 8:00–9:00 | all | Terminal: `dotnet test`, `pytest -q`, `npm test`, `flutter test`; GitHub Actions history; Insights → Contributors; live URLs | 208 / 43 / 25 / 45 tests; PRs per member |
 | 9:00–10:00 | all | `docs/adr/README.md` | One sentence per ADR from its author; close |
 
 † Needs Students B and C merged: until then the workflow ends *Failed safely* at the Resource agent

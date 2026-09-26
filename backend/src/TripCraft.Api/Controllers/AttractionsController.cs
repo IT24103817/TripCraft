@@ -30,6 +30,7 @@ public class AttractionsController(IAttractionService attractions) : ControllerB
     [HttpPost]
     [Authorize(Roles = Roles.OperationsManager)]
     [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AttractionDto>> Create(SaveAttractionRequest request, CancellationToken ct)
     {
         var created = await attractions.CreateAsync(User.GetCurrentUser(), request, ct);
@@ -37,6 +38,8 @@ public class AttractionsController(IAttractionService attractions) : ControllerB
     }
 
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [Authorize(Roles = Roles.OperationsManager)]
     public async Task<ActionResult<AttractionDto>> Update(Guid id, SaveAttractionRequest request, CancellationToken ct)
     {

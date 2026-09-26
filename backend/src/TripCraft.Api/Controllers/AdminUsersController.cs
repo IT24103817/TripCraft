@@ -19,6 +19,8 @@ public class AdminUsersController(IUserAdminService userAdminService) : Controll
 
     /// <summary>Create a user with any role (Guide, OperationsManager, Admin, Tourist).</summary>
     [HttpPost]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<UserDto>> Create(CreateUserRequest request, CancellationToken ct)
     {
         var user = await userAdminService.CreateAsync(request, ct);
@@ -26,6 +28,7 @@ public class AdminUsersController(IUserAdminService userAdminService) : Controll
     }
 
     [HttpPost("{id:guid}/deactivate")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
     {
         await userAdminService.DeactivateAsync(id, ct);

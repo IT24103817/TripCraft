@@ -1,7 +1,7 @@
 # backend
 
 ASP.NET Core 8 Web API (C#) — the only public backend. Entity Framework Core + PostgreSQL (Npgsql).
-Setup, user secrets, migrations and test accounts are in the [root README](../README.md#run-the-backend-locally).
+Setup, user secrets, migrations and test accounts are in the [root README](../README.md#2-api-backend).
 
 ## Configuration (user secrets or environment variables — never in appsettings)
 

@@ -48,7 +48,7 @@ src/
   auth/         Zustand auth store (sessionStorage), login, ProtectedRoute, RoleGuard, 403, users/ (Admin)
   shared/       api (Axios + JWT/401 interceptors, types, query keys), components, hooks, utils, statuses
   features/
-    trips/       trip list + detail (status timeline, itinerary, Start planning), attractions CRUD + map
+    trips/       trip list + detail (status timeline, itinerary), attractions CRUD + map
     resources/   guides, vehicles, hotels, availability  (placeholders — see below)
     quotations/  approvals inbox + review, workflow monitor + step timeline, reports
   test/         MSW server, fixtures, renderApp helper (real routes, fresh providers)
@@ -93,5 +93,6 @@ These screens show a placeholder that names the missing endpoints instead of inv
   a status filter/tabs but no search or column sorting.
 - `GET /api/admin/users` returns the whole list, so search, filters, sorting and paging on the Users page
   happen in the browser.
-- `POST /api/trip-requests/{id}/start-planning` is currently **Tourist-only** in the API, so the
-  "Start planning" button in this app gets a 403 for a manager (shown as an error toast).
+- `POST /api/trip-requests/{id}/start-planning` is **Tourist-only** in the API, so this staff app has no
+  "Start planning" button: a Submitted trip shows "Waiting for the tourist to start planning in the mobile
+  app", and after a safe failure the tourist retries with **Try again** in the Flutter app.

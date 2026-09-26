@@ -3,8 +3,12 @@ import { VALIDATION_RULES } from './validationRules';
 
 const KNOWN_CODES = new Set(VALIDATION_RULES.flatMap((r) => r.codes));
 
+/** Set by the server when the agents failed before a proposal existed, so no rule was run. */
+const AGENT_FAILED = 'AGENT_FAILED';
+
 export function ValidationChecklist({ result }: { result: ProposalValidationResult }) {
   const extra = result.violations.filter((v) => !KNOWN_CODES.has(v.code));
+  const notChecked = result.violations.some((v) => v.code === AGENT_FAILED);
   return (
     <div>
       <p className="mb-2 text-sm font-medium">
@@ -17,6 +21,7 @@ export function ValidationChecklist({ result }: { result: ProposalValidationResu
               ? ' (hard: cannot be approved)'
               : ' (soft: needs a revision or a manager decision)'}
             .
+            {notChecked && ' The agents stopped before a proposal existed, so no rule was checked.'}
           </span>
         )}
       </p>
@@ -24,6 +29,17 @@ export function ValidationChecklist({ result }: { result: ProposalValidationResu
         {VALIDATION_RULES.map((rule) => {
           const failures = result.violations.filter((v) => rule.codes.includes(v.code));
           const passed = failures.length === 0;
+          if (notChecked) {
+            return (
+              <li key={rule.label} className="flex gap-2 text-slate-500">
+                <span aria-hidden="true">–</span>
+                <span>
+                  {rule.label}
+                  <span className="sr-only"> — not checked</span>
+                </span>
+              </li>
+            );
+          }
           return (
             <li key={rule.label} className="flex gap-2">
               <span aria-hidden="true" className={passed ? 'text-green-600' : 'text-red-600'}>

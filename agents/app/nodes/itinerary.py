@@ -6,8 +6,15 @@ from typing import Any
 from app.errors import AgentOutputError, ToolError
 from app.llm import call_json
 from app.nodes.common import DATA_RULES, failed_update, failure_retries, step_report, wrap_data
-from app.schemas import (ItineraryDay, ItineraryInput, ItineraryOutput, PlannerConstraints, PlanStep, Stop,
-                         WorkflowRequest)
+from app.schemas import (
+    ItineraryDay,
+    ItineraryInput,
+    ItineraryOutput,
+    PlannerConstraints,
+    PlanStep,
+    Stop,
+    WorkflowRequest,
+)
 from app.state import WorkflowState
 from app.tools.check_business_rules import MAX_DRIVING_MINUTES
 from app.tools.models import Attraction, Distance
@@ -73,13 +80,15 @@ def check_days(output: ItineraryOutput, dates: list[date], cities: list[str], ma
 
 
 def _build_days(output: ItineraryOutput, dates: list[date], cities: list[str],
-                attractions: dict[str, list[Attraction]], distances: dict[frozenset[str], Distance]) -> list[ItineraryDay]:
+                attractions: dict[str, list[Attraction]],
+                distances: dict[frozenset[str], Distance]) -> list[ItineraryDay]:
     """Turns the checked LLM draft into state days. Dates, km and driving minutes come from tools, not the LLM."""
     by_id = {a.id: a for items in attractions.values() for a in items}
     city_names = {c.lower(): c for c in cities}
     days: list[ItineraryDay] = []
     previous_city: str | None = None
-    for draft, day_date in zip(output.days, dates):
+    # check_days has already proved there is exactly one day per date.
+    for draft, day_date in zip(output.days, dates, strict=True):
         transfer_km, driving = 0, 0
         if previous_city is not None and draft.city.lower() != previous_city:
             distance = distances[_pair(previous_city, draft.city)]
@@ -109,7 +118,7 @@ async def itinerary_node(state: WorkflowState) -> dict[str, Any]:
             attractions[city.lower()] = await run_tool(AGENT, "get_attractions", city=city)
 
         distances: dict[frozenset[str], Distance] = {}
-        for a, b in zip(constraints.cities, constraints.cities[1:]):
+        for a, b in zip(constraints.cities, constraints.cities[1:], strict=False):  # consecutive pairs
             distances[_pair(a, b)] = await run_tool(AGENT, "get_distance", from_city=a, to_city=b)
 
         user = wrap_data({

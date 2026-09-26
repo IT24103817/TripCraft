@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { trip } from '@/test/fixtures';
@@ -22,51 +22,27 @@ function givenTrip(status: string) {
 describe('TripDetailPage', () => {
   beforeEach(() => signInAs('OperationsManager'));
 
-  it('shows Start planning when the trip is Submitted', async () => {
+  it('shows a Submitted trip as waiting for the tourist, with no Start planning button', async () => {
     givenTrip('Submitted');
     renderApp(`/trips/${ID}`);
 
-    expect(await screen.findByRole('button', { name: 'Start planning' })).toBeInTheDocument();
+    // start-planning is Tourist-only in the API, so staff are not offered a button that would 403.
+    expect(
+      await screen.findByText('Waiting for the tourist to start planning in the mobile app.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Start planning' })).not.toBeInTheDocument();
     expect(screen.getByText('No itinerary yet')).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Status timeline' })).toHaveTextContent('Submitted');
   });
 
   it.each(['Planning', 'PendingApproval', 'Confirmed'])(
-    'hides Start planning when the trip is %s',
+    'does not say it waits for the tourist when the trip is %s',
     async (status) => {
       givenTrip(status);
       renderApp(`/trips/${ID}`);
 
       expect(await screen.findByRole('heading', { name: 'Trip request' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Start planning' })).not.toBeInTheDocument();
+      expect(screen.queryByText(/Waiting for the tourist/)).not.toBeInTheDocument();
     },
   );
-
-  it('starts planning and opens the workflow timeline', async () => {
-    givenTrip('Submitted');
-    server.use(
-      http.post(`${API}/api/trip-requests/${ID}/start-planning`, () =>
-        HttpResponse.json(
-          {
-            workflowId: 'wf-1',
-            tripRequestId: ID,
-            workflowStatus: 'Planning',
-            tripStatus: 'Planning',
-            skeleton: [],
-            errorSummary: null,
-          },
-          { status: 202 },
-        ),
-      ),
-      http.get(`${API}/api/workflows/wf-1`, () => HttpResponse.json({ title: 'Not found' }, { status: 404 })),
-    );
-    const { user, location } = renderApp(`/trips/${ID}`);
-
-    await user.click(await screen.findByRole('button', { name: 'Start planning' }));
-
-    expect(await screen.findByText('Planning started. The agents are working on it.')).toBeInTheDocument();
-    await waitFor(() => expect(location()).toBe('/workflows/wf-1'));
-    // Let the workflow page finish loading before the test ends (its mocked GET answers 404).
-    expect(await screen.findByText('Could not load this page')).toBeInTheDocument();
-  });
 });

@@ -4,9 +4,10 @@ Every call is recorded so the node can put it in its StepReport.
 """
 import inspect
 import time
+from collections.abc import Callable
 from contextvars import ContextVar
 from datetime import date
-from typing import Any, Callable
+from typing import Any
 
 from pydantic import ValidationError
 

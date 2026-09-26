@@ -13,6 +13,7 @@ namespace TripCraft.Api.Controllers.Internal;
 public class InternalWorkflowsController(IWorkflowStepService steps, IWorkflowProposalService proposals) : ControllerBase
 {
     [HttpPost("{id:guid}/steps")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<ActionResult<AgentStepCreatedResponse>> AddStep(Guid id, AgentStepReportRequest report, CancellationToken ct)
     {
@@ -22,6 +23,8 @@ public class InternalWorkflowsController(IWorkflowStepService steps, IWorkflowPr
 
     /// <summary>Runs the deterministic ProposalValidator and moves the workflow to its next status.</summary>
     [HttpPost("{id:guid}/proposal")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ProposalOutcomeResponse>> Proposal(Guid id, AgentProposalRequest proposal, CancellationToken ct) =>
         Ok(await proposals.ReceiveAsync(id, proposal, ct));
 }

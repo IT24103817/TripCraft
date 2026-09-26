@@ -14,6 +14,8 @@ public class AuthController(IAuthService authService) : ControllerBase
 {
     /// <summary>Self-registration. Always creates a Tourist account.</summary>
     [HttpPost("register")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [AllowAnonymous]
     public async Task<ActionResult<UserDto>> Register(RegisterRequest request, CancellationToken ct)
     {
@@ -25,6 +27,8 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpPost("login")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitingSetup.LoginPolicy)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request, CancellationToken ct)
     {
         return Ok(await authService.LoginAsync(request, ct));

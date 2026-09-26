@@ -1,5 +1,6 @@
 """Chat model factory and the call_json helper every agent node uses to talk to the LLM."""
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage

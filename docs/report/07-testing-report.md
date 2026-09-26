@@ -7,10 +7,10 @@ relevant tables here with screenshots).
 
 | Layer | Tool | Tests | Result |
 |-------|------|------:|--------|
-| Backend unit, integration, database | xUnit, FluentAssertions, Moq, WebApplicationFactory, Testcontainers / PostgreSQL 16 | 197 | all pass |
+| Backend unit, integration, database | xUnit, FluentAssertions, Moq, WebApplicationFactory, Testcontainers / PostgreSQL 16 | 208 | all pass |
 | Agent evaluation | pytest, respx, FakeLLM | 43 | all pass |
 | React | Vitest, React Testing Library, MSW | 25 | all pass |
-| Flutter | flutter_test, mocktail | 44 | all pass |
+| Flutter | flutter_test, mocktail | 45 | all pass |
 | End to end | Playwright | 2 | fail — the Resource agent's first tool gets 503 until Student B merges |
 | Performance | k6 | 3 scripts | see section 9 |
 

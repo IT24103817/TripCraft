@@ -56,4 +56,31 @@ describe('WorkflowDetailPage', () => {
 
     expect(await screen.findByText('Planning — refreshing every 5 s')).toBeInTheDocument();
   });
+
+  it('shows the rules as not checked when the agents failed before a proposal existed', async () => {
+    server.use(
+      http.get(`${API}/api/workflows/${WORKFLOW_ID}`, () =>
+        HttpResponse.json(
+          pendingWorkflow({
+            status: 'FailedSafely',
+            finalOutcome: null,
+            validationResult: {
+              isValid: false,
+              hasHard: true,
+              hasSoft: false,
+              violations: [{ code: 'AGENT_FAILED', message: 'resources: tool returned 503', severity: 'Hard' }],
+            },
+          }),
+        ),
+      ),
+      http.get(`${API}/api/workflows/${WORKFLOW_ID}/steps`, () => HttpResponse.json([step(1, 'planner')])),
+    );
+    renderApp(`/workflows/${WORKFLOW_ID}`);
+
+    const checklist = await screen.findByRole('list', { name: 'Validation checklist' });
+    expect(within(checklist).getByText('Guide exists').closest('li')).toHaveTextContent('— not checked');
+    expect(checklist).not.toHaveTextContent('— passed');
+    expect(checklist).toHaveTextContent('AGENT_FAILED: resources: tool returned 503');
+    expect(screen.getByText(/no rule was checked/)).toBeInTheDocument();
+  });
 });

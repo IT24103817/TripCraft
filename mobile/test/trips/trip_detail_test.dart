@@ -124,6 +124,72 @@ void main() {
     expect(find.text('Start planning'), findsOneWidget);
   });
 
+  testWidgets(
+    'a FailedSafely workflow shows the reason, hides its days and offers Try again',
+    (tester) async {
+      givenTrip(
+        'Submitted',
+        workflow: {
+          'id': 'wf-1',
+          'status': 'FailedSafely',
+          'errorSummary': 'Agents failed safely: resources: tool returned 503',
+          'finalOutcome': {
+            'proposal': {
+              'days': [
+                {
+                  'day': 1,
+                  'date': '2026-10-10',
+                  'city': 'Kandy',
+                  'transport': 'road',
+                  'stops': <Object>[],
+                },
+              ],
+            },
+          },
+        },
+      );
+
+      await pumpScreen(
+        tester,
+        const TripDetailScreen(tripId: 'trip-1'),
+        api: api,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Planning could not finish'), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
+      final empty = find.text(
+        'Your day-by-day plan appears here once the agents have drafted it.',
+      );
+      await tester.scrollUntilVisible(
+        empty,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Day 1 — Kandy'), findsNothing);
+      expect(empty, findsOneWidget);
+
+      // Only the tourist may start planning, so Try again calls start-planning again.
+      when(() => api.post('/api/trip-requests/trip-1/start-planning'))
+          .thenAnswer(
+            (_) async => {
+              'workflowId': 'wf-2',
+              'workflowStatus': 'Planning',
+              'tripStatus': 'Planning',
+            },
+          );
+      await tester.scrollUntilVisible(
+        find.text('Try again'),
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+      verify(() => api.post('/api/trip-requests/trip-1/start-planning'))
+          .called(1);
+    },
+  );
+
   test('Approved is shown as Confirmed on the tourist timeline', () {
     expect(timelineStatus('Approved'), 'Confirmed');
     expect(timelineStatus('Planning'), 'Planning');

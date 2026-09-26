@@ -8,5 +8,6 @@ pydantic>=2
 httpx
 python-dotenv
 pytest
+ruff
 pytest-asyncio
 respx

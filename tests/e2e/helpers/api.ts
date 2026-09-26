@@ -19,8 +19,14 @@ export function demoTrip(budgetUsd = 1500) {
   };
 }
 
+/** The login limit is 5 per minute per IP; the whole suite needs more, so a 429 waits for the next window once. */
 export async function login(request: APIRequestContext, email: string): Promise<string> {
-  const response = await request.post(`${API_URL}/api/auth/login`, { data: { email, password: PASSWORD } });
+  const post = () => request.post(`${API_URL}/api/auth/login`, { data: { email, password: PASSWORD } });
+  let response = await post();
+  if (response.status() === 429) {
+    await new Promise((resolve) => setTimeout(resolve, 61_000));
+    response = await post();
+  }
   expect(response.status(), `login ${email}`).toBe(200);
   return (await response.json()).accessToken as string;
 }

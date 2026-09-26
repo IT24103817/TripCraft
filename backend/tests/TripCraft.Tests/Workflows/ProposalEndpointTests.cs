@@ -88,6 +88,25 @@ public class ProposalEndpointTests(TestWebApplicationFactory factory) : IClassFi
     }
 
     [Fact]
+    public async Task Every_trip_status_change_from_a_proposal_is_audited()
+    {
+        // Golden: Planning -> PendingApproval.
+        var (golden, _) = await factory.RunToProposalAsync();
+        // Agent failure: Planning -> Submitted (so the tourist can try again).
+        var (failedTrip, workflowId) = await factory.StartPlanningAsync();
+        await factory.PostProposalAsync(workflowId, new AgentProposalRequest(null, [], null, null, [], "FailedSafely", 0,
+            "resources: GET /api/internal/availability/guides returned 503"));
+
+        var changes = await factory.QueryDbAsync(db => db.AuditLogs
+            .Where(a => (a.EntityId == golden.Id || a.EntityId == failedTrip.Id) && a.Action == "TripRequestStatusChanged")
+            .Select(a => new { a.EntityId, a.After })
+            .ToListAsync());
+
+        changes.Should().Contain(c => c.EntityId == golden.Id && c.After!.Contains("PendingApproval"));
+        changes.Should().Contain(c => c.EntityId == failedTrip.Id && c.After!.Contains("Submitted"));
+    }
+
+    [Fact]
     public async Task A_decided_workflow_no_longer_accepts_proposals()
     {
         var (trip, outcome) = await factory.RunToProposalAsync();

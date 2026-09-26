@@ -46,19 +46,27 @@ public class InternalToolsController(
            ?? throw new NotFoundException($"No forecast for {query.City} on {query.Date:yyyy-MM-dd}."));
 
     [HttpGet("availability/guides")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<IReadOnlyList<GuideOption>>> Guides([FromQuery] GuideAvailabilityQuery q, CancellationToken ct) =>
         Ok(await resources.FindAvailableGuidesAsync(q.From, q.To, q.Language, q.Pax, ct));
 
     [HttpGet("availability/vehicles")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<IReadOnlyList<VehicleOption>>> Vehicles([FromQuery] VehicleAvailabilityQuery q, CancellationToken ct) =>
         Ok(await resources.FindAvailableVehiclesAsync(q.From, q.To, q.Seats, ct));
 
     [HttpGet("availability/rooms")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<IReadOnlyList<RoomOption>>> Rooms([FromQuery] RoomAvailabilityQuery q, CancellationToken ct) =>
         Ok(await resources.FindAvailableRoomsAsync(q.City, q.Night, q.Rooms, ct));
 
     /// <summary>"rate-card" is the path the agent's get_rate_card tool calls; "rates" is the same data.</summary>
     [HttpGet("rates")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     [HttpGet("rate-card")]
     public async Task<ActionResult<RateCard>> Rates(CancellationToken ct) => Ok(await resources.GetRateCardAsync(ct));
 

@@ -144,23 +144,7 @@ class _WorkflowSection extends ConsumerWidget {
       body = const LinearProgressIndicator();
     } else if (w == null) {
       body = trip.status == 'Submitted'
-          ? FilledButton(
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                try {
-                  await ref
-                      .read(tripsRepositoryProvider)
-                      .startPlanning(trip.id);
-                  ref.invalidate(tripWorkflowProvider(trip.id));
-                  ref.invalidate(tripDetailProvider(trip.id));
-                } catch (error) {
-                  messenger.showSnackBar(
-                    SnackBar(content: Text(friendlyMessage(error))),
-                  );
-                }
-              },
-              child: const Text('Start planning'),
-            )
+          ? _StartPlanningButton(tripId: trip.id, label: 'Start planning')
           : const Text('Planning has not started yet.');
     } else if (w.status == 'Planning') {
       body = const Row(
@@ -179,8 +163,18 @@ class _WorkflowSection extends ConsumerWidget {
         ],
       );
     } else if (w.status == 'FailedSafely') {
-      body = Text(
-        'Planning could not finish: ${w.errorSummary ?? 'unknown reason'}. Our team will follow up.',
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Planning could not finish: ${w.errorSummary ?? 'unknown reason'}.',
+          ),
+          // Only the tourist may start planning (API rule), so the retry lives here.
+          if (trip.status == 'Submitted') ...[
+            const SizedBox(height: 8),
+            _StartPlanningButton(tripId: trip.id, label: 'Try again'),
+          ],
+        ],
       );
     } else {
       body = Align(
@@ -274,6 +268,33 @@ class _DayTile extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Calls start-planning, then reloads the trip and its workflow. Errors are shown as a snackbar.
+class _StartPlanningButton extends ConsumerWidget {
+  const _StartPlanningButton({required this.tripId, required this.label});
+
+  final String tripId;
+  final String label;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FilledButton(
+      onPressed: () async {
+        final messenger = ScaffoldMessenger.of(context);
+        try {
+          await ref.read(tripsRepositoryProvider).startPlanning(tripId);
+          ref.invalidate(tripWorkflowProvider(tripId));
+          ref.invalidate(tripDetailProvider(tripId));
+        } catch (error) {
+          messenger.showSnackBar(
+            SnackBar(content: Text(friendlyMessage(error))),
+          );
+        }
+      },
+      child: Text(label),
     );
   }
 }

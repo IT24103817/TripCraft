@@ -7,7 +7,6 @@ import type {
   AttractionListQuery,
   ItineraryDto,
   SaveAttractionRequest,
-  StartPlanningResponse,
   TripRequestDto,
   TripRequestListQuery,
 } from './types';
@@ -50,18 +49,6 @@ export function useItinerary(id: string) {
         validateStatus: (status) => status === 200 || status === 404,
       });
       return response.status === 404 ? null : response.data;
-    },
-  });
-}
-
-export function useStartPlanning(id: string) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: async () =>
-      (await http.post<StartPlanningResponse>(`/api/trip-requests/${id}/start-planning`)).data,
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: [queryRoots.trips] });
-      void client.invalidateQueries({ queryKey: [queryRoots.workflows] });
     },
   });
 }

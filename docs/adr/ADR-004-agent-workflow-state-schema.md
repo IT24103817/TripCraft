@@ -31,7 +31,7 @@ input/output/validation summaries as jsonb).
 - Summaries are capped at 8,000 characters each by `AgentStepReportRequestValidator`, which also keeps raw
   prompts out; the agent service only sends summaries.
 - `final_outcome` holds the proposal and, after approval, the decision and the holds created.
-- Real PostgreSQL tests check the jsonb columns and constraints (`Tests/Shared/Database`).
+- Real PostgreSQL tests check the jsonb columns and constraints (`backend/tests/TripCraft.Tests/Shared/Database`).
 
 ## Where this shows in the code
 

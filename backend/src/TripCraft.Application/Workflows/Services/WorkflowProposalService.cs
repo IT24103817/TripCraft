@@ -39,6 +39,7 @@ public class WorkflowProposalService(
         var trip = await trips.GetByIdAsync(workflow.TripRequestId, ct)
                    ?? throw new NotFoundException("Trip request not found.");
         var previousStatus = workflow.Status;
+        var previousTripStatus = trip.Status;
 
         ProposalValidationResult validation;
         Guid? quotationId = null;
@@ -99,6 +100,9 @@ public class WorkflowProposalService(
                 QuotationId = quotationId,
                 proposal.Replans
             });
+        if (trip.Status != previousTripStatus)
+            audit.Record(null, "TripRequestStatusChanged", nameof(TripRequest), trip.Id,
+                new { Status = previousTripStatus.ToString() }, new { Status = trip.Status.ToString() });
         await unitOfWork.SaveChangesAsync(ct);
 
         return new ProposalOutcomeResponse(workflow.Id, workflow.Status.ToString(), quotationId, validation);

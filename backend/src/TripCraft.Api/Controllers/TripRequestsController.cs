@@ -46,6 +46,8 @@ public class TripRequestsController(
 
     /// <summary>Edit details. 409 unless the request is Submitted or RevisionRequested.</summary>
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<TripRequestDto>> Update(Guid id, UpdateTripRequestRequest request, CancellationToken ct)
     {
         return Ok(await tripRequests.UpdateAsync(User.GetCurrentUser(), id, request, ct));
@@ -58,7 +60,8 @@ public class TripRequestsController(
     /// </summary>
     [HttpPost("{id:guid}/start-planning")]
     [Authorize(Roles = Roles.Tourist)]
-    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(StartPlanningResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<StartPlanningResponse>> StartPlanning(Guid id, CancellationToken ct)
     {
         var result = await planning.StartPlanningAsync(User.GetCurrentUser(), id, ct);

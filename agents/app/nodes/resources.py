@@ -9,8 +9,14 @@ from typing import Any
 from app.errors import AgentOutputError, ToolError
 from app.llm import call_json
 from app.nodes.common import DATA_RULES, failed_update, failure_retries, step_report, wrap_data
-from app.schemas import (ItineraryDay, PlannerConstraints, ResourceActionOutput, ResourceInput, ResourceSelection,
-                         WorkflowRequest)
+from app.schemas import (
+    ItineraryDay,
+    PlannerConstraints,
+    ResourceActionOutput,
+    ResourceInput,
+    ResourceSelection,
+    WorkflowRequest,
+)
 from app.state import WorkflowState
 from app.tools.models import GuideOption, RateCard, RoomOption, VehicleOption
 from app.tools.registry import run_tool, start_recording
@@ -23,7 +29,8 @@ Your single responsibility: propose ONE available guide, ONE available vehicle a
 night of the itinerary. You only propose; you never book or hold anything.
 
 RULES
-- guide_id must be the id of a guide in DATA.guides (they already speak the required language). null if the list is empty.
+- guide_id must be the id of a guide in DATA.guides (they already speak the required language).
+  null if the list is empty.
 - vehicle_id must be the id of a vehicle in DATA.vehicles (they already have enough seats). null if the list is empty.
 - rooms: one entry per room per night, only from DATA.room_options for that night. Pick enough rooms so the
   total capacity each night is at least pax. Do not pick more rooms of a type than available_rooms.

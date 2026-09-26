@@ -2,7 +2,7 @@
 import copy
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import httpx
 import pytest
@@ -62,7 +62,7 @@ def settings_env(monkeypatch):
 class FakeLLM:
     """Stands in for the chat model. Picks the agent from the system prompt and replies with canned JSON."""
 
-    MARKERS = {
+    MARKERS: ClassVar[dict[str, str]] = {
         "planner": "Planner / Coordinator agent",
         "itinerary": "Itinerary Analysis agent",
         "resources": "Resource & Action agent",

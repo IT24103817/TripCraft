@@ -25,7 +25,8 @@ async def _post(request: WorkflowRequest, suffix: str, body: dict[str, Any]) -> 
             logger.warning(f"callback {suffix} returned {response.status_code}",
                            extra={"workflow_id": str(request.workflow_id)})
     except httpx.HTTPError as ex:
-        logger.warning(f"callback {suffix} failed: {type(ex).__name__}", extra={"workflow_id": str(request.workflow_id)})
+        logger.warning(f"callback {suffix} failed: {type(ex).__name__}",
+                       extra={"workflow_id": str(request.workflow_id)})
 
 
 async def post_step(request: WorkflowRequest, report: dict[str, Any]) -> None:

@@ -1,33 +1,15 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getErrorMessage } from '@/shared/api/errors';
+import { Link, useParams } from 'react-router-dom';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { PageState } from '@/shared/components/PageState';
 import { StatusBadge } from '@/shared/components/StatusBadge';
-import { useToast } from '@/shared/components/Toast';
 import { formatDate, formatDateTime, formatUsd } from '@/shared/utils/format';
-import { useItinerary, useStartPlanning, useTrip } from './api';
+import { useItinerary, useTrip } from './api';
 import { StatusTimeline } from './StatusTimeline';
 
 export default function TripDetailPage() {
   const { id = '' } = useParams();
-  const navigate = useNavigate();
-  const toast = useToast();
   const trip = useTrip(id);
   const itinerary = useItinerary(id);
-  const startPlanning = useStartPlanning(id);
-
-  const start = () =>
-    startPlanning.mutate(undefined, {
-      onSuccess: (result) => {
-        if (result.workflowStatus === 'FailedSafely') {
-          toast.error(`Planning could not start: ${result.errorSummary ?? 'agent service unavailable'}`);
-          return;
-        }
-        toast.success('Planning started. The agents are working on it.');
-        navigate(`/workflows/${result.workflowId}`);
-      },
-      onError: (error) => toast.error(getErrorMessage(error)),
-    });
 
   return (
     <PageState
@@ -42,27 +24,21 @@ export default function TripDetailPage() {
             title="Trip request"
             description={trip.data.objective}
             actions={
-              <>
-                <Link to="/trips" className="btn-secondary">
-                  Back to trips
-                </Link>
-                {trip.data.status === 'Submitted' && (
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    disabled={startPlanning.isPending}
-                    onClick={start}
-                  >
-                    {startPlanning.isPending ? 'Starting…' : 'Start planning'}
-                  </button>
-                )}
-              </>
+              <Link to="/trips" className="btn-secondary">
+                Back to trips
+              </Link>
             }
           />
 
           <div className="card">
             <h2 className="mb-3 font-semibold text-slate-900">Status</h2>
             <StatusTimeline status={trip.data.status} />
+            {trip.data.status === 'Submitted' && (
+              // Only the tourist may start planning (API rule), from the mobile app.
+              <p className="mt-3 text-sm text-slate-600">
+                Waiting for the tourist to start planning in the mobile app.
+              </p>
+            )}
           </div>
 
           <div className="card">

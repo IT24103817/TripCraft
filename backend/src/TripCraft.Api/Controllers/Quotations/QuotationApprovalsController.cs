@@ -17,17 +17,26 @@ public class QuotationApprovalsController(IQuotationApprovalService approvals) :
 {
     /// <summary>One transaction: holds, quotation, trip, workflow, decision, audit. 409 and nothing saved on any failure.</summary>
     [HttpPost("{id:guid}/approve")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<QuotationDecisionResponse>> Approve(Guid id,
         [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] QuotationDecisionRequest? request, CancellationToken ct) =>
         Ok(await approvals.ApproveAsync(User.GetCurrentUser(), id, request?.Comment, ct));
 
     [HttpPost("{id:guid}/reject")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<QuotationDecisionResponse>> Reject(Guid id,
         [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] QuotationDecisionRequest? request, CancellationToken ct) =>
         Ok(await approvals.RejectAsync(User.GetCurrentUser(), id, request?.Comment, ct));
 
     /// <summary>The comment is sent to the Planner agent, which re-plans the trip.</summary>
     [HttpPost("{id:guid}/request-revision")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<QuotationDecisionResponse>> RequestRevision(Guid id, RequestRevisionRequest request,
         CancellationToken ct) =>
         Ok(await approvals.RequestRevisionAsync(User.GetCurrentUser(), id, request.Comment, ct));

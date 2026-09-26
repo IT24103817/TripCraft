@@ -227,7 +227,7 @@ lists the API's names; each component has its own example file.
 
 | Component | Variables |
 |-----------|-----------|
-| API | `DATABASE_URL`, `JWT_SECRET`, `JWT_ISSUER`, `ALLOWED_ORIGINS`, `INTERNAL_AGENT_KEY`, `AGENT_SERVICE_URL`, `AGENT_CALLBACK_BASE_URL`, `RUN_MIGRATIONS`, `ORS_API_KEY`, `OWM_API_KEY`, `FX_FALLBACK_LKR_PER_USD`, `UPLOADS_DIR` |
+| API | `DATABASE_URL`, `JWT_SECRET`, `JWT_ISSUER`, `ALLOWED_ORIGINS`, `INTERNAL_AGENT_KEY`, `AGENT_SERVICE_URL`, `AGENT_CALLBACK_BASE_URL`, `RUN_MIGRATIONS`, `ORS_API_KEY`, `OWM_API_KEY`, `FX_FALLBACK_LKR_PER_USD`, `UPLOADS_DIR`, optional `FX_API_BASE_URL` / `ORS_API_BASE_URL` / `OWM_API_BASE_URL` |
 | Agent service ([agents/.env.example](agents/.env.example)) | `INTERNAL_AGENT_KEY`, `API_BASE_URL`, `LLM_PROVIDER`, `OLLAMA_MODEL`, `OLLAMA_BASE_URL`, `GROQ_API_KEY`, `GROQ_MODEL`, `NODE_TIMEOUT_SECONDS`, `MAX_RETRIES`, `MAX_REPLANS` |
 | Web ([web/.env.example](web/.env.example)) | `VITE_API_URL` |
 | Mobile | `API_URL` (`--dart-define`) |
@@ -325,11 +325,11 @@ section 3 and **not built yet**.
 
 | Layer | Command | Count (latest run) |
 |-------|---------|--------------------|
-| Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 197 passed |
+| Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 208 passed |
 | Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 43 passed |
 | React | `cd web && npm run lint && npm test && npm run build` | 25 passed |
-| Flutter | `cd mobile && flutter analyze && flutter test` | 44 passed |
-| End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 2 written; fail until Students B and C merge |
+| Flutter | `cd mobile && flutter analyze && flutter test` | 45 passed |
+| End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 6: 4 passed (`roles.spec.ts`); the 2 workflow specs fail until Students B and C merge |
 | Performance | `k6 run tests/perf/list-load.js` (and `auth-load.js`, `agent-latency.js`) from the repo root | see [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md) |
 
 Per-component counts, the PLAN.md section 11 mapping and the non-green results with their reasons:
@@ -409,6 +409,7 @@ is [docs/report/15-group-ai-declaration.md](docs/report/15-group-ai-declaration.
 | Diagrams (ER, architecture, workflow, agents) | [docs/diagrams/](docs/diagrams/README.md) |
 | Deployment guide | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
 | Test evidence | [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md) |
+| Final verification (PASS/FAIL checklist, fixes, manual TODOs) | [docs/FINAL-CHECK.md](docs/FINAL-CHECK.md) |
 | Demo script | [docs/DEMO-SCRIPT.md](docs/DEMO-SCRIPT.md) |
 | Report sources | [docs/report/](docs/report/README.md) |
 | APK install | [docs/APK-INSTALL.md](docs/APK-INSTALL.md) |

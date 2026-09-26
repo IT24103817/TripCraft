@@ -5,7 +5,8 @@ A budget-only failure loops back to the planner (at most MAX_REPLANS times). Any
 import asyncio
 import logging
 import time
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 
@@ -33,7 +34,7 @@ def guarded(name: str, node: NodeFn) -> NodeFn:
         started = time.perf_counter()
         try:
             update = await asyncio.wait_for(node(state), timeout=timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             update = failed_update(name, f"timed out after {timeout:g} s", [], started, 0, {})
         except ToolNotAllowed as ex:  # a node asked for a tool outside its allow-list
             logger.warning("tool not allowed", extra={"workflow_id": state["workflow_id"], "node": name})

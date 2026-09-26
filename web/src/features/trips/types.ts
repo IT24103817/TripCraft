@@ -51,23 +51,6 @@ export interface ItineraryDto {
   days: ItineraryDayDto[];
 }
 
-export interface SkeletonDay {
-  dayNumber: number;
-  date: string;
-  city: string;
-  maxStops: number;
-}
-
-/** 202 from POST /api/trip-requests/{id}/start-planning. */
-export interface StartPlanningResponse {
-  workflowId: string;
-  tripRequestId: string;
-  workflowStatus: string;
-  tripStatus: string;
-  skeleton: SkeletonDay[];
-  errorSummary: string | null;
-}
-
 export interface AttractionDto {
   id: string;
   name: string;

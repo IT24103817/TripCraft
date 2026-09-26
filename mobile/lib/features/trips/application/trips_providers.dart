@@ -46,18 +46,20 @@ Future<List<Attraction>> stopLocations(Ref ref, String attractionIds) async {
 }
 
 /// Days from the agents' proposal when there is one, otherwise from the saved itinerary.
+/// A FailedSafely workflow's days were never checked, so they are not shown to the tourist.
 List<TripDay> proposalDays(TripWorkflow? workflow) => [
-  for (final d
-      in workflow?.finalOutcome?.proposal.days ?? const <ProposalDay>[])
-    TripDay(
-      day: d.day,
-      date: d.date,
-      city: d.city,
-      transport: d.transport,
-      weather: d.weather,
-      stops: [
-        for (final s in d.stops ?? const <ProposalStop>[])
-          TripStop(attractionId: s.attractionId, name: s.name),
-      ],
-    ),
+  if (workflow?.status != 'FailedSafely')
+    for (final d
+        in workflow?.finalOutcome?.proposal.days ?? const <ProposalDay>[])
+      TripDay(
+        day: d.day,
+        date: d.date,
+        city: d.city,
+        transport: d.transport,
+        weather: d.weather,
+        stops: [
+          for (final s in d.stops ?? const <ProposalStop>[])
+            TripStop(attractionId: s.attractionId, name: s.name),
+        ],
+      ),
 ];

@@ -19,7 +19,7 @@ async def test_injection_in_objective_is_treated_as_data(fake_llm, api):
         assert {c["tool"] for c in step["tool_calls"]} <= set(ALLOWED_TOOLS[step["agent_name"]])
 
     # The objective only ever reaches the model inside one DATA block, never in the system prompt.
-    for agent, messages in fake_llm.calls:
+    for _agent, messages in fake_llm.calls:
         system, user = messages[0].content, messages[1].content
         assert "ignore all previous rules" not in system
         assert user.count("</DATA>") == 1 and user.endswith("</DATA>")

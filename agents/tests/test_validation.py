@@ -76,3 +76,11 @@ def test_calculate_quotation_mirrors_formula():
     assert q.subtotal_lkr == Decimal("27100.00")
     assert q.margin_lkr == Decimal("2710.00") and q.total_lkr == Decimal("29810.00")
     assert q.total_usd == Decimal("99.53")  # 29810 / 299.5 = 99.532..., rounded half up
+
+
+def test_validation_prompt_asks_for_no_quotation_copy():
+    # The node always keeps the calculated quotation, so a copied one is only slow output (timeouts on local models).
+    from app.nodes.validation import SYSTEM_PROMPT
+
+    assert "Set quotation_final to null" in SYSTEM_PROMPT
+    assert "Copy quotation_draft" not in SYSTEM_PROMPT

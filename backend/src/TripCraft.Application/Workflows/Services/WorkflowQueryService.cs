@@ -3,8 +3,8 @@ using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Common.Paging;
 using TripCraft.Application.Common.Security;
 using TripCraft.Application.Trips;
-using TripCraft.Application.Trips.Services;
 using TripCraft.Application.Workflows.Dtos;
+using TripCraft.Application.Workflows.Ports;
 
 namespace TripCraft.Application.Workflows.Services;
 
@@ -12,7 +12,8 @@ namespace TripCraft.Application.Workflows.Services;
 /// Read side of the workflow monitor. Tourists see only workflows of their own trips (checked here,
 /// not only in the controller); Operations Managers and Admins see all of them.
 /// </summary>
-public class WorkflowQueryService(IAgentWorkflowRepository workflows, ITripRequestRepository trips) : IWorkflowQueryService
+public class WorkflowQueryService(IAgentWorkflowRepository workflows, ITripRequestRepository trips, IResourceCatalog resources)
+    : IWorkflowQueryService
 {
     public async Task<WorkflowDto> GetAsync(CurrentUser user, Guid id, CancellationToken ct)
     {
@@ -24,13 +25,33 @@ public class WorkflowQueryService(IAgentWorkflowRepository workflows, ITripReque
             workflow.Id, workflow.TripRequestId, workflow.Status.ToString(), workflow.CurrentStep,
             WorkflowJson.ToElement(workflow.Plan) ?? default, WorkflowJson.ToElement(workflow.ValidationResult),
             WorkflowJson.ToElement(workflow.FinalOutcome), workflow.ErrorSummary, workflow.StartedAt, workflow.FinishedAt,
-            (long)(end - workflow.StartedAt).TotalMilliseconds, steps.Count, steps.Sum(s => (long)s.DurationMs));
+            (long)(end - workflow.StartedAt).TotalMilliseconds, steps.Count, steps.Sum(s => (long)s.DurationMs),
+            await ResourceNamesAsync(workflow, ct));
+    }
+
+    /// <summary>Guide name, "Van CAB-1234" and "Hotel — Room type" for the ids in the proposal (unknown ids are left out).</summary>
+    private async Task<IReadOnlyDictionary<string, string>> ResourceNamesAsync(AgentWorkflow workflow, CancellationToken ct)
+    {
+        var names = new Dictionary<string, string>();
+        var proposed = WorkflowJson.Deserialize<WorkflowOutcome>(workflow.FinalOutcome)?.Proposal.Resources;
+        if (proposed is null)
+            return names;
+        if (ProposalValidator.ParseId(proposed.GuideId) is { } guideId && await resources.GetGuideAsync(guideId, ct) is { } guide)
+            names[proposed.GuideId!] = guide.Name;
+        if (ProposalValidator.ParseId(proposed.VehicleId) is { } vehicleId && await resources.GetVehicleAsync(vehicleId, ct) is { } vehicle)
+            names[proposed.VehicleId!] = $"{vehicle.Type} {vehicle.RegistrationNo}";
+        foreach (var roomTypeId in (proposed.Rooms ?? []).Select(r => r.RoomTypeId).Distinct())
+        {
+            if (ProposalValidator.ParseId(roomTypeId) is { } id && await resources.GetRoomTypeAsync(id, ct) is { } room)
+                names[roomTypeId] = $"{room.HotelName} — {room.RoomTypeName}";
+        }
+        return names;
     }
 
     public async Task<WorkflowDto> GetLatestForTripAsync(CurrentUser user, Guid tripRequestId, CancellationToken ct)
     {
         var trip = await trips.GetByIdAsync(tripRequestId, ct) ?? throw new NotFoundException("Trip request not found.");
-        TripRequestService.EnsureCanAccess(user, trip);
+        TripAccess.EnsureCanAccess(user, trip.Tourist?.UserId);
         var workflowId = await workflows.Query()
                              .Where(w => w.TripRequestId == tripRequestId)
                              .OrderByDescending(w => w.StartedAt)
@@ -70,7 +91,7 @@ public class WorkflowQueryService(IAgentWorkflowRepository workflows, ITripReque
         {
             var trip = await trips.GetByIdAsync(workflow.TripRequestId, ct)
                        ?? throw new NotFoundException("Trip request not found.");
-            TripRequestService.EnsureCanAccess(user, trip);
+            TripAccess.EnsureCanAccess(user, trip.Tourist?.UserId);
         }
         return workflow;
     }

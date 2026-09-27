@@ -116,7 +116,7 @@ describe('Reports, quotations and re-pricing (Component C)', () => {
         HttpResponse.json([{ month: '2026-09', quotations: 2, totalLkr: 300000, totalUsd: 1000 }]),
       ),
     );
-    renderApp('/');
+    renderApp('/dashboard');
 
     const card = (await screen.findByText('Revenue this month')).closest('div')!;
     await waitFor(() => expect(card).toHaveTextContent('1,000'));

@@ -41,7 +41,7 @@ export function StatusTimeline({ status }: { status: TripRequestStatus }) {
               className={cn(
                 'flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold',
                 current
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-brand-700 text-white'
                   : done
                     ? 'bg-green-600 text-white'
                     : 'bg-slate-200 text-slate-600',

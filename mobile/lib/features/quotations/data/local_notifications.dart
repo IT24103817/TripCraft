@@ -8,7 +8,8 @@ abstract class StatusNotifier {
   Future<void> show(int id, String title, String body);
 }
 
-/// flutter_local_notifications on Android. Initialised on first use; asks for POST_NOTIFICATIONS on Android 13+.
+/// flutter_local_notifications on Android and iOS. Initialised on first use; asks for POST_NOTIFICATIONS on
+/// Android 13+, and for alert permission on iOS (the Darwin settings ask by default).
 class LocalStatusNotifier implements StatusNotifier {
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
@@ -21,6 +22,7 @@ class LocalStatusNotifier implements StatusNotifier {
       importance: Importance.high,
       priority: Priority.high,
     ),
+    iOS: DarwinNotificationDetails(),
   );
 
   Future<void> _init() async {
@@ -28,6 +30,7 @@ class LocalStatusNotifier implements StatusNotifier {
     await _plugin.initialize(
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: DarwinInitializationSettings(),
       ),
     );
     await _plugin

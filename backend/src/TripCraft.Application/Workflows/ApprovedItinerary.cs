@@ -1,6 +1,6 @@
-using TripCraft.Application.Workflows;
+using TripCraft.Application.Trips;
 
-namespace TripCraft.Application.Trips.Planning;
+namespace TripCraft.Application.Workflows;
 
 /// <summary>
 /// PLAN.md section 6 step 11: when a manager approves, the approved proposal becomes the trip's saved itinerary

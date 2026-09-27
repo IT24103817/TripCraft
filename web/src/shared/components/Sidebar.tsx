@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import type { Role } from '../api/types';
 import { cn } from '../utils/cn';
+import { Logo } from './Logo';
 
 export interface NavItem {
   to: string;
@@ -23,11 +24,11 @@ export function Sidebar({ items, role, open, onNavigate }: SidebarProps) {
       id="main-navigation"
       aria-label="Main"
       className={cn(
-        'fixed inset-y-0 left-0 z-30 w-60 transform bg-slate-900 p-4 text-slate-100 transition-transform md:static md:translate-x-0',
+        'fixed inset-y-0 left-0 z-30 w-60 transform bg-brand-950 p-4 text-brand-50 transition-transform md:static md:translate-x-0',
         open ? 'translate-x-0' : '-translate-x-full',
       )}
     >
-      <p className="mb-6 text-lg font-bold tracking-tight">TripCraft</p>
+      <Logo tone="light" className="mb-8 text-lg" />
       <ul className="space-y-1">
         {visible.map((item) => (
           <li key={item.to}>
@@ -37,8 +38,10 @@ export function Sidebar({ items, role, open, onNavigate }: SidebarProps) {
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
-                  'block rounded px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
-                  isActive ? 'bg-slate-700 font-semibold' : 'hover:bg-slate-800',
+                  'block rounded-md px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+                  isActive
+                    ? 'bg-brand-800 font-semibold text-white'
+                    : 'text-brand-100 hover:bg-brand-900 hover:text-white',
                 )
               }
             >

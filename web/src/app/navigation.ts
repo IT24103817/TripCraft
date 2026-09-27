@@ -6,7 +6,7 @@ import type { NavItem } from '@/shared/components/Sidebar';
  * Admins too; user management and the audit log are Admin only (separation of duties).
  */
 export const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'Dashboard', roles: ['OperationsManager', 'Admin'] },
+  { to: '/dashboard', label: 'Dashboard', roles: ['OperationsManager', 'Admin'] },
   { to: '/approvals', label: 'Approvals', roles: ['OperationsManager'] },
   { to: '/trips', label: 'Trip requests', roles: ['OperationsManager'] },
   { to: '/attractions', label: 'Attractions', roles: ['OperationsManager'] },

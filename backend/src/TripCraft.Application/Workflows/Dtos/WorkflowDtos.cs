@@ -3,7 +3,10 @@ using TripCraft.Application.Common.Paging;
 
 namespace TripCraft.Application.Workflows.Dtos;
 
-/// <summary>GET /api/workflows/{id}: status, plan, validation, current step, outcome and timings.</summary>
+/// <summary>
+/// GET /api/workflows/{id}: status, plan, validation, current step, outcome and timings. ResourceNames maps the
+/// proposal's guide, vehicle and room-type ids to display names, so reviewers never read raw ids.
+/// </summary>
 public record WorkflowDto(
     Guid Id,
     Guid TripRequestId,
@@ -17,7 +20,8 @@ public record WorkflowDto(
     DateTime? FinishedAt,
     long? ElapsedMs,
     int StepCount,
-    long TotalStepDurationMs);
+    long TotalStepDurationMs,
+    IReadOnlyDictionary<string, string> ResourceNames);
 
 public record WorkflowSummaryDto(Guid Id, Guid TripRequestId, string Status, string? CurrentStep,
     DateTime StartedAt, DateTime? FinishedAt, string? ErrorSummary);

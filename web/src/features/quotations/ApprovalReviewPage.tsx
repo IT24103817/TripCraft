@@ -89,7 +89,7 @@ export default function ApprovalReviewPage() {
               <div className="card">
                 <h2 className="mb-3 font-semibold text-slate-900">Proposed guide, vehicle and rooms</h2>
                 {proposal?.resources ? (
-                  <ProposedResources resources={proposal.resources} />
+                  <ProposedResources resources={proposal.resources} names={workflow.data.resourceNames} />
                 ) : (
                   <p className="text-sm">None.</p>
                 )}

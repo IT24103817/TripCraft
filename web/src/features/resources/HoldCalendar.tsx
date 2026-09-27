@@ -78,7 +78,7 @@ export function HoldCalendar() {
                     return (
                       <td key={d} className="px-1 py-1">
                         <span
-                          className={`block h-4 w-full rounded ${hold ? (hold.tripRequestId ? 'bg-indigo-500' : 'bg-amber-400') : 'bg-slate-100'}`}
+                          className={`block h-4 w-full rounded ${hold ? (hold.tripRequestId ? 'bg-brand-600' : 'bg-amber-400') : 'bg-slate-100'}`}
                           title={
                             hold
                               ? `${hold.tripRequestId ? 'Trip' : (hold.note ?? 'Manual block')} · ${hold.quantity}`

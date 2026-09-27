@@ -56,20 +56,20 @@ The three business components and where each lives in every layer (ownership in 
 | Layer | A — Trip Requests & Itinerary | B — Resource Management | C — Quotation, Approval & Reporting |
 |-------|-------------------------------|-------------------------|-------------------------------------|
 | Business operation | Validate passport/dates, build a day-by-day skeleton from the objective, start the agent workflow | Availability check and transactional resource hold (no overlaps) | Deterministic proposal validation, quotation, approve / reject / revise in one transaction |
-| API (`backend/src/`) | `TripCraft.Application/Trips/`, `TripCraft.Api/Controllers/Trips/TripRequestsController.cs`, `AttractionsController.cs` | ports in `TripCraft.Application/Workflows/Ports/` (`IResourceCatalog`, `IResourceHoldService`); placeholders in `TripCraft.Infrastructure/Workflows/PendingComponents.cs`; `TripCraft.Application/Resources/` **not built yet** | `TripCraft.Application/Workflows/` (validator, proposal, steps, queries), `TripCraft.Application/Quotations/`, `TripCraft.Api/Controllers/Workflows/`, `Controllers/Quotations/`, `Controllers/Internal/` |
-| Database | `trip_requests`, `tourists`, `attractions`, `itineraries`, `itinerary_days`, `itinerary_stops` | guides, vehicles, hotels, room types, resource holds — **not built yet** | `agent_workflows`, `agent_steps`, `audit_logs`, `city_distances`; quotations and approval decisions **not built yet** |
-| React (`web/src/features/`) | `trips/` — trip list, trip detail with status timeline, attractions CRUD with map | `resources/` — guides, vehicles, hotels, availability (**placeholders naming the missing API**) | `quotations/` — approvals inbox and review, workflow monitor, reports |
-| Flutter (`mobile/lib/features/`) | `trips/` — trip form (camera, date range, chips), my trips, trip detail with map and 10 s polling | `resources/` — GPS check-in (500 m), QR voucher scan; schedule **waits for B's API** | `quotations/` — quotation in LKR/USD, 30 s status watcher with local notifications |
+| API (`backend/src/`) | `TripCraft.Application/Trips/`, `TripCraft.Api/Controllers/Trips/TripRequestsController.cs`, `AttractionsController.cs` | `TripCraft.Application/Resources/`, `TripCraft.Infrastructure/Resources/`, `TripCraft.Api/Controllers/Resources/` (guides, vehicles, hotels, availability, check-ins); implements the `IResourceCatalog` / `IResourceHoldService` ports | `TripCraft.Application/Workflows/` (validator, proposal, steps, queries), `TripCraft.Application/Quotations/`, `TripCraft.Api/Controllers/Workflows/`, `Controllers/Quotations/`, `Controllers/Internal/` |
+| Database | `trip_requests`, `tourists`, `attractions`, `itineraries`, `itinerary_days`, `itinerary_stops` | `guides`, `guide_languages`, `vehicles`, `hotels`, `room_types`, `rate_cards`, `resource_holds` (btree_gist no-overlap), `stop_check_ins` | `quotations`, `quotation_lines`, `approval_decisions`; shared `agent_workflows`, `agent_steps`, `audit_logs`, `city_distances` |
+| React (`web/src/features/`) | `trips/` — trip list, trip detail with status timeline, attractions CRUD with map | `resources/` — guides, vehicles, hotels + room types, availability calendar | `quotations/` — approvals inbox and review, workflow monitor, quotations, reports |
+| Flutter (`mobile/lib/features/`) | `trips/` — trip form (camera, date range, chips), my trips, trip detail with map and 10 s polling | `resources/` — guide schedule, GPS check-in (500 m), QR voucher scan | `quotations/` — quotation in LKR/USD, 30 s status watcher with local notifications |
 | Agent (`agents/app/nodes/`) | `planner.py`, `itinerary.py` (shared, reviewed by B) | `resources.py` | `validation.py` |
 | Third-party API | OpenWeatherMap (`Infrastructure/External/WeatherService.cs`) | OpenRouteService (`DistanceService.cs`) | open.er-api.com (`ExchangeRateService.cs`) |
-| Tests | `backend/tests/TripCraft.Tests/Trips/`, `web/src/features/trips/__tests__/`, `mobile/test/trips/` | `web/src/features/resources/__tests__/`, `mobile/test/resources/` | `backend/tests/TripCraft.Tests/Workflows/`, `Quotations/`, `web/src/features/quotations/__tests__/`, `mobile/test/quotations/` |
+| Tests | `backend/tests/TripCraft.Tests/Trips/`, `web/src/features/trips/__tests__/`, `mobile/test/trips/` | `backend/tests/TripCraft.Tests/Resources/`, `web/src/features/resources/__tests__/`, `mobile/test/resources/` | `backend/tests/TripCraft.Tests/Workflows/`, `Quotations/`, `web/src/features/quotations/__tests__/`, `mobile/test/quotations/` |
 
 Shared: authentication and users (`TripCraft.Application/Identity/`, `web/src/auth/`, `mobile/lib/core/auth/`),
 common infrastructure (`TripCraft.Application/Common/`, `web/src/shared/`, `mobile/lib/shared/`).
 
-**Status of Students B and C:** their entities, controllers and screens are not merged yet. The workflow reaches
-them through interfaces; until they register their real services, those calls answer **503** and a live workflow
-ends `FailedSafely` at the Resource agent. Details in [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md).
+**Status of Students B and C:** both components are merged on `main`. They were first written as drafts for
+B and C, who still need to review them and own them. The full PLAN.md section 6 workflow runs end to end; see
+[docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
 ### Component ownership
 
@@ -177,25 +177,25 @@ distances.
 ```
 .
 ├── backend/                       ASP.NET Core 8 solution
-│   ├── src/TripCraft.Api/         controllers (Internal/, Workflows/, Quotations/), middleware, Program.cs
-│   ├── src/TripCraft.Application/ entities, DTOs, validators, services (Common, Identity, Trips, Workflows, Quotations)
+│   ├── src/TripCraft.Api/         controllers by component (Trips/, Resources/, Quotations/, Workflows/, Identity/, Admin/, Internal/), middleware, Program.cs
+│   ├── src/TripCraft.Application/ entities, DTOs, validators, services (Common, Identity, Trips, Resources, Quotations, Workflows)
 │   ├── src/TripCraft.Infrastructure/  EF Core (Persistence/), third-party clients (External/), agent client (Workflows/)
-│   ├── tests/TripCraft.Tests/     xUnit: Trips, Workflows, Quotations, Identity, Shared/Database, Common
+│   ├── tests/TripCraft.Tests/     xUnit: Trips, Resources, Quotations, Workflows, Identity, Shared/Database, Common
 │   └── Dockerfile
 ├── agents/                        FastAPI + LangGraph agent service
 │   ├── app/                       graph.py, llm.py, nodes/, tools/, schemas.py, main.py
 │   ├── tests/                     pytest unit tests + golden/ evaluation cases, EVALUATION.md
 │   └── Dockerfile
-├── web/                           React 18 + Vite staff app
-│   └── src/                       app/, auth/, shared/, features/{trips,resources,quotations}/, test/
-├── mobile/                        Flutter app (lk.tripcraft.app)
+├── web/                           React 18 + Vite: public landing page + staff app
+│   └── src/                       app/, auth/, shared/, features/{landing,trips,resources,quotations}/, test/
+├── mobile/                        Flutter app (lk.tripcraft.app; android/ and ios/)
 │   ├── lib/                       core/, shared/, features/{trips,resources,quotations}/
 │   ├── test/                      core/, shared/, trips/, quotations/, resources/
 │   └── scripts/build-release-apk.sh
 ├── tests/
 │   ├── e2e/                       Playwright specs (full workflow, safe failure)
-│   └── perf/                      k6 scripts (list-load, auth-load, agent-latency)
-├── docs/                          adr/, diagrams/, report/, evidence/, DEPLOYMENT.md, TEST-EVIDENCE.md, DEMO-SCRIPT.md
+│   └── perf/                      k6 scripts (list-load, auth-load, db-response, agent-latency)
+├── docs/                          adr/, diagrams/, report/, evidence/, DEPLOYMENT.md, TEST-EVIDENCE.md, COMPLIANCE.md, RUN-ON-IPHONE.md, DEMO-SCRIPT.md
 ├── .github/workflows/             backend-ci, web-ci, mobile-ci, agents-ci
 ├── render.yaml                    Render Blueprint
 └── .env.example                   environment variable names (never values)
@@ -276,7 +276,17 @@ Groq mode and Docker: [agents/README.md](agents/README.md).
 cd web && npm install && cp .env.example .env.local && npm run dev   # http://localhost:5173
 ```
 
-Details: [web/README.md](web/README.md).
+| Route | Who | Page |
+|-------|-----|------|
+| `/` | anyone (no login) | Public landing page for tourists: how it works, who it's for, **Download APK** (`VITE_APK_URL`), Staff login |
+| `/login` | anyone | Staff sign-in; after login each role goes to its home |
+| `/dashboard` | Operations Manager, Admin | KPIs and the latest workflows (the staff home; it used to be `/`) |
+| `/trips`, `/approvals`, `/workflows`, `/quotations`, `/reports`, `/resources/*`, `/attractions` | Operations Manager | Operations screens |
+| `/admin/users`, `/admin/audit-logs` | Admin | Users and audit log |
+| `/mobile-app` | Tourist, Guide | "Please use the TripCraft mobile app" |
+
+Landing-page settings (build time, in Vercel): `VITE_APK_URL` (GitHub Release URL of the APK) and
+`VITE_GROUP_NUMBER` (shown in the footer as `SE3090_G<nn>`). Details: [web/README.md](web/README.md).
 
 ### 5. Mobile (`mobile/`)
 
@@ -286,6 +296,17 @@ cd mobile && flutter pub get && flutter run    # emulator; talks to http://10.0.
 
 Build the APK for the deployed API: `./scripts/build-release-apk.sh https://<api>`. Details:
 [mobile/README.md](mobile/README.md), install steps: [docs/APK-INSTALL.md](docs/APK-INSTALL.md).
+
+### 6. iPhone (optional)
+
+The app also has an iOS target (`mobile/ios/`) and runs on your own iPhone with a free Apple ID. You need Xcode and
+CocoaPods, a personal signing team set once in `ios/Runner.xcworkspace`, and Developer Mode on the phone. Then run:
+
+```bash
+flutter run -d "<my iPhone>" --dart-define=API_URL=http://<laptop LAN IP>:5080   # API started with ASPNETCORE_URLS=http://0.0.0.0:5080
+```
+
+Free-account builds expire after 7 days. Step by step: [docs/RUN-ON-IPHONE.md](docs/RUN-ON-IPHONE.md).
 
 ## API documentation
 
@@ -336,12 +357,28 @@ Agent service (internal, `http://127.0.0.1:8001`): `POST /run-workflow`, `POST /
 
 | Layer | Command | Count (latest run) |
 |-------|---------|--------------------|
-| Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 235 passed |
-| Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 43 passed |
-| React | `cd web && npm run lint && npm test && npm run build` | 31 passed |
-| Flutter | `cd mobile && flutter analyze && flutter test` | 48 passed |
-| End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 6: 4 passed (`roles.spec.ts`); the 2 workflow specs fail until Students B and C merge |
-| Performance | `k6 run tests/perf/list-load.js` (and `auth-load.js`, `agent-latency.js`) from the repo root | see [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md) |
+| Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 298 passed |
+| Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 49 passed |
+| React | `cd web && npm run lint && npm test && npm run build` | 45 passed (13 files) |
+| Flutter | `cd mobile && flutter analyze && flutter test` | 58 passed |
+| End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 6 passed (4 roles, over-budget → RevisionRequested, demo → approved → Confirmed) |
+| Performance | `k6 run tests/perf/list-load.js` (and `auth-load.js`, `agent-latency.js`) from the repo root | `list-load.js`: 800,901 requests, p95 6.6 ms, 0 % errors; others in [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md) |
+
+Latest run: 27 Sep 2026 on merged `main`, plus `dotnet build -warnaserror` (0 warnings), `ruff check`,
+`flutter analyze` (no issues) and Lighthouse accessibility **100** on the landing page.
+
+### Screenshots
+
+The UI follows the **Hallmark** design system (`.claude/skills/hallmark/SKILL.md`): teal brand, Inter,
+10/16 px radii, and the same status colours on web and mobile.
+
+| | Web | Mobile |
+|--|-----|--------|
+| Landing / login | ![Landing](docs/evidence/ui-after/web-0-landing.png) | ![Login](docs/evidence/ui-after/mobile-1-login.png) |
+| Work screen | ![Approval review](docs/evidence/ui-after/web-5-approval-review.png) | ![Trip detail](docs/evidence/ui-after/mobile-4-trip-detail.png) |
+
+All screens, before and after the redesign: [docs/evidence/ui-before/](docs/evidence/ui-before/),
+[docs/evidence/ui-after/](docs/evidence/ui-after/); the final emulator run: [docs/evidence/final-run/](docs/evidence/final-run/).
 
 Per-component counts, the PLAN.md section 11 mapping and the non-green results with their reasons:
 [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md). Agent evaluation method: [agents/tests/EVALUATION.md](agents/tests/EVALUATION.md).
@@ -359,7 +396,7 @@ variable, waking the free Render service, rotating secrets and the smoke-test ch
 |---------|-----|
 | API health | TODO `https://<api>.onrender.com/health` |
 | Swagger | TODO `https://<api>.onrender.com/swagger` |
-| React web app | TODO `https://<app>.vercel.app` |
+| React web app (landing page `/`, staff `/login`) | TODO `https://<app>.vercel.app` |
 | Android APK (GitHub Release v1.0) | TODO `https://github.com/<owner>/<repo>/releases/tag/v1.0` |
 
 All seeded accounts use the password `Passw0rd!`.
@@ -454,6 +491,8 @@ is [docs/report/15-group-ai-declaration.md](docs/report/15-group-ai-declaration.
 | Deployment guide | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
 | Test evidence | [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md) |
 | Final verification (PASS/FAIL checklist, fixes, manual TODOs) | [docs/FINAL-CHECK.md](docs/FINAL-CHECK.md) |
+| Specification compliance audit | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) |
+| Run on iPhone | [docs/RUN-ON-IPHONE.md](docs/RUN-ON-IPHONE.md) |
 | Demo script | [docs/DEMO-SCRIPT.md](docs/DEMO-SCRIPT.md) |
 | Report sources | [docs/report/](docs/report/README.md) |
 | APK install | [docs/APK-INSTALL.md](docs/APK-INSTALL.md) |

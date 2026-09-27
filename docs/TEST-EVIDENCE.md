@@ -1,8 +1,29 @@
 # Test evidence
 
 Maps every row of PLAN.md section 11 to the tests that prove it, how to run them, the latest counts, and
-where the screenshots for the report go. Counts are from the local run on 26 Sep 2026 on this branch (`docs/spec-compliance`). With Students B and C's
-draft branches stacked on top, every suite is larger and the workflow e2e passes — see `docs/COMPLIANCE.md`.
+where the screenshots for the report go.
+
+## Current status: merged `main`, 27 Sep 2026
+
+A, B and C are merged, so every "not built yet / fails until B and C merge" note further down is resolved.
+
+| Suite | Result |
+|-------|--------|
+| Backend `dotnet test` (PostgreSQL 16) | **298 passed**, 0 failed; `dotnet build -warnaserror` clean |
+| Agents `pytest` + `ruff check` | **49 passed**, ruff clean |
+| React `npm test` + lint + build | **45 passed** (13 files), lint and build clean |
+| Flutter `flutter test` + analyze | **58 passed**, no issues |
+| E2E Playwright | **6/6 passed** (roles ×4, over-budget → RevisionRequested, demo → approved → Confirmed) |
+| k6 `list-load.js` | 800,901 requests, p95 6.6 ms, 0.00 % errors |
+| Lighthouse accessibility (landing page) | 100 |
+
+Details, the emulator run and today's fixes: [docs/FINAL-CHECK.md](FINAL-CHECK.md) and
+[docs/COMPLIANCE.md](COMPLIANCE.md).
+
+## Snapshot: `docs/spec-compliance` before B and C were merged (26 Sep 2026)
+
+The rest of this document is the per-row mapping written on the A-only branch. The test locations are still valid;
+the counts and the "not built yet" statuses are historical.
 
 ## How to run each suite
 

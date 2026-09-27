@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../shared/utils/friendly_error.dart';
 import '../../shared/utils/validators.dart';
+import '../../shared/theme/app_theme.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../router/routes.dart';
@@ -72,6 +73,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Text(
+                  'Create a tourist account to request a custom trip.',
+                  style: Theme.of(context).textTheme.bodyLarge
+                      ?.copyWith(color: AppColors.muted),
+                ),
+                const SizedBox(height: 20),
                 if (_error != null) ...[
                   Semantics(
                     liveRegion: true,

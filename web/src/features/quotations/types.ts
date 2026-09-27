@@ -131,6 +131,8 @@ export interface WorkflowDto {
   elapsedMs: number | null;
   stepCount: number;
   totalStepDurationMs: number;
+  /** Display names for the proposal's guide, vehicle and room-type ids. */
+  resourceNames?: Record<string, string>;
 }
 
 export interface AgentToolCall {

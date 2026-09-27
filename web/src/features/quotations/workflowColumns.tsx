@@ -12,7 +12,7 @@ export const workflowColumns: Column<WorkflowSummaryDto>[] = [
     render: (w) => (
       <Link
         to={`/trips/${w.tripRequestId}`}
-        className="font-mono text-indigo-700 hover:underline"
+        className="font-mono text-brand-700 hover:underline"
         onClick={(e) => e.stopPropagation()}
       >
         {shortId(w.tripRequestId)}

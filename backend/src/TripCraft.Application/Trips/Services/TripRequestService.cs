@@ -156,18 +156,11 @@ public class TripRequestService(
         return TripRequestDto.FromEntity(trip);
     }
 
-    /// <summary>404 if the trip does not exist, 403 if a tourist asks for someone else's trip.</summary>
-    internal static void EnsureCanAccess(CurrentUser user, TripRequest trip)
-    {
-        if (user.IsTourist && trip.Tourist?.UserId != user.Id)
-            throw new ForbiddenException("You can only access your own trip requests.");
-    }
-
     private async Task<TripRequest> LoadForUserAsync(CurrentUser user, Guid id, CancellationToken ct)
     {
         var trip = await trips.GetByIdAsync(id, ct)
                    ?? throw new NotFoundException("Trip request not found.");
-        EnsureCanAccess(user, trip);
+        TripAccess.EnsureCanAccess(user, trip.Tourist?.UserId);
         return trip;
     }
 

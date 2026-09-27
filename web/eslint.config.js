@@ -7,10 +7,11 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-const features = ['trips', 'resources', 'quotations'];
+const features = ['trips', 'resources', 'quotations', 'landing'];
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage'] },
+  // .vite is Vite's dependency cache (created by the dev server); it is generated code, like dist.
+  { ignores: ['dist', 'coverage', '.vite'] },
   {
     extends: [
       js.configs.recommended,

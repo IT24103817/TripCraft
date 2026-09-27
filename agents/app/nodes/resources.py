@@ -109,6 +109,22 @@ def drop_rooms_outside_stay(output: ResourceActionOutput, nights: set[date]) -> 
     return output.model_copy(update={"rooms": kept}), len(output.rooms) - len(kept)
 
 
+def consistent_gaps(model_gaps: list[str], output: ResourceActionOutput, nights: set[date]) -> list[str]:
+    """
+    Enforced in code: the model's gaps may not contradict its own selection (e.g. "no guide available" while a
+    guide is chosen). Such gaps are dropped; real gaps are added by missing_resource_gaps from the tool results.
+    """
+    booked_nights = {r.night for r in output.rooms}
+
+    def contradicts(gap: str) -> bool:
+        text = gap.lower()
+        return (("guide" in text and output.guide_id is not None)
+                or ("vehicle" in text and output.vehicle_id is not None)
+                or ("room" in text and nights <= booked_nights))
+
+    return [g for g in model_gaps if not contradicts(g)]
+
+
 def check_selection(output: ResourceActionOutput, guides: list[GuideOption], vehicles: list[VehicleOption],
                     room_options: dict[date, list[RoomOption]], pax: int) -> list[str]:
     """Enforced in code: only offered ids, no over-booking of a room type, enough beds where possible."""
@@ -189,7 +205,8 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
     except (ToolError, AgentOutputError) as ex:
         return failed_update(AGENT, str(ex), calls, started, failure_retries(ex), input_summary)
 
-    gaps = list(dict.fromkeys(output.gaps + missing_resource_gaps(guides, vehicles, room_options, language, pax)))
+    gaps = list(dict.fromkeys(consistent_gaps(output.gaps, output, set(room_options))
+                              + missing_resource_gaps(guides, vehicles, room_options, language, pax)))
     guide = next((g for g in guides if g.id == output.guide_id), None)
     vehicle = next((v for v in vehicles if v.id == output.vehicle_id), None)
     selection = ResourceSelection(

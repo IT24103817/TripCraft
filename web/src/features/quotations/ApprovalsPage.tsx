@@ -32,7 +32,7 @@ export default function ApprovalsPage() {
             className={cn(
               '-mb-px border-b-2 px-3 py-2 text-sm font-medium',
               tab === t.status
-                ? 'border-indigo-600 text-indigo-700'
+                ? 'border-brand-700 text-brand-700'
                 : 'border-transparent text-slate-600 hover:text-slate-900',
             )}
             onClick={() => list.set({ tab: t.status })}

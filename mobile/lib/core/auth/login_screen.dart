@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../shared/utils/friendly_error.dart';
 import '../../shared/utils/validators.dart';
+import '../../shared/theme/app_theme.dart';
 import '../../shared/widgets/app_text_field.dart';
+import '../../shared/widgets/brand_mark.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../api/user_facing_exception.dart';
 import '../router/routes.dart';
@@ -74,12 +76,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: BrandMark(),
+                      ),
+                      const SizedBox(height: 32),
                       Text(
-                        'TripCraft',
-                        style: Theme.of(context).textTheme.headlineMedium,
+                        'Welcome back',
+                        style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 4),
-                      const Text('Sign in to plan your Sri Lanka trip.'),
+                      Text(
+                        'Sign in to plan your Sri Lanka trip.',
+                        style: Theme.of(context).textTheme.bodyLarge
+                            ?.copyWith(color: AppColors.muted),
+                      ),
                       const SizedBox(height: 24),
                       if (_error != null) ...[
                         Semantics(

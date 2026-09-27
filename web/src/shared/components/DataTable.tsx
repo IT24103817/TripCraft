@@ -37,7 +37,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
   return (
     <div className="card overflow-hidden p-0">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
+        <table className="min-w-full divide-y divide-slate-200 text-sm tabular-nums">
           <caption className="sr-only">{props.caption}</caption>
           <thead className="bg-slate-50">
             <tr>
@@ -53,12 +53,12 @@ export function DataTable<T>(props: DataTableProps<T>) {
                     key={column.key}
                     scope="col"
                     aria-sort={column.sortKey ? direction : undefined}
-                    className="whitespace-nowrap px-4 py-2 text-left font-semibold text-slate-700"
+                    className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"
                   >
                     {column.sortKey && props.onSortChange ? (
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1 hover:text-indigo-700 focus-visible:underline"
+                        className="inline-flex items-center gap-1 hover:text-brand-700 focus-visible:underline"
                         onClick={() => toggleSort(column.sortKey!)}
                         aria-label={`Sort by ${column.header}`}
                       >
@@ -86,12 +86,14 @@ export function DataTable<T>(props: DataTableProps<T>) {
               <tr
                 key={props.getRowId(row)}
                 onClick={props.onRowClick ? () => props.onRowClick?.(row) : undefined}
-                className={props.onRowClick ? 'cursor-pointer hover:bg-slate-50' : undefined}
+                className={
+                  props.onRowClick ? 'cursor-pointer transition-colors hover:bg-brand-50/60' : undefined
+                }
               >
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={column.className ?? 'whitespace-nowrap px-4 py-2 text-slate-700'}
+                    className={column.className ?? 'whitespace-nowrap px-4 py-3 text-slate-700'}
                   >
                     {column.render(row)}
                   </td>
@@ -100,7 +102,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                   <td className="px-4 py-2 text-right">
                     <button
                       type="button"
-                      className="text-indigo-700 hover:underline"
+                      className="font-semibold text-brand-700 hover:underline"
                       aria-label={`Open ${props.rowLabel?.(row) ?? 'row'}`}
                       onClick={(event) => {
                         event.stopPropagation();
@@ -131,7 +133,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
             <label className="flex items-center gap-1 text-slate-600">
               Rows
               <select
-                className="rounded border border-slate-300 px-1 py-1"
+                className="rounded-md border border-slate-300 px-2 py-1"
                 value={pageSize}
                 onChange={(e) => props.onPageSizeChange?.(Number(e.target.value))}
               >

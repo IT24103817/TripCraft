@@ -49,7 +49,7 @@ export default function HotelsPage() {
       render: (h) => (
         <button
           type="button"
-          className="text-indigo-700 hover:underline"
+          className="text-brand-700 hover:underline"
           aria-label={`Room types of ${h.name}`}
           onClick={(event) => {
             event.stopPropagation();

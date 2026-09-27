@@ -39,6 +39,22 @@ async def test_itinerary_repairs_four_stops_then_succeeds(fake_llm, api, demo_st
     assert all(len(d["stops"]) <= 3 for d in update["days"])
 
 
+async def test_itinerary_empty_last_day_is_repaired_by_repeating_a_stop(fake_llm, api, demo_state):
+    state = await planned(demo_state)
+    empty_last_day = load_fixture("itinerary")
+    empty_last_day["days"][4]["stops"] = []  # the model treated the departure day as a day off
+    repeated = load_fixture("itinerary")
+    repeated["days"][4]["stops"] = [repeated["days"][2]["stops"][0]]  # same Ella attraction as day 3
+    fake_llm.queue("itinerary", empty_last_day, repeated)
+
+    update = await itinerary_node(state)
+
+    repair = fake_llm.calls_for("itinerary")[1][-1].content
+    assert "day 5: has 0 stops" in repair and "repeat one of the Ella attractions" in repair
+    assert update["steps"][0]["retries"] == 1
+    assert update["days"][4]["stops"][0]["attraction_id"] == update["days"][2]["stops"][0]["attraction_id"]
+
+
 async def test_itinerary_long_road_transfer_fails_safely(fake_llm, api, demo_state):
     state = await planned(demo_state)
     bad = load_fixture("itinerary")

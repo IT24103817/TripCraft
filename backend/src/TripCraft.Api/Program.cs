@@ -53,9 +53,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 var app = builder.Build();
 
 app.UseForwardedHeaders();
+// Outside the exception middleware, so a handled 404/409 is logged with its real status code, not as a 500.
+app.UseSerilogRequestLogging();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseStatusCodePages(); // ProblemDetails bodies for bare 401/403/404/429 responses
-app.UseSerilogRequestLogging();
 
 app.UseSwagger();
 app.UseSwaggerUI();

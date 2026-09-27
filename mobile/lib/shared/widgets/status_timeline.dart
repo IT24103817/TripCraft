@@ -58,8 +58,8 @@ class _StepRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = switch (state) {
       _StepState.done => AppColors.success,
-      _StepState.current => AppColors.primary,
-      _StepState.todo => Colors.grey.shade400,
+      _StepState.current => AppColors.brand,
+      _StepState.todo => AppColors.line,
     };
     return Semantics(
       label:
@@ -107,9 +107,11 @@ class _StepRow extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontWeight: state == _StepState.current
-                      ? FontWeight.bold
-                      : FontWeight.normal,
-                  color: state == _StepState.todo ? Colors.grey.shade600 : null,
+                      ? FontWeight.w700
+                      : FontWeight.w400,
+                  color: state == _StepState.todo
+                      ? AppColors.muted
+                      : AppColors.ink,
                 ),
               ),
             ),

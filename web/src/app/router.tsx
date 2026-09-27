@@ -7,6 +7,7 @@ import { LoadingSkeleton } from '@/shared/components/PageState';
 import type { Role } from '@/shared/api/types';
 import { AppLayout } from './AppLayout';
 
+const LandingPage = lazy(() => import('@/features/landing/LandingPage'));
 const DashboardPage = lazy(() => import('./dashboard/DashboardPage'));
 const NotFoundPage = lazy(() => import('./NotFoundPage'));
 const MobileAppPage = lazy(() => import('@/auth/MobileAppPage'));
@@ -33,6 +34,15 @@ const ADMIN: Role[] = ['Admin'];
 const guard = (roles: Role[], element: ReactNode) => <RoleGuard roles={roles}>{element}</RoleGuard>;
 
 export const routes: RouteObject[] = [
+  {
+    // Public home page: no login needed.
+    path: '/',
+    element: (
+      <Suspense fallback={<LoadingSkeleton />}>
+        <LandingPage />
+      </Suspense>
+    ),
+  },
   { path: '/login', element: <LoginPage /> },
   {
     element: <ProtectedRoute />,
@@ -49,7 +59,7 @@ export const routes: RouteObject[] = [
       {
         element: <AppLayout />,
         children: [
-          { index: true, element: guard(STAFF, <DashboardPage />) },
+          { path: 'dashboard', element: guard(STAFF, <DashboardPage />) },
           { path: 'trips', element: guard(MANAGER, <TripsListPage />) },
           { path: 'trips/:id', element: guard(MANAGER, <TripDetailPage />) },
           { path: 'attractions', element: guard(MANAGER, <AttractionsPage />) },

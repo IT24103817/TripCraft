@@ -49,8 +49,9 @@ src/
   shared/       api (Axios + JWT/401 interceptors, types, query keys), components, hooks, utils, statuses
   features/
     trips/       trip list + detail (status timeline, itinerary), attractions CRUD + map
-    resources/   guides, vehicles, hotels, availability  (placeholders — see below)
-    quotations/  approvals inbox + review, workflow monitor + step timeline, reports
+    landing/     public landing page (`/`): how it works, who it's for, Download APK, Staff login
+    resources/   guides, vehicles, hotels + room types, availability calendar
+    quotations/  approvals inbox + review, workflow monitor + step timeline, quotations, reports
   test/         MSW server, fixtures, renderApp helper (real routes, fresh providers)
 ```
 
@@ -65,7 +66,8 @@ Types in each feature's `types.ts` are copied from the C# DTOs named in the file
 
 | Route | Roles | API |
 |-------|-------|-----|
-| `/` dashboard | OperationsManager, Admin | `GET /api/workflows`, `GET /api/trip-requests` |
+| `/` landing page | anyone (public, no login) | none; `VITE_APK_URL` and `VITE_GROUP_NUMBER` at build time |
+| `/dashboard` | OperationsManager, Admin | `GET /api/workflows`, `GET /api/trip-requests` |
 | `/trips`, `/trips/:id` | OperationsManager | `GET /api/trip-requests`, `/{id}`, `/{id}/itinerary`, `POST /{id}/start-planning` |
 | `/attractions` | OperationsManager | `GET/POST/PUT/DELETE /api/attractions` |
 | `/approvals`, `/approvals/:workflowId` | OperationsManager | `GET /api/workflows?status=`, `GET /api/workflows/{id}`, `POST /api/quotations/{id}/approve \| reject \| request-revision` |
@@ -79,13 +81,11 @@ as-of time) and the deterministic `ValidationResult` from the workflow's `finalO
 `validationResult`. The checklist rules in `features/quotations/validationRules.ts` mirror the codes
 in `ProposalValidator.cs`.
 
-## Not built yet (waiting for Students B and C)
+## Students B and C's screens
 
-These screens show a placeholder that names the missing endpoints instead of invented data:
-
-- Guides, vehicles, hotels + room types CRUD and the availability calendar — Resource Management (Student B).
-- Revenue by month and guide utilisation charts, and the "revenue this month" KPI — `/api/reports/*` (Student C).
-- Guide, vehicle and room **names** on the approval page (ids are shown until Resource Management exists).
+Guides, vehicles, hotels + room types and the availability calendar (Student B), and quotations, reports and the
+revenue KPI (Student C), use their real endpoints on `main`. The approval page names the proposed guide, vehicle
+and rooms (`WorkflowDto.resourceNames`).
 
 ## Known API limits reflected in the UI
 

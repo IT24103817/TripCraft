@@ -33,7 +33,15 @@ export function ProposedItinerary({ days }: { days: ProposalDay[] }) {
 }
 
 /** Ids only for now: names come from Resource Management once it is merged. */
-export function ProposedResources({ resources }: { resources: ProposalResources }) {
+export function ProposedResources({
+  resources,
+  names = {},
+}: {
+  resources: ProposalResources;
+  /** id → display name from the API; an id without a name is shown as it is. */
+  names?: Record<string, string>;
+}) {
+  const label = (id: string) => names[id] ?? id;
   const nights = new Map<string, Map<string, number>>();
   for (const room of resources.rooms ?? []) {
     const byType = nights.get(room.night) ?? new Map<string, number>();
@@ -44,11 +52,13 @@ export function ProposedResources({ resources }: { resources: ProposalResources 
     <dl className="space-y-2 text-sm">
       <div>
         <dt className="text-slate-500">Guide</dt>
-        <dd className="font-mono text-slate-900">{resources.guide_id ?? 'none proposed'}</dd>
+        <dd className="text-slate-900">{resources.guide_id ? label(resources.guide_id) : 'none proposed'}</dd>
       </div>
       <div>
         <dt className="text-slate-500">Vehicle</dt>
-        <dd className="font-mono text-slate-900">{resources.vehicle_id ?? 'none proposed'}</dd>
+        <dd className="text-slate-900">
+          {resources.vehicle_id ? label(resources.vehicle_id) : 'none proposed'}
+        </dd>
       </div>
       <div>
         <dt className="text-slate-500">Rooms</dt>
@@ -58,8 +68,8 @@ export function ProposedResources({ resources }: { resources: ProposalResources 
               <li key={night}>
                 {formatDate(night)}:{' '}
                 {[...byType.entries()].map(([type, count]) => (
-                  <span key={type} className="font-mono">
-                    {count} × {type}{' '}
+                  <span key={type}>
+                    {count} × {label(type)}{' '}
                   </span>
                 ))}
               </li>

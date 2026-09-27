@@ -25,7 +25,7 @@ export function StepTimeline({ steps }: { steps: AgentStepDto[] }) {
         <li key={step.id} className="relative">
           <span
             aria-hidden="true"
-            className="absolute -left-[29px] top-1 h-3 w-3 rounded-full border-2 border-white bg-indigo-500"
+            className="absolute -left-[29px] top-1 h-3 w-3 rounded-full border-2 border-white bg-brand-600"
           />
           <div className="card space-y-2">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
@@ -53,7 +53,7 @@ export function StepTimeline({ steps }: { steps: AgentStepDto[] }) {
               </ul>
             )}
             <details className="text-sm">
-              <summary className="cursor-pointer text-indigo-700">Summaries and validation result</summary>
+              <summary className="cursor-pointer text-brand-700">Summaries and validation result</summary>
               <div className="mt-2 grid gap-2 md:grid-cols-3">
                 <div>
                   <p className="text-xs font-medium text-slate-500">Input</p>

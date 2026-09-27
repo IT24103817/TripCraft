@@ -19,3 +19,9 @@ Against the deployed system: set `BASE_URL` to the Vercel URL and `API_URL` to t
 | `safe-failure.spec.ts` | Budget USD 400 → `RevisionRequested`; the review page shows the failed budget rule and Approve is disabled |
 
 Screenshots, traces and the HTML report are written to `docs/evidence/e2e/`.
+
+Both workflow specs submit the PLAN.md demo trip for **10–14 Oct 2026, 4 travellers**, so each run needs a free
+guide, a vehicle with at least 4 seats, and Ella rooms on those dates. Every passing `workflow.spec.ts` run holds one
+guide and one vehicle. After a few runs, or after the emulator demo on the same dates, the Resource agent can run out
+of vehicles and `safe-failure.spec.ts` then fails safely at the Resource step instead of reaching RevisionRequested.
+Run the specs against a freshly seeded database, or release the October holds of earlier test trips first.

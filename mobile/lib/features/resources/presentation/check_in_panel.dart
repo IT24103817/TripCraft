@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/theme/app_theme.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/utils/friendly_error.dart';
 import '../../../shared/utils/statuses.dart';
@@ -91,7 +92,7 @@ class _CheckInPanelState extends ConsumerState<CheckInPanel> {
     if (checkedInAt != null) {
       return ListTile(
         contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.check_circle, color: Colors.green),
+        leading: const Icon(Icons.check_circle, color: AppColors.success),
         title: Text('Checked in ${formatDateTime(checkedInAt)}'),
       );
     }

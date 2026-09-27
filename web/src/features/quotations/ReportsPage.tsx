@@ -4,6 +4,7 @@ import { PageHeader } from '@/shared/components/PageHeader';
 import { PageState } from '@/shared/components/PageState';
 import { SearchFilterBar } from '@/shared/components/SearchFilterBar';
 import { useListParams } from '@/shared/hooks/useListParams';
+import { CHART_COLORS } from '@/shared/theme';
 import { statusLabel } from '@/shared/statuses';
 import { formatLkr, formatUsd, toIsoDate } from '@/shared/utils/format';
 import { useRevenue, useTripsByStatus, useUtilisation } from './quotationsApi';
@@ -101,11 +102,11 @@ function ReportCard({ title, caption, query, data, format, empty, footer }: Repo
         <div className="h-72" aria-hidden="true">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 8, right: 8, bottom: 48, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
               <XAxis dataKey="name" angle={-30} textAnchor="end" interval={0} fontSize={11} />
               <YAxis />
               <Tooltip formatter={(v: number) => format(v)} />
-              <Bar dataKey="value" fill="#4f46e5" name={title} />
+              <Bar dataKey="value" fill={CHART_COLORS.primary} name={title} radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -29,6 +29,10 @@ describe('ApprovalReviewPage', () => {
     expect(screen.getByText('LKR 187,220.00')).toBeInTheDocument();
     expect(screen.getByText('USD 624.07')).toBeInTheDocument();
     expect(screen.getByText(/1 USD = 300 LKR, as of/)).toBeInTheDocument();
+    // Names from the API instead of raw ids.
+    expect(screen.getByText('Nimal Perera')).toBeInTheDocument();
+    expect(screen.getByText('Van CAB-1234')).toBeInTheDocument();
+    expect(screen.getByText(/2 × Kandy Hills — Standard Double/)).toBeInTheDocument();
   });
 
   it('marks failed rules red and disables Approve for an over-budget proposal', async () => {

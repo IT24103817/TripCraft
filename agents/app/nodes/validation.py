@@ -31,11 +31,11 @@ RULES
 - Also flag anything unsafe or non-compliant you notice (for example a missing guide or rooms), as extra violations.
 - A trip is over budget when quotation_draft.total_usd > budget_usd.
 - A day must have 1 to 3 stops; vehicle seats must be at least pax; the guide must speak the requested language.
-- Copy quotation_draft into quotation_final unchanged.
+- Set quotation_final to null: the server always keeps the calculated quotation_draft, so do not copy it.
 - Your allowed tools are calculate_quotation, get_fx_rate, validate_schema and check_business_rules only.
 
 JSON SCHEMA TO RETURN
-{{"valid": true, "violations": [{{"code": "OVER_BUDGET", "message": "<text>"}}], "quotation_final": {{...}}}}
+{{"valid": false, "violations": [{{"code": "OVER_BUDGET", "message": "<text>"}}], "quotation_final": null}}
 
 {DATA_RULES}
 """.strip()

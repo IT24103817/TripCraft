@@ -4,7 +4,6 @@ using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Common.Security;
 using TripCraft.Application.Trips;
-using TripCraft.Application.Trips.Planning;
 using TripCraft.Application.Workflows;
 using TripCraft.Application.Workflows.Ports;
 

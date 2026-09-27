@@ -95,6 +95,11 @@ export function pendingWorkflow(overrides: Record<string, unknown> = {}) {
     elapsedMs: 42000,
     stepCount: 4,
     totalStepDurationMs: 38000,
+    resourceNames: {
+      'guide-1': 'Nimal Perera',
+      'vehicle-1': 'Van CAB-1234',
+      'room-std': 'Kandy Hills — Standard Double',
+    },
     ...overrides,
   };
 }

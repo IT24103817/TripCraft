@@ -3,11 +3,10 @@ using TripCraft.Application.Quotations;
 using TripCraft.Application.Quotations.Reports;
 using TripCraft.Application.Resources;
 using TripCraft.Application.Workflows.Ports;
-using TripCraft.Infrastructure.Persistence;
 
-namespace TripCraft.Infrastructure.Quotations;
+namespace TripCraft.Infrastructure.Persistence.Reporting;
 
-/// <summary>Report aggregates. Reads across components' tables; never writes.</summary>
+/// <summary>Report aggregates for Component C. Shared read model: it reads A's, B's and C's tables and never writes.</summary>
 public class ReportQueries(AppDbContext db) : IReportQueries
 {
     public async Task<IReadOnlyList<RevenueMonthDto>> RevenueByMonthAsync(DateOnly from, DateOnly to, CancellationToken ct)

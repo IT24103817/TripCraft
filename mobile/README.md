@@ -12,7 +12,7 @@ export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" "emulator" \
            "system-images;android-35;google_apis;arm64-v8a"
 flutter config --android-sdk "$ANDROID_HOME" --jdk-dir "$JAVA_HOME"
-flutter doctor                        # Android toolchain must be green (Xcode is not needed)
+flutter doctor                        # Android toolchain must be green (Xcode only for iOS: docs/RUN-ON-IPHONE.md)
 
 cd mobile
 flutter pub get
@@ -91,11 +91,14 @@ composition root) knows every feature's screens; features navigate by path (`cor
 Registration takes no nationality in the API, so the nationality entered at registration is kept on the phone
 (secure storage) and pre-fills the trip form, where the API does take it.
 
-## Waiting for Students B and C
+## Students B and C's features
 
-These parts are built and tested, but their endpoints do not exist yet, so they say so instead of faking data:
+Guide schedule, GPS / QR check-in (`POST /api/check-ins`) and **Accept quotation** use the B and C endpoints,
+which are merged on `main`. The whole PLAN.md section 6 workflow was run on the emulator on 27 Sep 2026
+(`docs/evidence/final-run/`).
 
-- **Guide schedule** — needs `GET /api/guides/{id}/schedule` (Resource Management, Student B).
-- **GPS / QR check-in** — the location, distance and 500 m rule and the QR scanner work; saving a check-in
-  needs `POST /api/check-ins` (Student B). The trip-day screen (`/schedule/day`) opens from the schedule.
-- **Accept quotation** — the button is disabled until `POST /api/quotations/{id}/accept` exists (Student C).
+## iPhone
+
+The app has an iOS target (`ios/`, bundle id `lk.tripcraft.app`, iOS 15.0+), with camera, photo-library,
+location and local-network usage strings in `ios/Runner/Info.plist`. Setup with a free Apple ID:
+[docs/RUN-ON-IPHONE.md](../docs/RUN-ON-IPHONE.md).

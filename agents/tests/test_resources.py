@@ -106,3 +106,17 @@ def test_suggested_rooms_are_the_cheapest_plan_that_sleeps_everyone():
     tight = RoomOption(**{**double.model_dump(), "available_rooms": 1})
     mixed = suggest_rooms({night: [tight, family]}, 6, card)
     assert sorted(r.room_type_id for r in mixed) == ["dbl", "fam"]  # no single type fits 6: combine
+
+
+async def test_model_gaps_that_contradict_the_selection_are_dropped(fake_llm, api, demo_state):
+    state = await itinerary_ready(demo_state)
+    contradictory = load_fixture("resources")
+    contradictory["gaps"] = ["No guide available for language 'en' on day 2",
+                             "No vehicle available with 4 seats on day 2",
+                             "Tourist prefers a sea view"]
+    fake_llm.queue("resources", contradictory)
+
+    update = await resources_node(state)
+
+    assert update["resources"]["guide_id"] == "g-1"
+    assert update["resources"]["gaps"] == ["Tourist prefers a sea view"]

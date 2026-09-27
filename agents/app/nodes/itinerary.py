@@ -34,7 +34,9 @@ RULES
 - stops are attraction ids taken ONLY from DATA.attractions for that day's city.
 - Road driving on a day that changes city must be at most 240 minutes (see DATA.distances). If the road
   transfer is longer, use "train" for that day. Prefer "train" when the tourist prefers the train.
-- Pace the trip: do not repeat an attraction.
+- Pace the trip: prefer attractions not used on an earlier day. Every day, including the last one, needs at
+  least 1 stop: when a city has no unused attractions left, repeat one of that city's attractions rather than
+  leave the day empty.
 - Your allowed tools are get_attractions, get_distance and get_weather only.
 
 JSON SCHEMA TO RETURN
@@ -63,7 +65,11 @@ def check_days(output: ItineraryOutput, dates: list[date], cities: list[str], ma
         if city not in known_ids:
             problems.append(f"day {day.day}: city '{day.city}' is not one of {cities}")
             continue
-        if not 1 <= len(day.stops) <= max_stops:
+        if not day.stops:
+            # The seed has few attractions per city, so the model must be told a repeat beats an empty day.
+            problems.append(f"day {day.day}: has 0 stops, allowed 1-{max_stops}; every day, including the last, "
+                            f"needs a stop, so repeat one of the {day.city} attractions if none are unused")
+        elif len(day.stops) > max_stops:
             problems.append(f"day {day.day}: has {len(day.stops)} stops, allowed 1-{max_stops}")
         unknown = [s for s in day.stops if s not in known_ids[city]]
         if unknown:

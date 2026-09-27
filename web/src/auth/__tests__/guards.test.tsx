@@ -15,7 +15,7 @@ describe('ProtectedRoute and RoleGuard', () => {
 
   it('shows the 403 page to a Tourist', async () => {
     signInAs('Tourist');
-    renderApp('/');
+    renderApp('/dashboard');
 
     expect(
       await screen.findByRole('heading', { name: 'You do not have access to this page' }),

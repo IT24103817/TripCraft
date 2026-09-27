@@ -13,6 +13,7 @@ using TripCraft.Infrastructure.External;
 using TripCraft.Infrastructure.Identity;
 using TripCraft.Infrastructure.Persistence;
 using TripCraft.Infrastructure.Persistence.Auditing;
+using TripCraft.Infrastructure.Persistence.Reporting;
 using TripCraft.Infrastructure.Persistence.Seeding;
 using TripCraft.Infrastructure.Quotations;
 using TripCraft.Infrastructure.Resources;

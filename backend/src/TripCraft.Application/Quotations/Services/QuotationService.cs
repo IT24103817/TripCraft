@@ -7,7 +7,6 @@ using TripCraft.Application.Common.Paging;
 using TripCraft.Application.Common.Security;
 using TripCraft.Application.Quotations.Dtos;
 using TripCraft.Application.Trips;
-using TripCraft.Application.Trips.Services;
 using TripCraft.Application.Workflows;
 using TripCraft.Application.Workflows.External;
 using TripCraft.Application.Workflows.Ports;
@@ -153,7 +152,7 @@ public class QuotationService(
         if (user.IsTourist)
         {
             var trip = await trips.GetByIdAsync(quotation.TripRequestId, ct) ?? throw new NotFoundException("Trip request not found.");
-            TripRequestService.EnsureCanAccess(user, trip);
+            TripAccess.EnsureCanAccess(user, trip.Tourist?.UserId);
         }
         return quotation;
     }

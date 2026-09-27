@@ -37,7 +37,7 @@ public class TripPlanningService(
         // 1. Load and authorise.
         var trip = await trips.GetByIdAsync(tripRequestId, ct)
                    ?? throw new NotFoundException("Trip request not found.");
-        TripRequestService.EnsureCanAccess(user, trip);
+        TripAccess.EnsureCanAccess(user, trip.Tourist?.UserId);
 
         // 2. Status must allow planning.
         if (!PlannableStatuses.Contains(trip.Status))

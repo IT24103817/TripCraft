@@ -25,6 +25,19 @@ public class WorkflowsEndpointsTests(TestWebApplicationFactory factory) : IClass
     }
 
     [Fact]
+    public async Task The_proposed_guide_vehicle_and_rooms_come_with_display_names()
+    {
+        var (_, outcome) = await factory.RunToProposalAsync();
+        var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
+
+        var workflow = await manager.GetFromJsonAsync<WorkflowDto>($"/api/workflows/{outcome.WorkflowId}", TestJson.Options);
+
+        workflow!.ResourceNames.Should().Contain(Fakes.FakeResourcesState.GuideEn.ToString(), "Nimal Perera")
+            .And.Contain(Fakes.FakeResourcesState.VanSixSeats.ToString(), "Van CAB-1234")
+            .And.Contain(Fakes.FakeResourcesState.KandyStandard.ToString(), "Kandy Hills — Standard Double");
+    }
+
+    [Fact]
     public async Task Steps_are_returned_in_step_order()
     {
         var (_, workflowId) = await factory.StartPlanningAsync();

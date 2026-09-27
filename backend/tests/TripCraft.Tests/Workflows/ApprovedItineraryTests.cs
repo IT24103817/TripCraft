@@ -1,12 +1,10 @@
 using FluentAssertions;
 using TripCraft.Application.Trips;
-using TripCraft.Application.Trips.Planning;
 using TripCraft.Application.Workflows;
 using TripCraft.Application.Workflows.Dtos;
-using TripCraft.Tests.Workflows;
 using S = TripCraft.Tests.Workflows.Fakes.FakeResourcesState;
 
-namespace TripCraft.Tests.Trips;
+namespace TripCraft.Tests.Workflows;
 
 /// <summary>The approved proposal becomes the saved itinerary (PLAN.md section 6 step 11).</summary>
 public class ApprovedItineraryTests

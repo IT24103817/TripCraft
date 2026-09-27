@@ -454,7 +454,7 @@ Only a person can do these; everything code could fix is done above.
    (`Quotations`) each review their code, change what they would do differently, commit in their own name through a
    reviewed PR, and must be able to explain every line at the viva.
 4. **GitHub**: create `SE3090_G<nn>`, set up the project board from `docs/ISSUES.md`, protect `main`, and confirm
-   the four CI workflows are green. Replace `OWNER/REPO` in `README.md`.
+   the four CI workflows are green. The README badges already point to `IT24103817/TripCraft`.
 5. **Deploy** (`docs/DEPLOYMENT.md`):
    - Neon (btree_gist) and Render API with every secret.
    - Vercel with `VITE_API_URL`, **`VITE_APK_URL`** (the GitHub Release URL) and **`VITE_GROUP_NUMBER`** (shown in

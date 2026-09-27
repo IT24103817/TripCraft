@@ -15,7 +15,7 @@ Setup, user secrets, migrations and test accounts are in the [root README](../RE
 | `AGENT_CALLBACK_BASE_URL` | no | Base URL the agent service posts steps/proposals to; defaults to the agent's own `API_BASE_URL` |
 | `ORS_API_KEY` | no | OpenRouteService; without it the seeded `city_distances` table is used |
 | `OWM_API_KEY` | no | OpenWeatherMap; without it weather is skipped (advisory only) |
-| `RUN_MIGRATIONS` | no | `true` applies EF migrations on start (Docker/Render); the seeder always runs and only fills empty tables |
+| `RUN_MIGRATIONS` | no | `true` applies EF migrations on start (Docker/Render); the seeder always runs and only adds missing seed rows |
 | `UPLOADS_DIR` | no | Private folder for passport photos (default `uploads/` next to the app); never served as static files |
 | `FX_FALLBACK_LKR_PER_USD` | no | Rate used (flagged stale) if open.er-api.com fails before any success; default 300 |
 
@@ -29,7 +29,7 @@ Vercel setup: [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md).
 
 1. PostgreSQL (local or Neon), then `dotnet ef database update --project src/TripCraft.Infrastructure --startup-project src/TripCraft.Api`
 2. Agent service: `cd agents && .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001` with the same `INTERNAL_AGENT_KEY` and `API_BASE_URL=http://localhost:5080` (see [agents/README.md](../agents/README.md))
-3. API: `dotnet run --project src/TripCraft.Api` (seeds users, attractions and city distances on first start)
+3. API: `dotnet run --project src/TripCraft.Api`. On start it seeds users, attractions, tourists and a sample trip, guides, vehicles, hotels and room types, the rate card, city distances and the sample trip's quotation (rules per table: [Seed data](../docs/diagrams/er.md#seed-data))
 4. React / Flutter clients
 
 ## Agent workflow (PLAN.md sections 5–6)

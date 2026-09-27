@@ -12,10 +12,18 @@ export interface WorkflowSummaryDto {
   startedAt: string;
   finishedAt: string | null;
   errorSummary: string | null;
+  /** The trip request's objective, so a list row says what the trip is. */
+  objective: string;
 }
 
+/**
+ * Query of GET /api/workflows. Search matches the trip objective (case-insensitive).
+ * Sortable: startedAt, finishedAt, status ("-" prefix = descending); the API default is "-startedAt".
+ */
 export interface WorkflowListQuery {
   status?: string;
+  search?: string;
+  sort?: string;
   page: number;
   pageSize: number;
 }

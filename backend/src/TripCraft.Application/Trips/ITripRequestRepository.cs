@@ -21,4 +21,10 @@ public interface ITripRequestRepository
 
     /// <summary>Loads the itinerary with days, stops and attractions, ordered for display.</summary>
     Task<Itinerary?> GetItineraryAsync(Guid tripRequestId, CancellationToken ct);
+
+    /// <summary>Loads the itinerary with its days and stops, tracked, for the itinerary editor.</summary>
+    Task<Itinerary?> GetItineraryForUpdateAsync(Guid tripRequestId, CancellationToken ct);
+
+    /// <summary>Stages a new stop of an existing itinerary day (it has a client-side id, so it must be added).</summary>
+    void AddItineraryStop(ItineraryStop stop);
 }

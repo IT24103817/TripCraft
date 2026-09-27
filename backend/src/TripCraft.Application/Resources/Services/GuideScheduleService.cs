@@ -104,7 +104,7 @@ public class GuideScheduleService(
             .ToListAsync(ct);
         var vehicleIds = vehicleHolds.Select(h => h.ResourceId).ToList();
         var vehicles = await resources.Vehicles().Where(v => vehicleIds.Contains(v.Id))
-            .ToDictionaryAsync(v => v.Id, v => v.RegistrationNo, ct);
+            .ToDictionaryAsync(v => v.Id, ct);
 
         var result = new List<GuideTripDto>();
         foreach (var trip in heldTrips)
@@ -112,8 +112,9 @@ public class GuideScheduleService(
             var itinerary = await trips.GetItineraryAsync(trip.Id, ct);
             var days = await DaysAsync(trip, itinerary, ct);
             var vehicleId = vehicleHolds.FirstOrDefault(h => h.TripRequestId == trip.Id)?.ResourceId;
+            var vehicle = vehicleId is { } id ? vehicles.GetValueOrDefault(id) : null;
             result.Add(new GuideTripDto(trip.Id, trip.Objective, trip.StartDate, trip.EndDate, trip.Pax,
-                trip.Status.ToString(), vehicleId is { } id ? vehicles.GetValueOrDefault(id) : null, days));
+                trip.Status.ToString(), vehicle?.RegistrationNo, days, vehicle?.Type, vehicle?.Seats));
         }
         return new GuideScheduleDto(guide.Id, guide.Name, result);
     }

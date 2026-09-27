@@ -152,4 +152,50 @@ public class ProposalValidatorTests
 
         Codes(result).Should().Contain(["UNKNOWN_GUIDE", "UNKNOWN_VEHICLE", "UNKNOWN_ROOM_TYPE"]);
     }
+
+    [Fact]
+    public void More_than_four_hours_of_driving_in_a_day_is_a_hard_violation()
+    {
+        var proposal = Golden(Start, A);
+        proposal.Days![2] = proposal.Days[2] with { Transport = "road", DrivingMinutes = 270 };
+        var atTheLimit = Golden(Start, A);
+        atTheLimit.Days![2] = atTheLimit.Days[2] with { Transport = "road", DrivingMinutes = 240 };
+
+        var result = _validator.Validate(proposal, Trip(), Facts());
+
+        Codes(result).Should().Equal("DRIVING_LIMIT");
+        result.Violations[0].Message.Should().Contain("Day 3 has 270 min of driving (max 240)");
+        _validator.Validate(atTheLimit, Trip(), Facts()).IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Overlapping_vehicle_hold_is_a_hard_violation()
+    {
+        var result = _validator.Validate(Golden(Start, A), Trip(), Facts(vehicleOverlaps: true));
+
+        Codes(result).Should().Equal("VEHICLE_HOLD_OVERLAP");
+        result.HasHard.Should().BeTrue();
+    }
+
+    [Fact]
+    public void A_room_type_booked_under_the_wrong_hotel_is_a_hard_violation()
+    {
+        var proposal = Golden(Start, A);
+        proposal.Resources!.Rooms![0] = Room(S.EllaHotel, S.KandyStandard, Start); // Kandy room type, Ella hotel
+
+        var result = _validator.Validate(proposal, Trip(), Facts());
+
+        Codes(result).Should().Contain("UNKNOWN_HOTEL");
+    }
+
+    [Fact]
+    public void Days_outside_the_trip_or_without_rooms_are_incomplete()
+    {
+        var outside = Golden(Start, A);
+        outside.Days![4] = outside.Days[4] with { Date = Start.AddDays(10) };
+        var noRooms = Golden(Start, A) with { Resources = Golden(Start, A).Resources! with { Rooms = null } };
+
+        Codes(_validator.Validate(outside, Trip(), Facts())).Should().Equal("SCHEMA_INCOMPLETE");
+        Codes(_validator.Validate(noRooms, Trip(), Facts())).Should().Equal("SCHEMA_INCOMPLETE");
+    }
 }

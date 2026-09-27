@@ -123,8 +123,9 @@ public class QuotationApprovalService(
         await unitOfWork.SaveChangesAsync(ct);
 
         // After the commit: never hold a DB transaction open during an HTTP call.
+        // The rejected proposal's violations go with the replan, so e.g. OVER_BUDGET makes the Planner pick budget hotels.
         var request = new StartAgentWorkflowRequest(workflow.Id, trip.Id, trip.Objective, trip.StartDate, trip.EndDate,
-            trip.Pax, trip.BudgetUsd, trip.Preferences, []);
+            trip.Pax, trip.BudgetUsd, trip.Preferences, [], PreviousViolation.FromValidationJson(workflow.ValidationResult));
         if (!await agentService.ReplanAsync(workflow, request, comment, ct))
         {
             // The client already set FailedSafely + error summary; the trip stays RevisionRequested so it can be re-planned.

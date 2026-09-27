@@ -80,4 +80,23 @@ public class WorkflowsEndpointsTests(TestWebApplicationFactory factory) : IClass
         (await tourist.GetAsync("/api/workflows")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
         (await admin.GetAsync("/api/workflows?pageSize=500")).StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    [Fact]
+    public async Task Staff_search_workflows_by_objective_and_sort_by_a_whitelisted_field()
+    {
+        await factory.RunToProposalAsync();
+        var manager = await factory.CreateClientAsAsync("manager1@tripcraft.test");
+
+        var found = await manager.GetFromJsonAsync<PagedResult<WorkflowSummaryDto>>(
+            "/api/workflows?search=HILL-COUNTRY&sort=-startedAt", TestJson.Options);
+        var none = await manager.GetFromJsonAsync<PagedResult<WorkflowSummaryDto>>(
+            "/api/workflows?search=no-such-objective-xyz", TestJson.Options);
+
+        found!.Items.Should().NotBeEmpty()
+            .And.OnlyContain(w => w.Objective.Contains("hill-country", StringComparison.OrdinalIgnoreCase));
+        found.Items.Select(w => w.StartedAt).Should().BeInDescendingOrder();
+        none!.Items.Should().BeEmpty();
+        (await manager.GetAsync("/api/workflows?sort=status")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await manager.GetAsync("/api/workflows?sort=objective")).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }

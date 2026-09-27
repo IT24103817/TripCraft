@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { API, server } from '@/test/server';
@@ -36,6 +36,28 @@ describe('LoginPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password.');
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeEnabled();
+  });
+
+  it.each([
+    ['Admin', '/dashboard'],
+    ['Guide', '/mobile-app'],
+  ])('redirects a signed-in %s to %s', async (role, home) => {
+    server.use(
+      http.post(`${API}/api/auth/login`, () =>
+        HttpResponse.json({
+          accessToken: 'jwt',
+          expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+          user: { id: 'u1', email: 'x@tripcraft.test', fullName: `Demo ${role}`, role, isActive: true },
+        }),
+      ),
+    );
+    const { user, location } = renderApp('/login');
+
+    await user.type(await screen.findByLabelText('Email'), 'someone@tripcraft.test');
+    await user.type(screen.getByLabelText('Password'), 'Passw0rd!');
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    await waitFor(() => expect(location()).toBe(home));
   });
 
   it('sends a manager to the dashboard and a tourist to the mobile-app page', async () => {

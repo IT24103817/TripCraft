@@ -13,7 +13,10 @@ import type {
 
 const QUOTATIONS = 'quotations';
 
-/** GET /api/quotations with status filter, search (trip objective), sort and paging. */
+/**
+ * GET /api/quotations with status, created from/to and minTotalUsd filters, search (trip objective),
+ * sort and paging. Empty values are left out so the API only sees filters that are set.
+ */
 export function useQuotations(query: Record<string, string | number>) {
   const params = Object.fromEntries(Object.entries(query).filter(([, v]) => v !== ''));
   return useQuery({

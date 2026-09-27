@@ -9,8 +9,10 @@ using TripCraft.Infrastructure.Persistence;
 namespace TripCraft.Infrastructure.Resources;
 
 /// <summary>
-/// PLAN.md section 4 seed: 4 guides, 3 vehicles, 4 hotels with 2 room types each, a 15 % rate card.
-/// Ids are fixed so demos, agent fixtures and tests can refer to them. Runs only when the guides table is empty.
+/// PLAN.md section 4 seed: 4 guides, 3 vehicles, a 15 % rate card, and 6 hotels with 2 room types each — one per
+/// attraction city (Kandy, Ella, Colombo, Galle, Nuwara Eliya, Sigiriya), so every city a trip can visit has rooms.
+/// Ids are fixed so demos, agent fixtures and tests can refer to them. Guides, vehicles and the rate card are
+/// seeded only when the guides table is empty; hotels missing by id are added on every start.
 /// Also links the completed sample trip (TripsSeeder) to its hotels and holds, so reports have data.
 /// </summary>
 public static class ResourcesSeeder
@@ -25,9 +27,20 @@ public static class ResourcesSeeder
     /// <remarks>Nimal (guide1's login) is the cheapest English guide, so the demo trip is visible on the guide's phone.</remarks>
     public static async Task SeedAsync(AppDbContext db, ILogger logger, CancellationToken ct)
     {
-        if (await db.Guides.AnyAsync(ct))
-            return;
+        var firstRun = !await db.Guides.AnyAsync(ct);
+        if (firstRun)
+            await SeedGuidesVehiclesAndRatesAsync(db, ct);
 
+        var hotelsAdded = await AddMissingHotelsAsync(db, ct);
+
+        if (firstRun)
+            await LinkSampleTripAsync(db, ct);
+        if (firstRun || hotelsAdded > 0)
+            logger.LogInformation("Seeded resources: first run {FirstRun}, {Hotels} hotels added", firstRun, hotelsAdded);
+    }
+
+    private static async Task SeedGuidesVehiclesAndRatesAsync(AppDbContext db, CancellationToken ct)
+    {
         var guideUsers = await db.Users.Where(u => u.Role == UserRole.Guide && u.Email.EndsWith("@tripcraft.test"))
             .OrderBy(u => u.Email).Select(u => u.Id).ToListAsync(ct);
         Guid? UserAt(int i) => i < guideUsers.Count ? guideUsers[i] : null;
@@ -43,7 +56,24 @@ public static class ResourcesSeeder
             new Vehicle { Id = Id("b002"), RegistrationNo = "CAR-9876", Type = "Car", Seats = 3, RatePerKmLkr = 100 },
             new Vehicle { Id = Id("b003"), RegistrationNo = "NC-4455", Type = "Coach", Seats = 15, RatePerKmLkr = 180 });
 
-        db.Hotels.AddRange(
+        db.RateCards.Add(new RateCardEntry { MarginPct = 15m, EffectiveFrom = new DateOnly(2026, 1, 1) });
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Adds the seed hotels whose id is not in the table (soft-deleted ones count as present).</summary>
+    private static async Task<int> AddMissingHotelsAsync(AppDbContext db, CancellationToken ct)
+    {
+        var existing = await db.Hotels.IgnoreQueryFilters().Select(h => h.Id).ToListAsync(ct);
+        var missing = Hotels().Where(h => !existing.Contains(h.Id)).ToList();
+        if (missing.Count == 0)
+            return 0;
+        db.Hotels.AddRange(missing);
+        await db.SaveChangesAsync(ct);
+        return missing.Count;
+    }
+
+    private static Hotel[] Hotels() =>
+    [
             Hotel(KandyHotel, "Kandy Hills", "Kandy", 4, 7.2906, 80.6337,
                 Room(KandyStandard, "Standard Double", 2, 12000, 5), Room(Id("c012"), "Family Room", 4, 20000, 3)),
             Hotel(EllaHotel, "Ella Gap", "Ella", 3, 6.8667, 81.0466,
@@ -51,14 +81,12 @@ public static class ResourcesSeeder
             Hotel(Id("c003"), "Galle Face Residence", "Colombo", 4, 6.9271, 79.8612,
                 Room(Id("c031"), "Standard Double", 2, 15000, 8), Room(Id("c032"), "Suite", 3, 30000, 2)),
             Hotel(Id("c004"), "Fort Bay Hotel", "Galle", 4, 6.0269, 80.2170,
-                Room(Id("c041"), "Standard Double", 2, 14000, 6), Room(Id("c042"), "Family Room", 4, 22000, 2)));
-
-        db.RateCards.Add(new RateCardEntry { MarginPct = 15m, EffectiveFrom = new DateOnly(2026, 1, 1) });
-        await db.SaveChangesAsync(ct);
-
-        await LinkSampleTripAsync(db, ct);
-        logger.LogInformation("Seeded 4 guides, 3 vehicles, 4 hotels and the rate card");
-    }
+                Room(Id("c041"), "Standard Double", 2, 14000, 6), Room(Id("c042"), "Family Room", 4, 22000, 2)),
+            Hotel(Id("c005"), "Highland Mist Inn", "Nuwara Eliya", 3, 6.9497, 80.7891,
+                Room(Id("c051"), "Standard Double", 2, 13000, 5), Room(Id("c052"), "Family Room", 4, 21000, 2)),
+            Hotel(Id("c006"), "Lion Rock Lodge", "Sigiriya", 3, 7.9496, 80.7512,
+                Room(Id("c061"), "Standard Double", 2, 12500, 6), Room(Id("c062"), "Family Room", 4, 20000, 2))
+    ];
 
     /// <summary>The completed sample trip: hotel per day and the holds it used (guide, van, rooms).</summary>
     private static async Task LinkSampleTripAsync(AppDbContext db, CancellationToken ct)

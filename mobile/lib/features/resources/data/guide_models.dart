@@ -30,6 +30,8 @@ abstract class GuideTrip with _$GuideTrip {
     required int pax,
     required String status,
     String? vehicleRegistrationNo,
+    String? vehicleType,
+    int? vehicleSeats,
     @Default(<GuideDay>[]) List<GuideDay> days,
   }) = _GuideTrip;
 

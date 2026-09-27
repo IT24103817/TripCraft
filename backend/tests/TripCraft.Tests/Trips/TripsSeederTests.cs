@@ -21,15 +21,54 @@ public class TripsSeederTests
     }
 
     [Fact]
-    public async Task Seeds_eight_attractions_two_per_city()
+    public async Task Seeds_twenty_one_attractions_in_six_cities_so_a_five_day_trip_never_runs_out()
     {
         await using var db = await SeededContextAsync();
 
         var perCity = await db.Attractions.GroupBy(a => a.City).Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
 
-        perCity.Should().HaveCount(4);
-        perCity.Select(c => c.Key).Should().BeEquivalentTo(new[] { "Colombo", "Kandy", "Ella", "Galle" });
-        perCity.Should().OnlyContain(c => c.Count == 2);
+        perCity.ToDictionary(c => c.Key, c => c.Count).Should().BeEquivalentTo(new Dictionary<string, int>
+        {
+            ["Colombo"] = 2, ["Kandy"] = 4, ["Ella"] = 4, ["Galle"] = 5, ["Nuwara Eliya"] = 3, ["Sigiriya"] = 3
+        });
+        // A 5-day trip needs 5 stops at the least (1 per day): Kandy + Ella alone now have 8.
+        perCity.Where(c => c.Key is "Kandy" or "Ella").Sum(c => c.Count).Should().BeGreaterThanOrEqualTo(5);
+    }
+
+    [Fact]
+    public async Task Every_attraction_city_has_a_hotel_and_a_distance_to_every_other_city()
+    {
+        await using var db = await SeededContextAsync();
+
+        var cities = await db.Attractions.Select(a => a.City).Distinct().ToListAsync();
+        var hotelCities = await db.Hotels.Select(h => h.City).Distinct().ToListAsync();
+        var pairs = await db.CityDistances.Select(d => new { d.FromCity, d.ToCity }).ToListAsync();
+
+        hotelCities.Should().Contain(cities);
+        foreach (var a in cities)
+        foreach (var b in cities.Where(b => string.CompareOrdinal(a, b) < 0))
+            pairs.Should().Contain(p => (p.FromCity == a && p.ToCity == b) || (p.FromCity == b && p.ToCity == a),
+                $"the itinerary agent needs the distance {a} - {b}");
+        pairs.Should().HaveCount(15);
+    }
+
+    [Fact]
+    public async Task An_existing_database_gets_the_missing_attractions_hotels_and_distances_on_the_next_start()
+    {
+        await using var db = await SeededContextAsync();
+        // Simulate a database seeded before the new cities existed.
+        db.Attractions.RemoveRange(db.Attractions.Where(a => a.City == "Sigiriya"));
+        db.RoomTypes.RemoveRange(db.RoomTypes.Where(r => db.Hotels.Any(h => h.Id == r.HotelId && h.City == "Sigiriya")));
+        db.Hotels.RemoveRange(db.Hotels.Where(h => h.City == "Sigiriya"));
+        db.CityDistances.RemoveRange(db.CityDistances.Where(d => d.FromCity == "Sigiriya" || d.ToCity == "Sigiriya"));
+        await db.SaveChangesAsync();
+
+        await new DataSeeder(db, new PasswordHasher<User>(), NullLogger<DataSeeder>.Instance).SeedAsync();
+
+        (await db.Attractions.CountAsync(a => a.City == "Sigiriya")).Should().Be(3);
+        (await db.Hotels.CountAsync(h => h.City == "Sigiriya")).Should().Be(1);
+        (await db.CityDistances.CountAsync()).Should().Be(15);
+        (await db.TripRequests.CountAsync()).Should().Be(1); // the sample trip is not added twice
     }
 
     [Fact]
@@ -67,7 +106,9 @@ public class TripsSeederTests
 
         await new DataSeeder(db, new PasswordHasher<User>(), NullLogger<DataSeeder>.Instance).SeedAsync();
 
-        (await db.Attractions.CountAsync()).Should().Be(8);
+        (await db.Attractions.CountAsync()).Should().Be(21);
+        (await db.Hotels.CountAsync()).Should().Be(6);
+        (await db.CityDistances.CountAsync()).Should().Be(15);
         (await db.Tourists.CountAsync()).Should().Be(3);
         (await db.TripRequests.CountAsync()).Should().Be(1);
     }

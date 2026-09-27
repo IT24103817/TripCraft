@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tripcraft_mobile/core/api/user_facing_exception.dart';
@@ -272,6 +273,110 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Cancel request'), findsNothing);
+  });
+
+  testWidgets(
+    'a workflow that fails to load shows the error with Retry, not "not started"',
+    (tester) async {
+      givenTrip('Planning');
+      when(() => api.get('/api/trip-requests/trip-1/workflow')).thenThrow(
+        const UserFacingException(
+          'The TripCraft server had a problem. Please try again in a moment.',
+          statusCode: 500,
+        ),
+      );
+
+      await pumpScreen(
+        tester,
+        const TripDetailScreen(tripId: 'trip-1'),
+        api: api,
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Retry'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'The TripCraft server had a problem. Please try again in a moment.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Planning has not started yet.'), findsNothing);
+      expect(find.text('Start planning'), findsNothing);
+
+      // Retry loads the workflow again.
+      when(() => api.get('/api/trip-requests/trip-1/workflow'))
+          .thenAnswer((_) async => {'id': 'wf-1', 'status': 'PendingApproval'});
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+      expect(find.text('Retry'), findsNothing);
+      expect(find.text('View quotation'), findsOneWidget);
+    },
+  );
+
+  testWidgets('the itinerary map shows one marker per stop with coordinates', (
+    tester,
+  ) async {
+    givenTrip(
+      'PendingApproval',
+      workflow: {
+        'id': 'wf-1',
+        'status': 'PendingApproval',
+        'finalOutcome': {
+          'proposal': {
+            'days': [
+              {
+                'day': 1,
+                'date': '2026-10-10',
+                'city': 'Kandy',
+                'transport': 'road',
+                'stops': [
+                  {'attraction_id': 'a1', 'name': 'Temple of the Tooth'},
+                  {'attraction_id': 'a2', 'name': 'Peradeniya Gardens'},
+                ],
+              },
+            ],
+          },
+        },
+      },
+    );
+    when(() => api.get('/api/attractions/a1')).thenAnswer(
+      (_) async => {
+        'id': 'a1',
+        'name': 'Temple of the Tooth',
+        'city': 'Kandy',
+        'latitude': 7.2936,
+        'longitude': 80.6413,
+      },
+    );
+    when(() => api.get('/api/attractions/a2')).thenAnswer(
+      (_) async => {
+        'id': 'a2',
+        'name': 'Peradeniya Gardens',
+        'city': 'Kandy',
+        'latitude': 7.2687,
+        'longitude': 80.5966,
+      },
+    );
+
+    await pumpScreen(
+      tester,
+      const TripDetailScreen(tripId: 'trip-1'),
+      api: api,
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byType(MarkerLayer),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    final layer = tester.widget<MarkerLayer>(find.byType(MarkerLayer));
+    expect(layer.markers, hasLength(2));
+    expect(
+      layer.markers.map((m) => (m.point.latitude, m.point.longitude)),
+      containsAll([(7.2936, 80.6413), (7.2687, 80.5966)]),
+    );
   });
 
   test('Approved is shown as Confirmed on the tourist timeline', () {

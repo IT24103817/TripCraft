@@ -1,4 +1,5 @@
 import copy
+from datetime import date
 from decimal import Decimal
 
 from app.graph import initial_state
@@ -6,10 +7,11 @@ from app.nodes.itinerary import itinerary_node
 from app.nodes.planner import planner_node
 from app.nodes.resources import resources_node
 from app.nodes.validation import validation_node
-from app.schemas import ItineraryDay, ResourceSelection
+from app.schemas import ItineraryDay, ResourceSelection, RoomNight, Stop
 from app.state import PENDING_APPROVAL, REVISION_REQUESTED
 from app.tools.calculate_quotation import calculate_quotation
-from app.tools.models import FxRate
+from app.tools.check_business_rules import check_business_rules
+from app.tools.models import FxRate, RateCard
 from tests.conftest import DEMO_REQUEST, apply, demo_request
 
 
@@ -84,3 +86,50 @@ def test_validation_prompt_asks_for_no_quotation_copy():
 
     assert "Set quotation_final to null" in SYSTEM_PROMPT
     assert "Copy quotation_draft" not in SYSTEM_PROMPT
+
+
+def _rule_inputs(driving_minutes: int = 0, rooms_on_first_night: int = 2):
+    """Two days (one night) for 4 pax: guide en, 6-seat van, rooms of capacity 2."""
+    first, second = date(2026, 10, 10), date(2026, 10, 11)
+    days = [ItineraryDay(day=1, date=first, city="Kandy", transport="road", driving_minutes=driving_minutes,
+                         stops=[Stop(attraction_id="a-1", name="Temple", entry_fee_lkr=2000)]),
+            ItineraryDay(day=2, date=second, city="Kandy", transport="road",
+                         stops=[Stop(attraction_id="a-2", name="Lake", entry_fee_lkr=0)])]
+    resources = ResourceSelection(
+        guide_id="g-1", vehicle_id="v-1", guide_languages=["en"], vehicle_seats=6,
+        rooms=[RoomNight(hotel_id="h-1", room_type_id="rt-std", night=first)] * rooms_on_first_night,
+        room_capacity={"rt-std": 2},
+        rate_card=RateCard(margin_pct=15, guide_day_rates={}, vehicle_km_rates={}, room_night_rates={}))
+    return days, resources
+
+
+def test_business_rules_flag_more_than_four_hours_of_driving():
+    days, resources = _rule_inputs(driving_minutes=270)
+
+    violations = check_business_rules(days, resources, 4, "en", Decimal("500"), Decimal("1500"))
+
+    assert [v.code for v in violations] == ["DRIVING_LIMIT"]
+    assert violations[0].message == "Day 1 needs 270 min driving (max 240)."
+    assert check_business_rules(*_rule_inputs(driving_minutes=240), 4, "en", Decimal("500"), Decimal("1500")) == []
+
+
+def test_business_rules_flag_a_night_that_does_not_sleep_everyone():
+    days, resources = _rule_inputs(rooms_on_first_night=1)  # 1 room x 2 beds for 4 people
+
+    violations = check_business_rules(days, resources, 4, "en", Decimal("500"), Decimal("1500"))
+
+    assert [v.code for v in violations] == ["ROOM_CAPACITY"]
+    assert violations[0].message == "Night 2026-10-10 sleeps 2 but pax is 4."
+
+
+def test_a_one_city_trip_has_no_zero_km_vehicle_line():
+    days, resources = _rule_inputs()  # both days in Kandy: no transfer km
+    fx = FxRate(rate=Decimal("300"), as_of="2026-10-01T00:00:00Z", stale=False)
+    resources.rate_card.guide_day_rates["g-1"] = Decimal("6000")
+    resources.rate_card.vehicle_km_rates["v-1"] = Decimal("120")
+    resources.rate_card.room_night_rates["rt-std"] = Decimal("12000")
+
+    quotation = calculate_quotation(days, resources, 4, fx)
+
+    assert [line.line_type for line in quotation.lines] == ["guide", "room", "entry"]
+    assert all(line.qty > 0 for line in quotation.lines)

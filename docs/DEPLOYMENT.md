@@ -172,5 +172,5 @@ curl localhost:8080/health
 ```
 
 This exact flow was verified against an empty PostgreSQL 16 database: all 4 migrations applied, 12 tables,
-12 users, 8 attractions and 6 city distances seeded, `/health` → `{"status":"ok","version":"1.0.0","db":"ok"}`,
+12 users, 8 attractions and 6 city distances seeded (the seed now has 21 attractions and 15 distances; see `docs/diagrams/er.md`), `/health` → `{"status":"ok","version":"1.0.0","db":"ok"}`,
 Swagger served in Production, login `200`, container user `app` (uid 1654).

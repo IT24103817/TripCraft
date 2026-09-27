@@ -70,4 +70,15 @@ public class AgentServiceClientTests
             .And.Contain("\"startDate\":\"2026-10-10\"")
             .And.Contain("\"preferencesJson\"");
     }
+
+    [Fact]
+    public async Task Replan_sends_the_previous_violations_in_camel_case()
+    {
+        var handler = StubHandler.Status(HttpStatusCode.Accepted);
+        var request = Request with { PreviousViolations = [new PreviousViolation("OVER_BUDGET", "Over budget")] };
+
+        await Client(handler).ReplanAsync(new AgentWorkflow(), request, "cheaper hotels", CancellationToken.None);
+
+        handler.Bodies[0].Should().Contain("\"previousViolations\":[{\"code\":\"OVER_BUDGET\",\"message\":\"Over budget\"}]");
+    }
 }

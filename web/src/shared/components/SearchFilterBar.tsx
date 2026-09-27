@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 export interface FilterOption {
@@ -19,18 +19,30 @@ interface SearchFilterBarProps {
   search?: { value: string; placeholder?: string; onChange: (value: string) => void };
   filters?: FilterSelect[];
   dateRange?: { label: string; from: string; to: string; onChange: (from: string, to: string) => void };
+  /** Extra labelled controls a list needs (e.g. a number filter), shown at the end of the same bar. */
+  children?: ReactNode;
 }
 
 /** Debounced search box, filter selects and a date range. Each change goes straight to the list's URL params. */
-export function SearchFilterBar({ search, filters = [], dateRange }: SearchFilterBarProps) {
+export function SearchFilterBar({ search, filters = [], dateRange, children }: SearchFilterBarProps) {
   const [text, setText] = useState(search?.value ?? '');
   const debounced = useDebouncedValue(text, 300);
   const onSearchChange = search?.onChange;
   const currentSearch = search?.value;
 
+  // The search was changed outside the box (e.g. a "Clear filters" button): show the new value.
+  // Done while rendering (React's "adjust state when a prop changes" pattern) so the effect below
+  // never sends the old text back. A value this box sent itself equals `debounced` and is skipped.
+  const [lastSearch, setLastSearch] = useState(currentSearch);
+  if (currentSearch !== lastSearch) {
+    setLastSearch(currentSearch);
+    if (currentSearch !== debounced) setText(currentSearch ?? '');
+  }
+
+  // Send the typed text once the user has paused (debounced has caught up with the box).
   useEffect(() => {
-    if (onSearchChange && debounced !== currentSearch) onSearchChange(debounced);
-  }, [debounced, currentSearch, onSearchChange]);
+    if (onSearchChange && debounced === text && debounced !== currentSearch) onSearchChange(debounced);
+  }, [debounced, text, currentSearch, onSearchChange]);
 
   return (
     <div role="search" className="card flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
@@ -87,6 +99,7 @@ export function SearchFilterBar({ search, filters = [], dateRange }: SearchFilte
           </div>
         </fieldset>
       )}
+      {children}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { HomeLink } from './HomeLink';
 
 export function ForbiddenPage() {
   return (
@@ -8,9 +8,7 @@ export function ForbiddenPage() {
       <p className="text-sm text-slate-600">
         Your role cannot open this screen. Ask an administrator if you think this is wrong.
       </p>
-      <Link to="/" className="text-brand-700 underline">
-        Go to the start page
-      </Link>
+      <HomeLink />
     </section>
   );
 }

@@ -47,4 +47,33 @@ public class QuotationStatusCodeTests
         (await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/reject", null)).StatusCode.Should().Be(HttpStatusCode.OK);
         (await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/reject", null)).StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
+
+    [Theory]
+    [InlineData("tourist1@tripcraft.test")]
+    [InlineData("guide1@tripcraft.test")]
+    [InlineData("admin1@tripcraft.test")]
+    public async Task Only_the_operations_manager_decides_or_recalculates(string email)
+    {
+        await using var factory = new TestWebApplicationFactory();
+        var client = await factory.CreateClientAsAsync(email);
+        var id = Guid.NewGuid();
+
+        (await client.PostAsJsonAsync($"/api/quotations/{id}/reject", new QuotationDecisionRequest("no")))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await client.PostAsJsonAsync($"/api/quotations/{id}/request-revision", new RequestRevisionRequest("cheaper")))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await client.PostAsync($"/api/quotations/{id}/calculate", null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Only_the_tourist_accepts_a_quotation_and_only_a_guide_checks_in()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        var manager = await factory.CreateClientAsAsync("manager1@tripcraft.test");
+        var tourist = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
+
+        (await manager.PostAsync($"/api/quotations/{Guid.NewGuid()}/accept", null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await tourist.PostAsJsonAsync("/api/check-ins", new { itineraryStopId = Guid.NewGuid(), latitude = 7.29, longitude = 80.64 }))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
 }

@@ -161,16 +161,27 @@ with an error summary, only summaries persisted (never prompts). Evaluation:
 
 ## Database design
 
-12 tables today (PostgreSQL 16, EF Core code-first, snake_case). Every table has `id uuid`, `created_at` and
+22 tables (PostgreSQL 16, EF Core code-first, snake_case). Every table has `id uuid`, `created_at` and
 `updated_at` (`timestamptz`); money is `numeric(12,2)`; agent summaries are `jsonb`. Constraints include
 `end_date >= start_date` and `pax > 0` on trip requests, unique e-mail, one tourist profile per user, unique day
 and stop numbers, unique `(workflow_id, step_no)`. ER diagram generated from the EF model:
 [docs/diagrams/er.md](docs/diagrams/er.md). Schema decision for agent state: [ADR-004](docs/adr/ADR-004-agent-workflow-state-schema.md).
 
 Migrations (`backend/src/TripCraft.Infrastructure/Persistence/Migrations/`): `InitialCreate`, `AddTripRequests`,
-`AddAgentWorkflowsAndAuditLogs`, `AddAgentWorkflows`. Seed data on first start: 3 users per role, 8 attractions
-across Colombo, Kandy, Ella and Galle, a tourist profile per seeded tourist, one completed sample trip, 6 city
-distances.
+`AddAgentWorkflowsAndAuditLogs`, `AddAgentWorkflows`, `AddResourceManagement`, `AddQuotations`.
+
+Seed data (users only when the `users` table is empty; guides, vehicles and the rate card only on the first run,
+when the `guides` table is empty; attractions by name, hotels by id and city distances by pair are topped up on
+every start):
+- 3 users per role;
+- 21 attractions in six cities (Colombo, Kandy, Ella, Galle, Nuwara Eliya, Sigiriya);
+- one hotel per city;
+- 4 guides, 3 vehicles and a 15 % rate card;
+- a tourist profile per seeded tourist;
+- one completed sample trip;
+- 15 city distances.
+
+Full table: [docs/diagrams/er.md → Seed data](docs/diagrams/er.md#seed-data).
 
 ## Repository structure
 
@@ -193,7 +204,7 @@ distances.
 │   ├── test/                      core/, shared/, trips/, quotations/, resources/
 │   └── scripts/build-release-apk.sh
 ├── tests/
-│   ├── e2e/                       Playwright specs (full workflow, safe failure)
+│   ├── e2e/                       Playwright specs (roles, workflow, safe failure)
 │   └── perf/                      k6 scripts (list-load, auth-load, db-response, agent-latency)
 ├── docs/                          adr/, diagrams/, report/, evidence/, DEPLOYMENT.md, TEST-EVIDENCE.md, COMPLIANCE.md, RUN-ON-IPHONE.md, DEMO-SCRIPT.md
 ├── .github/workflows/             backend-ci, web-ci, mobile-ci, agents-ci
@@ -229,7 +240,7 @@ lists the API's names; each component has its own example file.
 |-----------|-----------|
 | API | `DATABASE_URL`, `JWT_SECRET`, `JWT_ISSUER`, `ALLOWED_ORIGINS`, `INTERNAL_AGENT_KEY`, `AGENT_SERVICE_URL`, `AGENT_CALLBACK_BASE_URL`, `RUN_MIGRATIONS`, `ORS_API_KEY`, `OWM_API_KEY`, `FX_FALLBACK_LKR_PER_USD`, `UPLOADS_DIR`, optional `FX_API_BASE_URL` / `ORS_API_BASE_URL` / `OWM_API_BASE_URL` |
 | Agent service ([agents/.env.example](agents/.env.example)) | `INTERNAL_AGENT_KEY`, `API_BASE_URL`, `LLM_PROVIDER`, `OLLAMA_MODEL`, `OLLAMA_BASE_URL`, `GROQ_API_KEY`, `GROQ_MODEL`, `NODE_TIMEOUT_SECONDS`, `MAX_RETRIES`, `MAX_REPLANS` |
-| Web ([web/.env.example](web/.env.example)) | `VITE_API_URL` |
+| Web ([web/.env.example](web/.env.example)) | `VITE_API_URL`, `VITE_APK_URL`, `VITE_GROUP_NUMBER` |
 | Mobile | `API_URL` (`--dart-define`) |
 | Tests | `TEST_DATABASE_URL` (backend DB tests), `BASE_URL`, `API_URL`, `E2E_DATABASE_URL` (Playwright), `API_URL` (k6) |
 
@@ -257,7 +268,8 @@ dotnet run --project src/TripCraft.Api
 
 `DATABASE_URL` also accepts the Neon/Render URL form (`postgresql://user:pass@host/db?sslmode=require`).
 `JWT_SECRET` must be at least 32 bytes. The API listens on <http://localhost:5080>; on first start it seeds the
-demo data (each part only if its table is empty). Details: [backend/README.md](backend/README.md).
+demo data (users, guides and vehicles only into empty tables; missing attractions, hotels and city distances
+on every start). Details: [backend/README.md](backend/README.md).
 
 ### 3. Agent service (`agents/`)
 
@@ -357,14 +369,14 @@ Agent service (internal, `http://127.0.0.1:8001`): `POST /run-workflow`, `POST /
 
 | Layer | Command | Count (latest run) |
 |-------|---------|--------------------|
-| Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 298 passed |
-| Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 49 passed |
-| React | `cd web && npm run lint && npm test && npm run build` | 45 passed (13 files) |
-| Flutter | `cd mobile && flutter analyze && flutter test` | 58 passed |
+| Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 333 passed |
+| Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 58 passed |
+| React | `cd web && npm run lint && npm test && npm run build` | 82 passed (19 files) |
+| Flutter | `cd mobile && flutter analyze && flutter test` | 68 passed |
 | End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 6 passed (4 roles, over-budget → RevisionRequested, demo → approved → Confirmed) |
-| Performance | `k6 run tests/perf/list-load.js` (and `auth-load.js`, `agent-latency.js`) from the repo root | `list-load.js`: 800,901 requests, p95 6.6 ms, 0 % errors; others in [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md) |
+| Performance | `k6 run tests/perf/list-load.js` (and `auth-load.js`, `agent-latency.js`) from the repo root | `list-load.js`: 610,814 requests, p95 9.56 ms, 0 % errors; others in [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md) |
 
-Latest run: 27 Sep 2026 on merged `main`, plus `dotnet build -warnaserror` (0 warnings), `ruff check`,
+Latest run: 28 Sep 2026 on merged `main`, plus `dotnet build -warnaserror` (0 warnings), `ruff check`,
 `flutter analyze` (no issues) and Lighthouse accessibility **100** on the landing page.
 
 ### Screenshots

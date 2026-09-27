@@ -32,8 +32,8 @@ public class StartupMigrationTests(PostgresFixture postgres)
         await using var db = PostgresFixture.CreateContext(connectionString);
         (await db.Database.GetPendingMigrationsAsync()).Should().BeEmpty();
         (await db.Users.CountAsync()).Should().Be(12);          // 3 per role
-        (await db.Attractions.CountAsync()).Should().Be(8);
-        (await db.CityDistances.CountAsync()).Should().Be(6);
+        (await db.Attractions.CountAsync()).Should().Be(21);
+        (await db.CityDistances.CountAsync()).Should().Be(15);
     }
 
     [Fact]
@@ -47,6 +47,6 @@ public class StartupMigrationTests(PostgresFixture postgres)
 
         await using var db = PostgresFixture.CreateContext(connectionString);
         (await db.Users.CountAsync()).Should().Be(12);
-        (await db.Attractions.CountAsync()).Should().Be(8);
+        (await db.Attractions.CountAsync()).Should().Be(21);
     }
 }

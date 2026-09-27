@@ -29,4 +29,11 @@ public class TripRequestRepository(AppDbContext db) : ITripRequestRepository
             .AsNoTracking()
             .Include(i => i.Days).ThenInclude(d => d.Stops).ThenInclude(s => s.Attraction)
             .FirstOrDefaultAsync(i => i.TripRequestId == tripRequestId, ct);
+
+    public Task<Itinerary?> GetItineraryForUpdateAsync(Guid tripRequestId, CancellationToken ct) =>
+        db.Itineraries
+            .Include(i => i.Days).ThenInclude(d => d.Stops)
+            .FirstOrDefaultAsync(i => i.TripRequestId == tripRequestId, ct);
+
+    public void AddItineraryStop(ItineraryStop stop) => db.ItineraryStops.Add(stop);
 }

@@ -69,8 +69,13 @@ GoRouter appRouter(Ref ref) {
           ),
           GoRoute(
             path: Routes.tripDay,
-            builder: (_, s) =>
-                TripDayScreen(stops: (s.extra as List<GuideStop>?) ?? const []),
+            builder: (_, s) {
+              final args = s.extra as TripDayArgs?;
+              return TripDayScreen(
+                stops: args?.day.guideStops ?? const [],
+                trip: args?.trip,
+              );
+            },
           ),
           GoRoute(path: Routes.scan, builder: (_, _) => const QrScanScreen()),
         ],

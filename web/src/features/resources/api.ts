@@ -81,13 +81,20 @@ export function useAvailability(query: ListQuery | null) {
 }
 
 /** Holds overlapping [from, to] for the calendar (up to 100). */
+/** The most holds the calendar asks for in one window (the API's largest page size). */
+export const HOLDS_PAGE_SIZE = 100;
+
+/**
+ * Held holds overlapping [from, to], first page only. The result keeps the API's `total`, so the
+ * calendar can say when there are more holds than it shows instead of dropping them silently.
+ */
 export function useHolds(from: string, to: string) {
   return useQuery({
     queryKey: [queryRoots.resources, 'holds', from, to],
     queryFn: async () =>
       (
         await http.get<PagedResult<HoldDto>>('/api/resource-holds', {
-          params: { from, to, status: 'Held', pageSize: 100 },
+          params: { from, to, status: 'Held', pageSize: HOLDS_PAGE_SIZE },
         })
       ).data,
   });

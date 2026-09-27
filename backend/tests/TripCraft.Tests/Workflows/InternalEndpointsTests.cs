@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Hosting;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -42,12 +43,31 @@ public class InternalEndpointsTests(TestWebApplicationFactory factory) : IClassF
     }
 
     [Fact]
+    public async Task Proposal_endpoint_without_key_returns_401()
+    {
+        var response = await factory.CreateClient().PostAsJsonAsync(
+            $"/api/internal/workflows/{Guid.NewGuid()}/proposal", new { status = "PendingApproval" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task An_unset_internal_key_refuses_every_caller_even_one_sending_an_empty_key()
+    {
+        await using var noKey = factory.WithWebHostBuilder(b => b.UseSetting("INTERNAL_AGENT_KEY", ""));
+        var client = noKey.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Internal-Key", "");
+
+        (await client.GetAsync("/api/internal/attractions?city=Kandy")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
     public async Task Tool_endpoints_with_key_reuse_trips_resources_and_external_services()
     {
         var client = factory.CreateInternalClient();
 
         var attractions = await client.GetFromJsonAsync<JsonElement>("/api/internal/attractions?city=kandy");
-        attractions.EnumerateArray().Select(a => a.GetProperty("city").GetString()).Should().AllBe("Kandy").And.HaveCount(2);
+        attractions.EnumerateArray().Select(a => a.GetProperty("city").GetString()).Should().AllBe("Kandy").And.HaveCount(4); // seeded Kandy attractions
 
         var distance = await client.GetFromJsonAsync<JsonElement>("/api/internal/distance?from=Kandy&to=Ella");
         distance.GetProperty("distanceKm").GetDecimal().Should().Be(140);

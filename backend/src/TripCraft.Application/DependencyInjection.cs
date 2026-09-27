@@ -26,6 +26,7 @@ public static class DependencyInjection
 
         // Component A — Trip Requests & Itinerary
         services.AddScoped<ITripRequestService, TripRequestService>();
+        services.AddScoped<IItineraryEditService, ItineraryEditService>();
         services.AddScoped<ITripPlanningService, TripPlanningService>();
         services.AddScoped<IAttractionService, AttractionService>();
         services.AddScoped<IPassportPhotoService, PassportPhotoService>();

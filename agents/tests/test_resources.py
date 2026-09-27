@@ -1,7 +1,8 @@
 from app.nodes.itinerary import itinerary_node
 from app.nodes.planner import planner_node
-from app.nodes.resources import resources_node
+from app.nodes.resources import cheapest_for_party, pick_guide, resources_node
 from app.state import FAILED_SAFELY
+from app.tools.models import GuideOption, RateCard, RoomOption
 from tests.conftest import apply, load_fixture
 
 
@@ -120,3 +121,74 @@ async def test_model_gaps_that_contradict_the_selection_are_dropped(fake_llm, ap
 
     assert update["resources"]["guide_id"] == "g-1"
     assert update["resources"]["gaps"] == ["Tourist prefers a sea view"]
+
+
+def _guide(gid: str, name: str, *languages: str) -> GuideOption:
+    return GuideOption(id=gid, name=name, languages=list(languages), max_pax=10)
+
+
+def _card(**rates: int) -> RateCard:
+    return RateCard(margin_pct=15, guide_day_rates=rates, vehicle_km_rates={}, room_night_rates={})
+
+
+def test_pick_guide_is_the_cheapest_candidate_with_the_language():
+    candidates = [_guide("g-3", "Ruwan Fernando", "en", "fr"), _guide("g-1", "Nimal Perera", "en", "si"),
+                  _guide("g-5", "Chen Wei", "zh")]
+    card = _card(**{"g-3": 7000, "g-1": 6000, "g-5": 4000})  # the cheapest guide does not speak English
+
+    guide, reason = pick_guide(candidates, card, "en")
+
+    assert guide is not None and guide.id == "g-1"
+    assert reason == "Nimal Perera: cheapest of 2 available 'en' guide(s), LKR 6,000/day"
+
+
+def test_pick_guide_breaks_ties_by_name_and_handles_no_speaker():
+    tied = [_guide("g-2", "Kumari Silva", "de"), _guide("g-9", "Anura Bandara", "de")]
+
+    guide, _ = pick_guide(tied, _card(**{"g-2": 6500, "g-9": 6500}), "de")
+    nobody, reason = pick_guide(tied, _card(), "ja")
+
+    assert guide is not None and guide.name == "Anura Bandara"  # same price: alphabetical, so always the same
+    assert nobody is None and reason == "no available guide speaks 'ja'"
+
+
+async def test_code_overrides_a_dearer_guide_proposed_by_the_model(fake_llm, api, demo_state):
+    state = await itinerary_ready(demo_state)
+    api.data["guides"] = [{"id": "g-1", "name": "Nimal Perera", "languages": ["en", "si"], "maxPax": 10},
+                          {"id": "g-3", "name": "Ruwan Fernando", "languages": ["en", "fr"], "maxPax": 12}]
+    api.data["rate_card"]["guideDayRates"] = {"g-1": 6000, "g-3": 7000}
+    dearer = load_fixture("resources")
+    dearer["guide_id"] = "g-3"  # a valid but more expensive choice
+    fake_llm.queue("resources", dearer)
+
+    update = await resources_node(state)
+
+    assert update["resources"]["guide_id"] == "g-1"
+    assert update["resources"]["guide_languages"] == ["en", "si"]
+    summary = update["steps"][0]["output_summary"]
+    assert summary["model_guide_id"] == "g-3" and summary["guide_overridden"] is True
+    assert summary["guide_choice"].startswith("Nimal Perera: cheapest of 2 available 'en' guide(s)")
+
+
+def _room(rtid: str, name: str, capacity: int, free: int = 5) -> RoomOption:
+    return RoomOption(hotel_id="h-1", hotel_name="Kandy Hills", room_type_id=rtid, room_type_name=name,
+                      capacity=capacity, available_rooms=free)
+
+
+def test_budget_tier_keeps_the_room_type_cheapest_for_the_whole_party():
+    double, family = _room("rt-dbl", "Standard Double", 2), _room("rt-fam", "Family Room", 4)
+    card = RateCard(margin_pct=15, guide_day_rates={}, vehicle_km_rates={},
+                    room_night_rates={"rt-dbl": 12000, "rt-fam": 20000})
+
+    # 4 people: one family room (20,000) beats two doubles (24,000) even though a double is cheaper per room.
+    assert [o.room_type_id for o in cheapest_for_party([double, family], card, 4)] == ["rt-fam"]
+    # 2 people: one double (12,000) beats one family room (20,000).
+    assert [o.room_type_id for o in cheapest_for_party([double, family], card, 2)] == ["rt-dbl"]
+
+
+def test_budget_tier_keeps_every_option_when_no_single_type_sleeps_the_party():
+    options = [_room("rt-dbl", "Standard Double", 2, free=1), _room("rt-fam", "Family Room", 4, free=1)]
+    card = RateCard(margin_pct=15, guide_day_rates={}, vehicle_km_rates={},
+                    room_night_rates={"rt-dbl": 12000, "rt-fam": 20000})
+
+    assert cheapest_for_party(options, card, 6) == options

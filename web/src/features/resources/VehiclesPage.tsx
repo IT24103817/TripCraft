@@ -96,6 +96,11 @@ export default function VehiclesPage() {
         onRetry={() => vehicles.refetch()}
         isEmpty={vehicles.data?.total === 0}
         emptyTitle="No vehicles found"
+        emptyAction={
+          <button type="button" className="btn-primary" onClick={() => openForm(null)}>
+            Add vehicle
+          </button>
+        }
       >
         {vehicles.data && (
           <DataTable

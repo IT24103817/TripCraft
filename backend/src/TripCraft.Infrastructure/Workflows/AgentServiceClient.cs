@@ -32,6 +32,7 @@ public class AgentServiceClient(HttpClient http, IConfiguration configuration, I
         r.BudgetUsd,
         r.PreferencesJson,
         r.Skeleton,
+        PreviousViolations = r.PreviousViolations ?? [],
         ManagerComment = managerComment,
         CallbackBaseUrl = configuration["AGENT_CALLBACK_BASE_URL"]
     };

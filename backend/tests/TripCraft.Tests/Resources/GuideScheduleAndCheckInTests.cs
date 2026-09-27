@@ -40,6 +40,8 @@ public class GuideScheduleAndCheckInTests
             db.AddRange(trip, itinerary);
             db.ResourceHolds.Add(new ResourceHold { ResourceType = ResourceType.Guide, ResourceId = ResourcesSeeder.NimalGuide,
                 TripRequestId = trip.Id, FromDate = trip.StartDate, ToDate = trip.EndDate });
+            db.ResourceHolds.Add(new ResourceHold { ResourceType = ResourceType.Vehicle, ResourceId = ResourcesSeeder.VanSixSeats,
+                TripRequestId = trip.Id, FromDate = trip.StartDate, ToDate = trip.EndDate });
             await db.SaveChangesAsync();
             return (trip.Id, day.Stops.OrderBy(s => s.Sequence).Select(s => s.Id).ToArray());
         });
@@ -60,6 +62,28 @@ public class GuideScheduleAndCheckInTests
         trip.Days.Should().ContainSingle().Which.HotelName.Should().Be("Ella Gap");
         trip.Days[0].Stops.Select(s => s.AttractionName).Should().Equal("Nine Arches Bridge", "Little Adam's Peak");
         trip.Days[0].Stops.Should().OnlyContain(s => s.CheckedInAt == null);
+        // Vehicle lookup for the guide: registration, type and seats of the held vehicle.
+        trip.VehicleRegistrationNo.Should().Be("CAB-1234");
+        trip.VehicleType.Should().Be("Van");
+        trip.VehicleSeats.Should().Be(6);
+    }
+
+    [Fact]
+    public async Task A_manager_reads_any_guides_schedule_by_id_and_a_tourist_cannot()
+    {
+        var (factory, tripId, _) = await ConfirmedTripAsync();
+        await using var _ = factory;
+        var manager = await factory.CreateClientAsAsync("manager1@tripcraft.test");
+        var tourist = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
+
+        var schedule = await manager.GetFromJsonAsync<GuideScheduleDto>(
+            $"/api/guides/{ResourcesSeeder.NimalGuide}/schedule", TestJson.Options);
+
+        schedule!.GuideName.Should().Be("Nimal Perera");
+        schedule.Trips.Should().Contain(t => t.TripRequestId == tripId);
+        (await manager.GetAsync($"/api/guides/{Guid.NewGuid()}/schedule")).StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await tourist.GetAsync($"/api/guides/{ResourcesSeeder.NimalGuide}/schedule")).StatusCode
+            .Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]

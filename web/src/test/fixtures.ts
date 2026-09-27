@@ -132,3 +132,75 @@ export function step(stepNo: number, agentName: string, overrides: Record<string
     ...overrides,
   };
 }
+
+/** One row of GET /api/workflows (WorkflowSummaryDto). */
+export function workflowSummary(overrides: Record<string, unknown> = {}) {
+  return {
+    id: WORKFLOW_ID,
+    tripRequestId: trip().id,
+    status: 'PendingApproval',
+    currentStep: 'awaiting-manager',
+    startedAt: '2026-09-26T08:00:00Z',
+    finishedAt: '2026-09-26T08:01:00Z',
+    errorSummary: null,
+    objective: trip().objective,
+    ...overrides,
+  };
+}
+
+/** An attraction as GET /api/attractions returns it. */
+export function attraction(id: string, name: string, city = 'Kandy') {
+  return {
+    id,
+    name,
+    city,
+    category: 'Culture',
+    durationMinutes: 90,
+    entryFeeLkr: 2000,
+    latitude: 7.29,
+    longitude: 80.64,
+  };
+}
+
+/** GET /api/trip-requests/{id}/itinerary: two days, Kandy then Ella. */
+export function itinerary(overrides: Record<string, unknown> = {}) {
+  return {
+    id: '55555555-5555-5555-5555-555555555555',
+    tripRequestId: trip().id,
+    version: 1,
+    generatedBy: 'Agent',
+    days: [
+      {
+        dayNumber: 1,
+        city: 'Kandy',
+        hotelId: null,
+        notes: 'Arrive and settle in',
+        stops: [
+          {
+            sequence: 1,
+            arrivalTime: null,
+            attractionId: 'a1',
+            attractionName: 'Temple of the Tooth',
+            durationMinutes: 90,
+          },
+        ],
+      },
+      {
+        dayNumber: 2,
+        city: 'Ella',
+        hotelId: null,
+        notes: null,
+        stops: [
+          {
+            sequence: 1,
+            arrivalTime: null,
+            attractionId: 'e1',
+            attractionName: 'Nine Arches Bridge',
+            durationMinutes: 60,
+          },
+        ],
+      },
+    ],
+    ...overrides,
+  };
+}

@@ -91,6 +91,20 @@ public class TripRequestsController(
     }
 
     /// <summary>
+    /// Itinerary editor: an Operations Manager changes one day's stops (1–3 attractions in the day's city) and
+    /// notes while the trip is Confirmed. 409 in any other status or without a saved itinerary.
+    /// </summary>
+    [HttpPut("{id:guid}/itinerary/days/{dayNumber:int}")]
+    [Authorize(Roles = Roles.OperationsManager)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ItineraryDto>> EditItineraryDay(Guid id, int dayNumber,
+        EditItineraryDayRequest request, [FromServices] IItineraryEditService editor, CancellationToken ct)
+    {
+        return Ok(await editor.EditDayAsync(User.GetCurrentUser().Id, id, dayNumber, request, ct));
+    }
+
+    /// <summary>
     /// Passport photo from the Flutter camera (multipart field "file"). Owner Tourist only; JPEG/PNG up to 5 MB,
     /// checked by content, stored privately under a random name (PLAN.md section 10).
     /// </summary>

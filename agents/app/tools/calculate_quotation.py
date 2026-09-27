@@ -55,7 +55,8 @@ def calculate_quotation(days: list[ItineraryDay], resources: ResourceSelection, 
     if args.resources.vehicle_id:
         rate = _rate(card.vehicle_km_rates, args.resources.vehicle_id)
         total_km = sum((d.transfer_km for d in args.days), Decimal(0))
-        lines.append(_line("vehicle", f"Vehicle {args.resources.vehicle_id}", total_km, rate))
+        if total_km > 0:  # a one-city trip has no transfer km: no zero line (same as the C# QuotationCalculator)
+            lines.append(_line("vehicle", f"Vehicle {args.resources.vehicle_id}", total_km, rate))
 
     room_nights = Counter(r.room_type_id for r in args.resources.rooms)
     for room_type_id, count in sorted(room_nights.items()):

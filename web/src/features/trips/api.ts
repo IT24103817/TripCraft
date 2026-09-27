@@ -10,6 +10,7 @@ import type {
   TripHistoryEntryDto,
   TripRequestDto,
   TripRequestListQuery,
+  UpdateItineraryDayRequest,
 } from './types';
 
 /** Drops empty values so the API only sees filters that are set. */
@@ -51,6 +52,23 @@ export function useItinerary(id: string) {
         validateStatus: (status) => status === 200 || status === 404,
       });
       return response.status === 404 ? null : response.data;
+    },
+  });
+}
+
+/**
+ * Replaces one day's stops and notes (the itinerary editor). The API answers with the whole itinerary
+ * (version + 1, generatedBy "Manual"), which is shown at once; the trip's queries are then refreshed
+ * because the change is also in the trip history.
+ */
+export function useUpdateItineraryDay(tripId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ dayNumber, body }: { dayNumber: number; body: UpdateItineraryDayRequest }) =>
+      (await http.put<ItineraryDto>(`/api/trip-requests/${tripId}/itinerary/days/${dayNumber}`, body)).data,
+    onSuccess: (itinerary) => {
+      client.setQueryData(tripKeys.itinerary(tripId), itinerary);
+      void client.invalidateQueries({ queryKey: [queryRoots.trips] });
     },
   });
 }

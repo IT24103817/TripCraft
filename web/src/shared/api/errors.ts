@@ -23,3 +23,17 @@ export function getErrorMessage(
 export function getErrorStatus(error: unknown): number | undefined {
   return axios.isAxiosError(error) ? error.response?.status : undefined;
 }
+
+/**
+ * First validation message for one request field from a 400 ProblemDetails `errors` map. The API uses
+ * C# property names, so "attractionIds" matches "AttractionIds" and "AttractionIds[0]".
+ */
+export function getFieldError(error: unknown, field: string): string | undefined {
+  if (!axios.isAxiosError<ProblemDetails>(error)) return undefined;
+  const errors = error.response?.data?.errors ?? {};
+  const name = field.toLowerCase();
+  const key = Object.keys(errors).find(
+    (k) => k.toLowerCase() === name || k.toLowerCase().startsWith(`${name}[`),
+  );
+  return key ? errors[key]?.[0] : undefined;
+}

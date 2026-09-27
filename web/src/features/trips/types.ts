@@ -72,6 +72,15 @@ export interface AttractionListQuery {
   pageSize: number;
 }
 
+/**
+ * Body of PUT /api/trip-requests/{id}/itinerary/days/{dayNumber} (Operations Manager, Confirmed trips only):
+ * 1–3 distinct active attractions in the day's city, in visiting order, and notes of at most 500 characters.
+ */
+export interface UpdateItineraryDayRequest {
+  attractionIds: string[];
+  notes: string | null;
+}
+
 /** Body of POST and PUT /api/attractions. */
 export type SaveAttractionRequest = Omit<AttractionDto, 'id'>;
 

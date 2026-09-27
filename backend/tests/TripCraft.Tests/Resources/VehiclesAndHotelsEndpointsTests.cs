@@ -70,4 +70,31 @@ public class VehiclesAndHotelsEndpointsTests(TestWebApplicationFactory factory) 
         (await guide.GetAsync($"/api/hotels/{ResourcesSeeder.KandyHotel}")).StatusCode.Should().Be(HttpStatusCode.OK);
         (await guide.GetAsync("/api/hotels")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
+
+    [Fact]
+    public async Task Room_types_of_a_hotel_are_listed_and_an_unknown_hotel_is_404()
+    {
+        var client = await factory.CreateClientAsAsync(Manager);
+
+        var rooms = await client.GetFromJsonAsync<List<RoomTypeDto>>(
+            $"/api/hotels/{ResourcesSeeder.KandyHotel}/room-types", TestJson.Options);
+
+        rooms!.Select(r => r.Name).Should().BeEquivalentTo("Standard Double", "Family Room");
+        rooms.Should().OnlyContain(r => r.HotelId == ResourcesSeeder.KandyHotel);
+        (await client.GetAsync($"/api/hotels/{Guid.NewGuid()}/room-types")).StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Theory]
+    [InlineData("tourist1@tripcraft.test")]
+    [InlineData("admin1@tripcraft.test")]
+    [InlineData("guide1@tripcraft.test")]
+    public async Task Only_the_operations_manager_creates_vehicles_and_hotels(string email)
+    {
+        var client = await factory.CreateClientAsAsync(email);
+
+        (await client.PostAsJsonAsync("/api/vehicles", new SaveVehicleRequest("WP-0001", "Van", 6, 120, true)))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await client.PostAsJsonAsync("/api/hotels", new SaveHotelRequest("Any Inn", "Kandy", 3, 7.29, 80.63, true)))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
 }

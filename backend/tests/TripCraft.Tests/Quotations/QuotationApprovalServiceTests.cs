@@ -1,3 +1,4 @@
+using TripCraft.Application.Workflows.Dtos;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -123,6 +124,29 @@ public class QuotationApprovalServiceTests
         _trip.Status.Should().Be(TripRequestStatus.RevisionRequested);
         _audit.Verify(a => a.Record(Manager.Id, "AgentWorkflowFailedSafely", nameof(AgentWorkflow), _workflow.Id,
             It.IsAny<object>(), It.IsAny<object>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Request_revision_sends_the_rejected_proposals_violations_to_the_planner()
+    {
+        _workflow.ValidationResult = WorkflowJson.Serialize(new ProposalValidationResult(false,
+            [new ProposalRuleViolation("OVER_BUDGET", "Total USD 624.07 is over the budget of USD 400.", ViolationSeverity.Soft)]));
+        StartAgentWorkflowRequest? sent = null;
+        _agent.Setup(a => a.ReplanAsync(_workflow, It.IsAny<StartAgentWorkflowRequest>(), "Cheaper hotels", It.IsAny<CancellationToken>()))
+            .Callback<AgentWorkflow, StartAgentWorkflowRequest, string, CancellationToken>((_, r, _, _) => sent = r)
+            .ReturnsAsync(true);
+
+        await Service().RequestRevisionAsync(Manager, _quotationId, "Cheaper hotels", CancellationToken.None);
+
+        sent!.PreviousViolations.Should().ContainSingle()
+            .Which.Should().Be(new PreviousViolation("OVER_BUDGET", "Total USD 624.07 is over the budget of USD 400."));
+    }
+
+    [Fact]
+    public void Previous_violations_are_empty_without_a_stored_validation_result()
+    {
+        PreviousViolation.FromValidationJson(null).Should().BeEmpty();
+        PreviousViolation.FromValidationJson("""{"isValid":true,"violations":[]}""").Should().BeEmpty();
     }
 
     [Fact]

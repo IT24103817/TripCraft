@@ -12,6 +12,7 @@ import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../data/guide_models.dart';
 import '../data/resources_repository.dart';
+import 'trip_day_screen.dart';
 
 /// The guide's schedule (Component B): only trips they are held for, with search and a status filter.
 class ScheduleScreen extends ConsumerStatefulWidget {
@@ -133,8 +134,10 @@ class _TripCard extends StatelessWidget {
                   ' · ${day.stops.where((s) => s.checkedInAt != null).length} checked in',
                 ),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () =>
-                    context.push(Routes.tripDay, extra: day.guideStops),
+                onTap: () => context.push(
+                  Routes.tripDay,
+                  extra: TripDayArgs(trip: trip, day: day),
+                ),
               ),
           ],
         ),

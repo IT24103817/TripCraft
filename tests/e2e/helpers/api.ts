@@ -5,12 +5,32 @@ export const PASSWORD = 'Passw0rd!';
 export const TOURIST = 'tourist1@tripcraft.test';
 export const MANAGER = 'manager1@tripcraft.test';
 
-/** The demo request from PLAN.md section 6. */
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
+  'November', 'December'];
+const isoDate = (d: Date) => d.toISOString().slice(0, 10);
+
+/**
+ * A 5-day window starting 30-729 days after today, chosen at random for every trip. Reruns and earlier demo trips
+ * then (almost) never hold the same guide, vehicle or rooms, so no database clean-up is needed between runs.
+ */
+export function freshTripDates(today = new Date()) {
+  const offset = 30 + Math.floor(Math.random() * 700);
+  const start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + offset));
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 4);
+  const label = start.getUTCMonth() === end.getUTCMonth()
+    ? `${start.getUTCDate()}-${end.getUTCDate()} ${MONTHS[end.getUTCMonth()]}`
+    : `${start.getUTCDate()} ${MONTHS[start.getUTCMonth()]} - ${end.getUTCDate()} ${MONTHS[end.getUTCMonth()]}`;
+  return { startDate: isoDate(start), endDate: isoDate(end), label };
+}
+
+/** The demo request from PLAN.md section 6, on fresh dates (see freshTripDates). */
 export function demoTrip(budgetUsd = 1500) {
+  const { startDate, endDate, label } = freshTripDates();
   return {
-    objective: '5 days for 4 people, 10-14 October, Kandy and Ella, prefer the hill-country train, English-speaking guide.',
-    startDate: '2026-10-10',
-    endDate: '2026-10-14',
+    objective: `5 days for 4 people, ${label}, Kandy and Ella, prefer the hill-country train, English-speaking guide.`,
+    startDate,
+    endDate,
     pax: 4,
     budgetUsd,
     preferences: { transport: 'train', language: 'en' },

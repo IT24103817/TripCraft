@@ -47,6 +47,8 @@ class WorkflowRequest(ApiModel):
 
 class ReplanRequest(WorkflowRequest):
     manager_comment: str = Field(min_length=1, max_length=1000)
+    # The violations of the proposal the manager sent back (e.g. OVER_BUDGET), so the Planner re-plans for them.
+    previous_violations: list["Violation"] = Field(default_factory=list, max_length=50)
 
 
 # ---------- Planner / Coordinator ----------
@@ -235,3 +237,6 @@ class Proposal(BaseModel):
     status: str
     replans: int
     error_summary: str | None = None
+
+
+ReplanRequest.model_rebuild()  # resolves the forward reference to Violation

@@ -14,7 +14,7 @@ TODO: 3–5 pages. Step-by-step guide: `docs/DEPLOYMENT.md`; decision: ADR-005.
 
 The API image (multi-stage .NET 8, non-root user `app`, port 8080) was run against an empty PostgreSQL 16
 database with `RUN_MIGRATIONS=true`: 4 migrations applied, 12 tables, 12 users, 8 attractions and 6 city
-distances seeded; `GET /health` → `{"status":"ok","version":"1.0.0","db":"ok"}`; Swagger served in
+distances seeded (the seed now has 21 attractions and 15 distances); `GET /health` → `{"status":"ok","version":"1.0.0","db":"ok"}`; Swagger served in
 Production; login 200; logs in JSON. The agent image runs as a non-root user and answers 401 without the key.
 The release APK (73.4 MB) was built and ran on an Android 15 emulator.
 

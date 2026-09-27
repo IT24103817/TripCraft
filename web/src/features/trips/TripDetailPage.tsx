@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useAuthStore } from '@/auth/authStore';
 import { getErrorMessage } from '@/shared/api/errors';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { PageHeader } from '@/shared/components/PageHeader';
@@ -8,8 +9,10 @@ import { StatusBadge } from '@/shared/components/StatusBadge';
 import { useToast } from '@/shared/components/Toast';
 import { formatDate, formatDateTime, formatUsd } from '@/shared/utils/format';
 import { useCancelTrip, useItinerary, useTrip } from './api';
+import { ItineraryDayEditor } from './ItineraryDayEditor';
 import { StatusTimeline } from './StatusTimeline';
 import { TripHistory } from './TripHistory';
+import type { ItineraryDayDto } from './types';
 
 export default function TripDetailPage() {
   const { id = '' } = useParams();
@@ -18,6 +21,12 @@ export default function TripDetailPage() {
   const cancel = useCancelTrip(id);
   const toast = useToast();
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const isManager = useAuthStore((s) => s.user?.role === 'OperationsManager');
+  const [editingDay, setEditingDay] = useState<ItineraryDayDto | null>(null);
+  // Stable, so the open dialog does not move focus again when this page re-renders.
+  const closeEditor = useCallback(() => setEditingDay(null), []);
+  // The API only accepts itinerary edits from an Operations Manager on a Confirmed trip.
+  const canEditItinerary = isManager && trip.data?.status === 'Confirmed';
 
   return (
     <PageState
@@ -80,7 +89,14 @@ export default function TripDetailPage() {
           </div>
 
           <div className="card">
-            <h2 className="mb-3 font-semibold text-slate-900">Itinerary</h2>
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="font-semibold text-slate-900">Itinerary</h2>
+              {itinerary.data && (
+                <p className="text-xs text-slate-500">
+                  Version {itinerary.data.version} · {itinerary.data.generatedBy}
+                </p>
+              )}
+            </div>
             <PageState
               isLoading={itinerary.isLoading}
               isError={itinerary.isError}
@@ -93,9 +109,21 @@ export default function TripDetailPage() {
               <ol className="space-y-3">
                 {itinerary.data?.days.map((day) => (
                   <li key={day.dayNumber} className="rounded border border-slate-200 p-3">
-                    <h3 className="font-medium text-slate-900">
-                      Day {day.dayNumber} — {day.city}
-                    </h3>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="font-medium text-slate-900">
+                        Day {day.dayNumber} — {day.city}
+                      </h3>
+                      {canEditItinerary && (
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          aria-label={`Edit day ${day.dayNumber}`}
+                          onClick={() => setEditingDay(day)}
+                        >
+                          Edit day
+                        </button>
+                      )}
+                    </div>
                     {day.notes && <p className="text-sm text-slate-600">{day.notes}</p>}
                     <ul className="mt-2 list-inside list-disc text-sm text-slate-700">
                       {day.stops.map((stop) => (
@@ -109,6 +137,8 @@ export default function TripDetailPage() {
               </ol>
             </PageState>
           </div>
+
+          {editingDay && <ItineraryDayEditor tripId={id} day={editingDay} onClose={closeEditor} />}
 
           <div className="card">
             <h2 className="mb-3 font-semibold text-slate-900">History</h2>

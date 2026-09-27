@@ -14,8 +14,7 @@ public class ItineraryDayConfiguration : IEntityTypeConfiguration<ItineraryDay>
         builder.Property(d => d.City).HasMaxLength(100).IsRequired();
         builder.Property(d => d.Notes).HasColumnType("text");
 
-        // TODO(Component B): configure HasOne<Hotel>().WithMany().HasForeignKey(d => d.HotelId)
-        // when the Hotel entity is added.
+        // The FK itinerary_days.hotel_id → hotels is configured by Component B in Resources/HotelConfiguration.cs.
 
         builder.HasIndex(d => new { d.ItineraryId, d.DayNumber }).IsUnique();
 

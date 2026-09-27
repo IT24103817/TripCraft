@@ -96,6 +96,11 @@ export default function GuidesPage() {
         onRetry={() => guides.refetch()}
         isEmpty={guides.data?.total === 0}
         emptyTitle="No guides found"
+        emptyAction={
+          <button type="button" className="btn-primary" onClick={() => openForm(null)}>
+            Add guide
+          </button>
+        }
       >
         {guides.data && (
           <DataTable

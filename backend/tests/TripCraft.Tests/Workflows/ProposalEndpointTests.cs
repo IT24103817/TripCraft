@@ -20,6 +20,8 @@ public class ProposalEndpointTests(TestWebApplicationFactory factory) : IClassFi
 
         outcome.Status.Should().Be("PendingApproval");
         outcome.Validation.IsValid.Should().BeTrue();
+        // Approval gate (PLAN.md section 5): a valid proposal holds nothing until a manager approves.
+        factory.State<FakeResourcesState>().Holds.Should().NotContain(h => h.TripRequestId == trip.Id);
         var quotation = factory.State<FakeQuotationsState>().Quotations.Single(q => q.Id == outcome.QuotationId);
         quotation.Draft.TotalLkr.Should().Be(TestProposals.GoldenTotalLkr);
         quotation.Version.Should().Be(1);

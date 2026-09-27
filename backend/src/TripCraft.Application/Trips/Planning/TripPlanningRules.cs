@@ -14,6 +14,9 @@ public static class TripPlanningRules
 
     /// <summary>Operator rule from PLAN.md section 5: at most 3 stops per day.</summary>
     public const int MaxStopsPerDay = 3;
+
+    /// <summary>Operator rule from PLAN.md section 5: at most 4 hours (240 minutes) of driving per day.</summary>
+    public const int MaxDrivingMinutesPerDay = 240;
     public const int RelaxedStopsPerDay = 2;
 
     private static readonly Regex MaskedPassportPattern = new(@"^\*{4}[A-Z0-9]{4}$");

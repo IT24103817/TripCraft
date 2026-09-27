@@ -20,8 +20,6 @@ Against the deployed system: set `BASE_URL` to the Vercel URL and `API_URL` to t
 
 Screenshots, traces and the HTML report are written to `docs/evidence/e2e/`.
 
-Both workflow specs submit the PLAN.md demo trip for **10–14 Oct 2026, 4 travellers**, so each run needs a free
-guide, a vehicle with at least 4 seats, and Ella rooms on those dates. Every passing `workflow.spec.ts` run holds one
-guide and one vehicle. After a few runs, or after the emulator demo on the same dates, the Resource agent can run out
-of vehicles and `safe-failure.spec.ts` then fails safely at the Resource step instead of reaching RevisionRequested.
-Run the specs against a freshly seeded database, or release the October holds of earlier test trips first.
+Both workflow specs submit the PLAN.md demo trip (4 travellers, Kandy and Ella) on **fresh dates**:
+`freshTripDates()` in `helpers/api.ts` picks a random 5-day window 30-729 days after today for every trip. Reruns
+never compete with the holds of earlier runs or demos, so the suite needs no database clean-up.

@@ -298,7 +298,7 @@ as List<GuideTrip>,
 /// @nodoc
 mixin _$GuideTrip {
 
- String get tripRequestId; String get objective; String get startDate; String get endDate; int get pax; String get status; String? get vehicleRegistrationNo; List<GuideDay> get days;
+ String get tripRequestId; String get objective; String get startDate; String get endDate; int get pax; String get status; String? get vehicleRegistrationNo; String? get vehicleType; int? get vehicleSeats; List<GuideDay> get days;
 /// Create a copy of GuideTrip
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -312,20 +312,20 @@ $GuideTripCopyWith<GuideTrip> get copyWith => _$GuideTripCopyWithImpl<GuideTrip>
 @override
 bool operator ==(Object other) {
   final _this = this as GuideTrip;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GuideTrip&&(identical(other.tripRequestId, _this.tripRequestId) || other.tripRequestId == _this.tripRequestId)&&(identical(other.objective, _this.objective) || other.objective == _this.objective)&&(identical(other.startDate, _this.startDate) || other.startDate == _this.startDate)&&(identical(other.endDate, _this.endDate) || other.endDate == _this.endDate)&&(identical(other.pax, _this.pax) || other.pax == _this.pax)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.vehicleRegistrationNo, _this.vehicleRegistrationNo) || other.vehicleRegistrationNo == _this.vehicleRegistrationNo)&&const DeepCollectionEquality().equals(other.days, _this.days));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GuideTrip&&(identical(other.tripRequestId, _this.tripRequestId) || other.tripRequestId == _this.tripRequestId)&&(identical(other.objective, _this.objective) || other.objective == _this.objective)&&(identical(other.startDate, _this.startDate) || other.startDate == _this.startDate)&&(identical(other.endDate, _this.endDate) || other.endDate == _this.endDate)&&(identical(other.pax, _this.pax) || other.pax == _this.pax)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.vehicleRegistrationNo, _this.vehicleRegistrationNo) || other.vehicleRegistrationNo == _this.vehicleRegistrationNo)&&(identical(other.vehicleType, _this.vehicleType) || other.vehicleType == _this.vehicleType)&&(identical(other.vehicleSeats, _this.vehicleSeats) || other.vehicleSeats == _this.vehicleSeats)&&const DeepCollectionEquality().equals(other.days, _this.days));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as GuideTrip;
-  return Object.hash(runtimeType,_this.tripRequestId,_this.objective,_this.startDate,_this.endDate,_this.pax,_this.status,_this.vehicleRegistrationNo,const DeepCollectionEquality().hash(_this.days));
+  return Object.hash(runtimeType,_this.tripRequestId,_this.objective,_this.startDate,_this.endDate,_this.pax,_this.status,_this.vehicleRegistrationNo,_this.vehicleType,_this.vehicleSeats,const DeepCollectionEquality().hash(_this.days));
 }
 
 @override
 String toString() {
   final _this = this as GuideTrip;
-  return 'GuideTrip(tripRequestId: ${_this.tripRequestId}, objective: ${_this.objective}, startDate: ${_this.startDate}, endDate: ${_this.endDate}, pax: ${_this.pax}, status: ${_this.status}, vehicleRegistrationNo: ${_this.vehicleRegistrationNo}, days: ${_this.days})';
+  return 'GuideTrip(tripRequestId: ${_this.tripRequestId}, objective: ${_this.objective}, startDate: ${_this.startDate}, endDate: ${_this.endDate}, pax: ${_this.pax}, status: ${_this.status}, vehicleRegistrationNo: ${_this.vehicleRegistrationNo}, vehicleType: ${_this.vehicleType}, vehicleSeats: ${_this.vehicleSeats}, days: ${_this.days})';
 }
 
 
@@ -336,7 +336,7 @@ abstract mixin class $GuideTripCopyWith<$Res>  {
   factory $GuideTripCopyWith(GuideTrip value, $Res Function(GuideTrip) _then) = _$GuideTripCopyWithImpl;
 @useResult
 $Res call({
- String tripRequestId, String objective, String startDate, String endDate, int pax, String status, String? vehicleRegistrationNo, List<GuideDay> days
+ String tripRequestId, String objective, String startDate, String endDate, int pax, String status, String? vehicleRegistrationNo, String? vehicleType, int? vehicleSeats, List<GuideDay> days
 });
 
 
@@ -353,7 +353,7 @@ class _$GuideTripCopyWithImpl<$Res>
 
 /// Create a copy of GuideTrip
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? tripRequestId = null,Object? objective = null,Object? startDate = null,Object? endDate = null,Object? pax = null,Object? status = null,Object? vehicleRegistrationNo = freezed,Object? days = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? tripRequestId = null,Object? objective = null,Object? startDate = null,Object? endDate = null,Object? pax = null,Object? status = null,Object? vehicleRegistrationNo = freezed,Object? vehicleType = freezed,Object? vehicleSeats = freezed,Object? days = null,}) {
   return _then(GuideTrip(
 tripRequestId: null == tripRequestId ? _self.tripRequestId : tripRequestId // ignore: cast_nullable_to_non_nullable
 as String,objective: null == objective ? _self.objective : objective // ignore: cast_nullable_to_non_nullable
@@ -362,7 +362,9 @@ as String,endDate: null == endDate ? _self.endDate : endDate // ignore: cast_nul
 as String,pax: null == pax ? _self.pax : pax // ignore: cast_nullable_to_non_nullable
 as int,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,vehicleRegistrationNo: freezed == vehicleRegistrationNo ? _self.vehicleRegistrationNo : vehicleRegistrationNo // ignore: cast_nullable_to_non_nullable
-as String?,days: null == days ? _self.days : days // ignore: cast_nullable_to_non_nullable
+as String?,vehicleType: freezed == vehicleType ? _self.vehicleType : vehicleType // ignore: cast_nullable_to_non_nullable
+as String?,vehicleSeats: freezed == vehicleSeats ? _self.vehicleSeats : vehicleSeats // ignore: cast_nullable_to_non_nullable
+as int?,days: null == days ? _self.days : days // ignore: cast_nullable_to_non_nullable
 as List<GuideDay>,
   ));
 }
@@ -448,10 +450,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String tripRequestId,  String objective,  String startDate,  String endDate,  int pax,  String status,  String? vehicleRegistrationNo,  List<GuideDay> days)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String tripRequestId,  String objective,  String startDate,  String endDate,  int pax,  String status,  String? vehicleRegistrationNo,  String? vehicleType,  int? vehicleSeats,  List<GuideDay> days)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _GuideTrip() when $default != null:
-return $default(_that.tripRequestId,_that.objective,_that.startDate,_that.endDate,_that.pax,_that.status,_that.vehicleRegistrationNo,_that.days);case _:
+return $default(_that.tripRequestId,_that.objective,_that.startDate,_that.endDate,_that.pax,_that.status,_that.vehicleRegistrationNo,_that.vehicleType,_that.vehicleSeats,_that.days);case _:
   return orElse();
 
 }
@@ -469,10 +471,10 @@ return $default(_that.tripRequestId,_that.objective,_that.startDate,_that.endDat
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String tripRequestId,  String objective,  String startDate,  String endDate,  int pax,  String status,  String? vehicleRegistrationNo,  List<GuideDay> days)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String tripRequestId,  String objective,  String startDate,  String endDate,  int pax,  String status,  String? vehicleRegistrationNo,  String? vehicleType,  int? vehicleSeats,  List<GuideDay> days)  $default,) {final _that = this;
 switch (_that) {
 case _GuideTrip():
-return $default(_that.tripRequestId,_that.objective,_that.startDate,_that.endDate,_that.pax,_that.status,_that.vehicleRegistrationNo,_that.days);case _:
+return $default(_that.tripRequestId,_that.objective,_that.startDate,_that.endDate,_that.pax,_that.status,_that.vehicleRegistrationNo,_that.vehicleType,_that.vehicleSeats,_that.days);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -489,10 +491,10 @@ return $default(_that.tripRequestId,_that.objective,_that.startDate,_that.endDat
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String tripRequestId,  String objective,  String startDate,  String endDate,  int pax,  String status,  String? vehicleRegistrationNo,  List<GuideDay> days)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String tripRequestId,  String objective,  String startDate,  String endDate,  int pax,  String status,  String? vehicleRegistrationNo,  String? vehicleType,  int? vehicleSeats,  List<GuideDay> days)?  $default,) {final _that = this;
 switch (_that) {
 case _GuideTrip() when $default != null:
-return $default(_that.tripRequestId,_that.objective,_that.startDate,_that.endDate,_that.pax,_that.status,_that.vehicleRegistrationNo,_that.days);case _:
+return $default(_that.tripRequestId,_that.objective,_that.startDate,_that.endDate,_that.pax,_that.status,_that.vehicleRegistrationNo,_that.vehicleType,_that.vehicleSeats,_that.days);case _:
   return null;
 
 }
@@ -504,7 +506,7 @@ return $default(_that.tripRequestId,_that.objective,_that.startDate,_that.endDat
 @JsonSerializable()
 
 class _GuideTrip implements GuideTrip {
-  const _GuideTrip({required this.tripRequestId, required this.objective, required this.startDate, required this.endDate, required this.pax, required this.status, this.vehicleRegistrationNo,  List<GuideDay> days = const <GuideDay>[]}): _days = days;
+  const _GuideTrip({required this.tripRequestId, required this.objective, required this.startDate, required this.endDate, required this.pax, required this.status, this.vehicleRegistrationNo, this.vehicleType, this.vehicleSeats,  List<GuideDay> days = const <GuideDay>[]}): _days = days;
   factory _GuideTrip.fromJson(Map<String, dynamic> json) => _$GuideTripFromJson(json);
 
 @override final  String tripRequestId;
@@ -514,6 +516,8 @@ class _GuideTrip implements GuideTrip {
 @override final  int pax;
 @override final  String status;
 @override final  String? vehicleRegistrationNo;
+@override final  String? vehicleType;
+@override final  int? vehicleSeats;
  final  List<GuideDay> _days;
 @override@JsonKey() List<GuideDay> get days {
   if (_days is EqualUnmodifiableListView) return _days;
@@ -535,18 +539,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _GuideTrip&&(identical(other.tripRequestId, tripRequestId) || other.tripRequestId == tripRequestId)&&(identical(other.objective, objective) || other.objective == objective)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.pax, pax) || other.pax == pax)&&(identical(other.status, status) || other.status == status)&&(identical(other.vehicleRegistrationNo, vehicleRegistrationNo) || other.vehicleRegistrationNo == vehicleRegistrationNo)&&const DeepCollectionEquality().equals(other.days, _days));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _GuideTrip&&(identical(other.tripRequestId, tripRequestId) || other.tripRequestId == tripRequestId)&&(identical(other.objective, objective) || other.objective == objective)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.pax, pax) || other.pax == pax)&&(identical(other.status, status) || other.status == status)&&(identical(other.vehicleRegistrationNo, vehicleRegistrationNo) || other.vehicleRegistrationNo == vehicleRegistrationNo)&&(identical(other.vehicleType, vehicleType) || other.vehicleType == vehicleType)&&(identical(other.vehicleSeats, vehicleSeats) || other.vehicleSeats == vehicleSeats)&&const DeepCollectionEquality().equals(other.days, _days));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,tripRequestId,objective,startDate,endDate,pax,status,vehicleRegistrationNo,const DeepCollectionEquality().hash(_days));
+    return Object.hash(runtimeType,tripRequestId,objective,startDate,endDate,pax,status,vehicleRegistrationNo,vehicleType,vehicleSeats,const DeepCollectionEquality().hash(_days));
 }
 
 @override
 String toString() {
-    return 'GuideTrip(tripRequestId: $tripRequestId, objective: $objective, startDate: $startDate, endDate: $endDate, pax: $pax, status: $status, vehicleRegistrationNo: $vehicleRegistrationNo, days: $days)';
+    return 'GuideTrip(tripRequestId: $tripRequestId, objective: $objective, startDate: $startDate, endDate: $endDate, pax: $pax, status: $status, vehicleRegistrationNo: $vehicleRegistrationNo, vehicleType: $vehicleType, vehicleSeats: $vehicleSeats, days: $days)';
 }
 
 
@@ -557,7 +561,7 @@ abstract mixin class _$GuideTripCopyWith<$Res> implements $GuideTripCopyWith<$Re
   factory _$GuideTripCopyWith(_GuideTrip value, $Res Function(_GuideTrip) _then) = __$GuideTripCopyWithImpl;
 @override @useResult
 $Res call({
- String tripRequestId, String objective, String startDate, String endDate, int pax, String status, String? vehicleRegistrationNo, List<GuideDay> days
+ String tripRequestId, String objective, String startDate, String endDate, int pax, String status, String? vehicleRegistrationNo, String? vehicleType, int? vehicleSeats, List<GuideDay> days
 });
 
 
@@ -574,7 +578,7 @@ class __$GuideTripCopyWithImpl<$Res>
 
 /// Create a copy of GuideTrip
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? tripRequestId = null,Object? objective = null,Object? startDate = null,Object? endDate = null,Object? pax = null,Object? status = null,Object? vehicleRegistrationNo = freezed,Object? days = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? tripRequestId = null,Object? objective = null,Object? startDate = null,Object? endDate = null,Object? pax = null,Object? status = null,Object? vehicleRegistrationNo = freezed,Object? vehicleType = freezed,Object? vehicleSeats = freezed,Object? days = null,}) {
   return _then(_GuideTrip(
 tripRequestId: null == tripRequestId ? _self.tripRequestId : tripRequestId // ignore: cast_nullable_to_non_nullable
 as String,objective: null == objective ? _self.objective : objective // ignore: cast_nullable_to_non_nullable
@@ -583,7 +587,9 @@ as String,endDate: null == endDate ? _self.endDate : endDate // ignore: cast_nul
 as String,pax: null == pax ? _self.pax : pax // ignore: cast_nullable_to_non_nullable
 as int,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,vehicleRegistrationNo: freezed == vehicleRegistrationNo ? _self.vehicleRegistrationNo : vehicleRegistrationNo // ignore: cast_nullable_to_non_nullable
-as String?,days: null == days ? _self._days : days // ignore: cast_nullable_to_non_nullable
+as String?,vehicleType: freezed == vehicleType ? _self.vehicleType : vehicleType // ignore: cast_nullable_to_non_nullable
+as String?,vehicleSeats: freezed == vehicleSeats ? _self.vehicleSeats : vehicleSeats // ignore: cast_nullable_to_non_nullable
+as int?,days: null == days ? _self._days : days // ignore: cast_nullable_to_non_nullable
 as List<GuideDay>,
   ));
 }

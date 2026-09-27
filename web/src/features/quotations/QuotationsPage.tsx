@@ -22,7 +22,10 @@ const columns: Column<QuotationDto>[] = [
   { key: 'createdAt', header: 'Created', sortKey: 'createdAt', render: (q) => formatDate(q.createdAt) },
 ];
 
-/** Component C: every quotation version, filterable by status and searchable by the trip's objective. */
+/**
+ * Component C: every quotation version, filterable by status, created date and minimum total (USD),
+ * and searchable by the trip's objective.
+ */
 export default function QuotationsPage() {
   const navigate = useNavigate();
   const list = useListParams({ sort: '-createdAt' });
@@ -30,12 +33,15 @@ export default function QuotationsPage() {
     status: list.get('status'),
     from: list.get('from'),
     to: list.get('to'),
+    minTotalUsd: list.get('minTotalUsd'),
     search: list.search,
     sort: list.sort,
     page: list.page,
     pageSize: list.pageSize,
   };
   const quotations = useQuotations(query);
+  const filtered = Boolean(query.status || query.from || query.to || query.minTotalUsd || query.search);
+  const clearFilters = () => list.set({ status: '', from: '', to: '', minTotalUsd: '', search: '' });
 
   return (
     <section className="space-y-4">
@@ -64,14 +70,41 @@ export default function QuotationsPage() {
           to: query.to,
           onChange: (from, to) => list.set({ from, to }),
         }}
-      />
+      >
+        <label className="flex flex-col gap-1 text-sm text-slate-700">
+          Min total (USD)
+          <input
+            type="number"
+            className="input"
+            min={0}
+            step="0.01"
+            inputMode="decimal"
+            value={query.minTotalUsd}
+            onChange={(e) => {
+              // The API rejects a negative minimum, so only empty or 0+ values are sent.
+              const value = e.target.value;
+              if (value === '' || Number(value) >= 0) list.set({ minTotalUsd: value });
+            }}
+          />
+        </label>
+      </SearchFilterBar>
       <PageState
         isLoading={quotations.isLoading}
         isError={quotations.isError}
         error={quotations.error}
         onRetry={() => quotations.refetch()}
         isEmpty={quotations.data?.total === 0}
-        emptyTitle="No quotations match these filters"
+        emptyTitle={filtered ? 'No quotations match these filters' : 'No quotations yet'}
+        emptyDescription={
+          filtered ? undefined : 'A quotation appears when the agents finish planning a trip.'
+        }
+        emptyAction={
+          filtered && (
+            <button type="button" className="btn-secondary" onClick={clearFilters}>
+              Clear filters
+            </button>
+          )
+        }
       >
         {quotations.data && (
           <DataTable

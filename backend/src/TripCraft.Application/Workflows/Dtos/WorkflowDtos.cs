@@ -24,7 +24,7 @@ public record WorkflowDto(
     IReadOnlyDictionary<string, string> ResourceNames);
 
 public record WorkflowSummaryDto(Guid Id, Guid TripRequestId, string Status, string? CurrentStep,
-    DateTime StartedAt, DateTime? FinishedAt, string? ErrorSummary);
+    DateTime StartedAt, DateTime? FinishedAt, string? ErrorSummary, string Objective);
 
 public record AgentStepDto(
     Guid Id,
@@ -39,12 +39,11 @@ public record AgentStepDto(
     string Status,
     DateTime CreatedAt);
 
-/// <summary>GET /api/workflows?status=&amp;page=&amp;pageSize= (staff only).</summary>
-public class WorkflowListQuery
+/// <summary>
+/// GET /api/workflows?status=&amp;search=&amp;sort=&amp;page=&amp;pageSize= (staff only). Search matches the trip
+/// objective; sort is one of WorkflowQueryService.SortableFields (default newest first).
+/// </summary>
+public class WorkflowListQuery : PagedQuery
 {
     public AgentWorkflowStatus? Status { get; set; }
-    public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 20;
-
-    public const int MaxPageSize = PagedQuery.MaxPageSize;
 }

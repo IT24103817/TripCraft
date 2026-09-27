@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { DataTable } from '@/shared/components/DataTable';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { PageState } from '@/shared/components/PageState';
+import { SearchFilterBar } from '@/shared/components/SearchFilterBar';
 import { useListParams } from '@/shared/hooks/useListParams';
 import { cn } from '@/shared/utils/cn';
 import { useWorkflows } from './api';
@@ -15,13 +16,26 @@ const TABS = [
 /** Approval inbox: workflows waiting for the Operations Manager (PLAN.md section 6, step 9). */
 export default function ApprovalsPage() {
   const navigate = useNavigate();
-  const list = useListParams();
+  const list = useListParams({ sort: '-startedAt' });
   const tab = list.get('tab') || 'PendingApproval';
-  const workflows = useWorkflows({ status: tab, page: list.page, pageSize: list.pageSize });
+  const workflows = useWorkflows({
+    status: tab,
+    search: list.search,
+    sort: list.sort,
+    page: list.page,
+    pageSize: list.pageSize,
+  });
 
   return (
     <section className="space-y-4">
-      <PageHeader title="Approvals" description="AI-drafted trips waiting for a decision. Newest first." />
+      <PageHeader title="Approvals" description="AI-drafted trips waiting for a decision." />
+      <SearchFilterBar
+        search={{
+          value: list.search,
+          placeholder: 'Search the trip objective',
+          onChange: (search) => list.set({ search }),
+        }}
+      />
       <div role="tablist" aria-label="Approval status" className="flex gap-2 border-b border-slate-200">
         {TABS.map((t) => (
           <button
@@ -48,8 +62,12 @@ export default function ApprovalsPage() {
           error={workflows.error}
           onRetry={() => workflows.refetch()}
           isEmpty={workflows.data?.total === 0}
-          emptyTitle="Nothing is waiting here"
-          emptyDescription="New proposals appear as soon as the agents finish planning."
+          emptyTitle={list.search ? 'No proposals match your search' : 'Nothing is waiting here'}
+          emptyDescription={
+            list.search
+              ? 'Try another search, or clear the search box.'
+              : 'New proposals appear as soon as the agents finish planning.'
+          }
         >
           {workflows.data && (
             <DataTable
@@ -61,6 +79,8 @@ export default function ApprovalsPage() {
               total={workflows.data.total}
               page={workflows.data.page}
               pageSize={workflows.data.pageSize}
+              sort={list.sort}
+              onSortChange={(sort) => list.set({ sort })}
               onPageChange={(page) => list.set({ page })}
               onPageSizeChange={(pageSize) => list.set({ pageSize })}
               onRowClick={(w) => navigate(`/approvals/${w.id}`)}

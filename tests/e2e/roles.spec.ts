@@ -73,8 +73,9 @@ test('Guide is sent to the mobile app; catalogue changes and trips are 403', asy
   await expect(page.getByRole('heading', { name: 'Please use the TripCraft mobile app' })).toBeVisible();
   await page.goto('/trips');
   await expect(page.getByText('You do not have access to this page')).toBeVisible();
-  // Resource CRUD (/api/guides, /api/vehicles, /api/hotels) belongs to Student B and does not exist yet;
-  // the attraction catalogue is the operations CRUD a guide must not change.
+  // Catalogue and resource CRUD is the Operations Manager's job; a guide may not change any of it.
   expect(await status(page, 'POST', '/api/attractions')).toBe(403);
+  expect(await status(page, 'POST', '/api/guides')).toBe(403);
+  expect(await status(page, 'POST', '/api/vehicles')).toBe(403);
   expect(await status(page, 'GET', '/api/trip-requests')).toBe(403);
 });

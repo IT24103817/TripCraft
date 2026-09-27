@@ -1,6 +1,8 @@
+from app.graph import initial_state
 from app.nodes.planner import planner_node
+from app.schemas import ReplanRequest
 from app.state import FAILED_SAFELY, RUNNING
-from tests.conftest import load_fixture
+from tests.conftest import DEMO_REQUEST, load_fixture
 
 
 async def test_planner_golden_plan_and_constraints(fake_llm, api, demo_state):
@@ -44,3 +46,19 @@ async def test_planner_invalid_plan_fails_safely_after_retries(fake_llm, api, de
     assert "validation" in update["error_summary"]
     assert update["steps"][0]["status"] == "Failed" and update["steps"][0]["retries"] == 2
     assert len(fake_llm.calls_for("planner")) == 3  # first try + 2 repair messages
+
+
+async def test_a_manager_revision_replans_with_the_previous_violations(fake_llm, api):
+    # The API sends the rejected proposal's violations with /replan (camelCase, as the C# client does).
+    request = ReplanRequest.model_validate({
+        **DEMO_REQUEST, "managerComment": "Please find cheaper hotels",
+        "previousViolations": [{"code": "OVER_BUDGET", "message": "Total USD 624.07 is over the budget of USD 400."}]})
+    state = initial_state(request)
+
+    update = await planner_node(state)
+
+    assert state["violations"] == [{"code": "OVER_BUDGET",
+                                    "message": "Total USD 624.07 is over the budget of USD 400."}]
+    assert update["plan"]["constraints"]["hotel_tier"] == "budget"
+    prompt = fake_llm.calls_for("planner")[0][1].content
+    assert "Please find cheaper hotels" in prompt and "OVER_BUDGET" in prompt

@@ -1,4 +1,5 @@
 using TripCraft.Application.Trips.Planning;
+using TripCraft.Application.Workflows.Dtos;
 
 namespace TripCraft.Application.Workflows;
 
@@ -26,4 +27,16 @@ public record StartAgentWorkflowRequest(
     int Pax,
     decimal BudgetUsd,
     string PreferencesJson,
-    IReadOnlyList<SkeletonDay> Skeleton);
+    IReadOnlyList<SkeletonDay> Skeleton,
+    IReadOnlyList<PreviousViolation>? PreviousViolations = null);
+
+/// <summary>A violation of the proposal a manager sent back; the Planner re-plans for it (e.g. OVER_BUDGET).</summary>
+public record PreviousViolation(string Code, string Message)
+{
+    /// <summary>Reads the violations from a workflow's stored ValidationResult JSON. Empty when there is none.</summary>
+    public static IReadOnlyList<PreviousViolation> FromValidationJson(string? validationResultJson)
+    {
+        var result = WorkflowJson.Deserialize<ProposalValidationResult>(validationResultJson);
+        return result?.Violations.Select(v => new PreviousViolation(v.Code, v.Message)).ToList() ?? [];
+    }
+}

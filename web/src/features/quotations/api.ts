@@ -19,14 +19,23 @@ export const workflowKeys = {
   steps: (id: string) => [queryRoots.workflows, 'steps', id] as const,
 };
 
-/** GET /api/workflows (staff). The API filters by status only and sorts newest first. */
+/**
+ * GET /api/workflows (staff): status filter, search on the trip objective, sort (startedAt, finishedAt,
+ * status) and paging. Empty filters are left out, so the API uses its default sort ("-startedAt").
+ */
 export function useWorkflows(query: WorkflowListQuery) {
   return useQuery({
     queryKey: workflowKeys.list(query),
     queryFn: async () =>
       (
         await http.get<PagedResult<WorkflowSummaryDto>>('/api/workflows', {
-          params: { status: query.status || undefined, page: query.page, pageSize: query.pageSize },
+          params: {
+            status: query.status || undefined,
+            search: query.search || undefined,
+            sort: query.sort || undefined,
+            page: query.page,
+            pageSize: query.pageSize,
+          },
         })
       ).data,
     placeholderData: keepPreviousData,

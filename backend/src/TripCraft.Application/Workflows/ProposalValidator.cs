@@ -26,11 +26,14 @@ public class ProposalValidator
         var resources = proposal.Resources!;
         var quotation = proposal.Quotation!;
 
-        // 2. Days: 1–3 stops, every attraction exists.
+        // 2. Days: 1–3 stops, at most 4 h driving, every attraction exists.
         foreach (var day in days)
         {
             if (day.Stops!.Count is < 1 or > TripPlanningRules.MaxStopsPerDay)
                 Hard(violations, "DAY_STOPS", $"Day {day.Day} has {day.Stops.Count} stops (allowed 1–3).");
+            if (day.DrivingMinutes > TripPlanningRules.MaxDrivingMinutesPerDay)
+                Hard(violations, "DRIVING_LIMIT",
+                    $"Day {day.Day} has {day.DrivingMinutes} min of driving (max {TripPlanningRules.MaxDrivingMinutesPerDay}).");
             foreach (var stop in day.Stops.Where(s => !Known(s.AttractionId, facts.AttractionEntryFeesLkr)))
                 Hard(violations, "UNKNOWN_ATTRACTION", $"Day {day.Day}: attraction {stop.AttractionId} does not exist.");
         }

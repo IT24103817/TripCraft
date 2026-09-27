@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Common.Paging;
@@ -15,6 +16,15 @@ namespace TripCraft.Application.Workflows.Services;
 public class WorkflowQueryService(IAgentWorkflowRepository workflows, ITripRequestRepository trips, IResourceCatalog resources)
     : IWorkflowQueryService
 {
+    /// <summary>Whitelisted sort fields of GET /api/workflows.</summary>
+    public static readonly IReadOnlyDictionary<string, Expression<Func<AgentWorkflow, object>>> SortableFields =
+        new Dictionary<string, Expression<Func<AgentWorkflow, object>>>
+        {
+            ["startedAt"] = w => w.StartedAt,
+            ["finishedAt"] = w => w.FinishedAt!,
+            ["status"] = w => w.Status
+        };
+
     public async Task<WorkflowDto> GetAsync(CurrentUser user, Guid id, CancellationToken ct)
     {
         var workflow = await LoadForUserAsync(user, id, ct);
@@ -76,11 +86,17 @@ public class WorkflowQueryService(IAgentWorkflowRepository workflows, ITripReque
         var workflowsQuery = workflows.Query();
         if (query.Status is { } status)
             workflowsQuery = workflowsQuery.Where(w => w.Status == status);
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var search = query.Search.Trim().ToLower();
+            workflowsQuery = workflowsQuery.Where(w => w.Objective.ToLower().Contains(search));
+        }
 
         return workflowsQuery
-            .OrderByDescending(w => w.StartedAt)
+            .ApplySort(query.Sort, SortableFields, "-startedAt")
             .ToPagedResultAsync(query.Page, query.PageSize, w => new WorkflowSummaryDto(
-                w.Id, w.TripRequestId, w.Status.ToString(), w.CurrentStep, w.StartedAt, w.FinishedAt, w.ErrorSummary), ct);
+                w.Id, w.TripRequestId, w.Status.ToString(), w.CurrentStep, w.StartedAt, w.FinishedAt, w.ErrorSummary,
+                w.Objective), ct);
     }
 
     private async Task<AgentWorkflow> LoadForUserAsync(CurrentUser user, Guid id, CancellationToken ct)

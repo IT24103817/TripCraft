@@ -29,6 +29,8 @@ export function HoldCalendar() {
     rows.set(key, [...(rows.get(key) ?? []), hold]);
   }
   const heldOn = (list: HoldDto[], day: string) => list.find((h) => h.fromDate <= day && day <= h.toDate);
+  const shown = holds.data?.items.length ?? 0;
+  const total = holds.data?.total ?? 0;
 
   return (
     <div className="card space-y-3">
@@ -52,6 +54,14 @@ export function HoldCalendar() {
         isEmpty={holds.data?.items.length === 0}
         emptyTitle="Nothing is held in these two weeks"
       >
+        {total > shown && (
+          <p
+            role="note"
+            className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700"
+          >
+            Showing the first {shown} of {total} holds in this window — narrow the dates.
+          </p>
+        )}
         <div className="overflow-x-auto">
           <table className="min-w-full text-xs" aria-label="Hold calendar">
             <thead>

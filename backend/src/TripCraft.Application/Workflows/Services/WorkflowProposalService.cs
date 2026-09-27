@@ -103,9 +103,37 @@ public class WorkflowProposalService(
         if (trip.Status != previousTripStatus)
             audit.Record(null, "TripRequestStatusChanged", nameof(TripRequest), trip.Id,
                 new { Status = previousTripStatus.ToString() }, new { Status = trip.Status.ToString() });
-        await unitOfWork.SaveChangesAsync(ct);
+        try
+        {
+            await unitOfWork.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            // A proposal the database rejects must still end the workflow; otherwise it would stay Planning forever.
+            return await FailUnsavedProposalAsync(workflowId, previousTripStatus, ex, ct);
+        }
 
         return new ProposalOutcomeResponse(workflow.Id, workflow.Status.ToString(), quotationId, validation);
+    }
+
+    /// <summary>Discards the rejected changes and records a safe failure instead (no quotation, no holds).</summary>
+    private async Task<ProposalOutcomeResponse> FailUnsavedProposalAsync(Guid workflowId,
+        TripRequestStatus previousTripStatus, DbUpdateException ex, CancellationToken ct)
+    {
+        unitOfWork.DiscardChanges();
+        var workflow = (await workflows.GetByIdAsync(workflowId, ct))!;
+        var trip = (await trips.GetByIdAsync(workflow.TripRequestId, ct))!;
+        var reason = $"The proposal could not be saved ({ex.InnerException?.GetType().Name ?? ex.GetType().Name}).";
+        var validation = new ProposalValidationResult(false, [new("PROPOSAL_NOT_SAVED", reason, ViolationSeverity.Hard)]);
+        FailSafely(workflow, trip, reason);
+        workflow.ValidationResult = WorkflowJson.Serialize(validation);
+        audit.Record(null, "AgentWorkflowFailedSafely", nameof(AgentWorkflow), workflow.Id, null,
+            new { Status = workflow.Status.ToString(), workflow.ErrorSummary });
+        if (trip.Status != previousTripStatus)
+            audit.Record(null, "TripRequestStatusChanged", nameof(TripRequest), trip.Id,
+                new { Status = previousTripStatus.ToString() }, new { Status = trip.Status.ToString() });
+        await unitOfWork.SaveChangesAsync(ct);
+        return new ProposalOutcomeResponse(workflow.Id, workflow.Status.ToString(), null, validation);
     }
 
     private static void FailSafely(AgentWorkflow workflow, TripRequest trip, string reason)
@@ -157,7 +185,8 @@ public class WorkflowProposalService(
 
     private static QuotationDraft ToDraft(TripRequest trip, AgentWorkflow workflow, ProposalQuotation q, ProposalFacts facts) => new(
         trip.Id, workflow.Id, q.SubtotalLkr, q.MarginPct, q.TotalLkr, q.TotalUsd, q.FxRate, q.FxAsOf, q.FxStale,
-        (q.Lines ?? []).Select(l => new QuotationDraftLine(
+        // A zero line (e.g. no transfer km on a one-city trip) prices nothing and is not stored, as in QuotationCalculator.
+        (q.Lines ?? []).Where(l => l.Qty > 0).Select(l => new QuotationDraftLine(
                 l.LineType, QuotationLineNames.Describe(l, facts), l.Qty, l.UnitLkr, l.AmountLkr))
             .ToList());
 }

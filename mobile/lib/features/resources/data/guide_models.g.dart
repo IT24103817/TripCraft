@@ -32,6 +32,8 @@ _GuideTrip _$GuideTripFromJson(Map<String, dynamic> json) => _GuideTrip(
   pax: (json['pax'] as num).toInt(),
   status: json['status'] as String,
   vehicleRegistrationNo: json['vehicleRegistrationNo'] as String?,
+  vehicleType: json['vehicleType'] as String?,
+  vehicleSeats: (json['vehicleSeats'] as num?)?.toInt(),
   days:
       (json['days'] as List<dynamic>?)
           ?.map((e) => GuideDay.fromJson(e as Map<String, dynamic>))
@@ -48,6 +50,8 @@ Map<String, dynamic> _$GuideTripToJson(_GuideTrip instance) =>
       'pax': instance.pax,
       'status': instance.status,
       'vehicleRegistrationNo': instance.vehicleRegistrationNo,
+      'vehicleType': instance.vehicleType,
+      'vehicleSeats': instance.vehicleSeats,
       'days': instance.days,
     };
 

@@ -45,6 +45,11 @@ public class HotelsController(IHotelService hotels) : ControllerBase
         return NoContent();
     }
 
+    /// <summary>The hotel's room types (the same list HotelDto.RoomTypes carries). 404 for an unknown hotel.</summary>
+    [HttpGet("{id:guid}/room-types")]
+    public async Task<ActionResult<IReadOnlyList<RoomTypeDto>>> ListRoomTypes(Guid id, CancellationToken ct) =>
+        Ok((await hotels.GetAsync(id, ct)).RoomTypes);
+
     [HttpPost("{id:guid}/room-types")]
     [Authorize(Roles = Roles.OperationsManager)]
     [ProducesResponseType(StatusCodes.Status201Created)]

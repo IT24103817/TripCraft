@@ -109,6 +109,11 @@ export default function HotelsPage() {
         onRetry={() => hotels.refetch()}
         isEmpty={hotels.data?.total === 0}
         emptyTitle="No hotels found"
+        emptyAction={
+          <button type="button" className="btn-primary" onClick={() => openForm(null)}>
+            Add hotel
+          </button>
+        }
       >
         {hotels.data && (
           <DataTable

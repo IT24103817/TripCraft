@@ -35,6 +35,12 @@ services:
         sync: false
       - key: RUN_MIGRATIONS          # "true" applies migrations and seeds on start
         sync: false
+      - key: AGENT_CALLBACK_BASE_URL # where the agents post results, if not the agent's own API_BASE_URL (optional)
+        sync: false
+      - key: FX_FALLBACK_LKR_PER_USD # rate used (flagged stale) if the FX provider fails before any success
+        value: "300"
+      # UPLOADS_DIR is not set here: the image uses /app/uploads. Render's free disk is ephemeral, so passport
+      # photos saved there are lost on every redeploy or restart.
 
   # OPTIONAL: the agent service on Render with Groq (Ollama cannot run on the free tier).
   # Uncomment to create it; then set the API's AGENT_SERVICE_URL to this service's URL.

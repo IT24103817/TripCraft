@@ -144,16 +144,27 @@ class _WorkflowSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final w = workflow.value;
-    final Widget body;
-    if (workflow.isLoading && w == null) {
-      body = const LinearProgressIndicator();
-    } else if (w == null) {
-      body = trip.status == 'Submitted'
+    // A failed load (e.g. no connection) shows the error with Retry, never "not started".
+    final current = workflow.hasError ? null : workflow.value;
+    return SectionCard(
+      title: 'Planning',
+      trailing: current == null ? null : StatusChip(status: current.status),
+      child: AsyncView<TripWorkflow?>(
+        value: workflow,
+        onRetry: () => ref.invalidate(tripWorkflowProvider(trip.id)),
+        data: (loaded) => _body(context, loaded),
+      ),
+    );
+  }
+
+  Widget _body(BuildContext context, TripWorkflow? w) {
+    if (w == null) {
+      return trip.status == 'Submitted'
           ? _StartPlanningButton(tripId: trip.id, label: 'Start planning')
           : const Text('Planning has not started yet.');
-    } else if (w.status == 'Planning') {
-      body = const Row(
+    }
+    if (w.status == 'Planning') {
+      return const Row(
         children: [
           SizedBox(
             width: 20,
@@ -168,8 +179,9 @@ class _WorkflowSection extends ConsumerWidget {
           ),
         ],
       );
-    } else if (w.status == 'FailedSafely') {
-      body = Column(
+    }
+    if (w.status == 'FailedSafely') {
+      return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -182,20 +194,14 @@ class _WorkflowSection extends ConsumerWidget {
           ],
         ],
       );
-    } else {
-      body = Align(
-        alignment: Alignment.centerLeft,
-        child: OutlinedButton.icon(
-          icon: const Icon(Icons.receipt_long),
-          label: const Text('View quotation'),
-          onPressed: () => context.push(Routes.quotation(trip.id)),
-        ),
-      );
     }
-    return SectionCard(
-      title: 'Planning',
-      trailing: w == null ? null : StatusChip(status: w.status),
-      child: body,
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: OutlinedButton.icon(
+        icon: const Icon(Icons.receipt_long),
+        label: const Text('View quotation'),
+        onPressed: () => context.push(Routes.quotation(trip.id)),
+      ),
     );
   }
 }

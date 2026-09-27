@@ -31,7 +31,8 @@ night of the itinerary. You only propose; you never book or hold anything.
 
 RULES
 - guide_id must be the id of a guide in DATA.guides (they already speak the required language).
-  null if the list is empty.
+  null if the list is empty. DATA.suggested_guide_id is the cheapest of them, computed by code; code makes the
+  final guide choice with the same rule, so choose it unless the list is empty.
 - vehicle_id must be the id of a vehicle in DATA.vehicles (they already have enough seats). null if the list is empty.
 - rooms: one entry per room per night, only from DATA.room_options for that night. Pick enough rooms so the
   total capacity each night is at least pax. Do not pick more rooms of a type than available_rooms.
@@ -51,12 +52,35 @@ JSON SCHEMA TO RETURN
 """.strip()
 
 
-def _cheapest_only(options: list[RoomOption], card: RateCard) -> list[RoomOption]:
-    """Budget tier: keep only the cheapest room type for the night."""
-    if not options:
-        return options
-    cheapest = min(options, key=lambda o: card.room_night_rates.get(o.room_type_id, Decimal("Infinity")))
-    return [cheapest]
+def cheapest_for_party(options: list[RoomOption], card: RateCard, pax: int) -> list[RoomOption]:
+    """
+    Budget tier: keep only the room type that sleeps the whole party for the least money that night
+    (rooms needed x rate, within the free rooms). Priced per party, not per room: for 4 people one family room
+    at 20,000 beats two doubles at 12,000 each. If no single type can sleep everyone, the options are kept.
+    """
+    def cost(o: RoomOption) -> Decimal:
+        return math.ceil(pax / o.capacity) * card.room_night_rates.get(o.room_type_id, Decimal("Infinity"))
+
+    whole = [o for o in options if math.ceil(pax / o.capacity) <= o.available_rooms]
+    return [min(whole, key=cost)] if whole else options
+
+
+def pick_guide(candidates: list[GuideOption], card: RateCard, language: str) -> tuple[GuideOption | None, str]:
+    """
+    Enforced in code, the same way as the room plan: the final guide is the cheapest candidate who speaks the
+    required language. Candidates are the guides the availability tool returned for the trip dates and pax.
+    Ties are broken by name, so the same data always gives the same guide. Returns the guide and the reason.
+    """
+    speaking = [g for g in candidates if language in g.languages]
+    if not speaking:
+        return None, f"no available guide speaks '{language}'"
+
+    def rate(g: GuideOption) -> Decimal:
+        return card.guide_day_rates.get(g.id, Decimal("Infinity"))
+
+    best = min(speaking, key=lambda g: (rate(g), g.name))
+    price = f"LKR {rate(best):,.0f}/day" if best.id in card.guide_day_rates else "no rate on the card"
+    return best, f"{best.name}: cheapest of {len(speaking)} available '{language}' guide(s), {price}"
 
 
 def missing_resource_gaps(guides: list[GuideOption], vehicles: list[VehicleOption],
@@ -182,7 +206,8 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
         card: RateCard = await run_tool(AGENT, "get_rate_card")
 
         if constraints.hotel_tier == "budget":
-            room_options = {night: _cheapest_only(options, card) for night, options in room_options.items()}
+            room_options = {night: cheapest_for_party(options, card, pax) for night, options in room_options.items()}
+        suggested, guide_reason = pick_guide(guides, card, language)
 
         user = wrap_data({
             "input": agent_input.model_dump(mode="json"),
@@ -192,6 +217,7 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
                              for n, opts in room_options.items()},
             "rate_card": card.model_dump(mode="json"),
             "suggested_rooms": [r.model_dump(mode="json") for r in suggest_rooms(room_options, pax, card)],
+            "suggested_guide_id": suggested.id if suggested else None,
         })
         dropped: list[int] = []
 
@@ -205,9 +231,12 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
     except (ToolError, AgentOutputError) as ex:
         return failed_update(AGENT, str(ex), calls, started, failure_retries(ex), input_summary)
 
+    # The model proposed a guide; code makes the final, deterministic choice (pick_guide above).
+    model_guide_id = output.guide_id
+    guide = suggested
+    output = output.model_copy(update={"guide_id": guide.id if guide else None})
     gaps = list(dict.fromkeys(consistent_gaps(output.gaps, output, set(room_options))
                               + missing_resource_gaps(guides, vehicles, room_options, language, pax)))
-    guide = next((g for g in guides if g.id == output.guide_id), None)
     vehicle = next((v for v in vehicles if v.id == output.vehicle_id), None)
     selection = ResourceSelection(
         guide_id=output.guide_id, vehicle_id=output.vehicle_id, rooms=output.rooms, gaps=gaps,
@@ -217,7 +246,8 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
 
     report = step_report(
         AGENT, calls, started, retries, "Succeeded", input_summary,
-        {"guide_id": selection.guide_id, "vehicle_id": selection.vehicle_id,
+        {"guide_id": selection.guide_id, "guide_choice": guide_reason, "model_guide_id": model_guide_id,
+         "guide_overridden": model_guide_id != selection.guide_id, "vehicle_id": selection.vehicle_id,
          "room_nights": len(selection.rooms), "gaps": gaps, "holds_created": 0,
          "room_nights_dropped": dropped[-1] if dropped else 0},
         {"ok": True, "schema": "ResourceActionOutput"})

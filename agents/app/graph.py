@@ -92,7 +92,9 @@ GRAPH = build_graph()
 def initial_state(request: WorkflowRequest) -> WorkflowState:
     return WorkflowState(
         workflow_id=str(request.workflow_id), objective=request.objective, request=request.model_dump(mode="json"),
-        plan=None, days=[], resources=None, quotation=None, violations=[], status=RUNNING, steps=[], replans=0,
+        plan=None, days=[], resources=None, quotation=None, status=RUNNING, steps=[], replans=0,
+        # A manager's revision carries the rejected proposal's violations; the Planner reads them (revision_context).
+        violations=[v.model_dump() for v in getattr(request, "previous_violations", [])],
         manager_comment=request.manager_comment, error_summary=None)
 
 

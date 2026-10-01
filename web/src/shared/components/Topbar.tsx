@@ -1,3 +1,4 @@
+import { NotificationBell } from '../notifications/NotificationBell';
 import { statusLabel } from '../statuses';
 
 interface TopbarProps {
@@ -21,6 +22,7 @@ export function Topbar({ userName, role, menuOpen, onToggleMenu, onLogout }: Top
         Menu
       </button>
       <div className="ml-auto flex items-center gap-3 text-sm">
+        <NotificationBell />
         <span className="hidden text-right sm:block">
           <span className="block font-medium text-slate-900">{userName}</span>
           <span className="block text-xs text-slate-500">{statusLabel(role)}</span>

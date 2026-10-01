@@ -2,7 +2,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_providers.dart';
-import '../../../core/api/paged_result.dart';
 import 'quotation_models.dart';
 
 part 'quotations_repository.g.dart';
@@ -14,7 +13,10 @@ class QuotationsRepository {
 
   /// The trip's quotation: the stored one (GET /api/quotations/{id}) when it exists, otherwise the one inside
   /// the agents' proposal (GET /api/trip-requests/{id}/workflow, finalOutcome.proposal.quotation).
+  /// The trip status (GET /api/trip-requests/{id}) decides whether the tourist may accept or decline.
   Future<QuotationView> quotationFor(String tripId) async {
+    final trip =
+        await _api.get('/api/trip-requests/$tripId') as Map<String, dynamic>;
     final workflow = await _api.get(
       '/api/trip-requests/$tripId/workflow',
     ) as Map<String, dynamic>;
@@ -23,6 +25,7 @@ class QuotationsRepository {
     final proposed = proposal?['quotation'] as Map<String, dynamic>?;
     final quotationId = proposal?['quotationId'] as String?;
     final view = QuotationView(
+      tripStatus: trip['status'] as String,
       workflowStatus: workflow['status'] as String,
       quotation: proposed == null ? null : Quotation.fromJson(proposed),
       quotationId: quotationId,
@@ -38,9 +41,21 @@ class QuotationsRepository {
     );
   }
 
-  /// POST /api/quotations/{id}/accept — only after the operator approved it.
-  Future<void> accept(String quotationId) =>
-      _api.post('/api/quotations/$quotationId/accept');
+  /// POST /api/quotations/{id}/accept — only while the trip is QuotationSent (409 otherwise).
+  Future<QuotationDecision> accept(String quotationId) async =>
+      QuotationDecision.fromJson(
+        await _api.post('/api/quotations/$quotationId/accept')
+            as Map<String, dynamic>,
+      );
+
+  /// POST /api/quotations/{id}/decline {reason}: the trip goes back to the operator (PendingReview).
+  Future<QuotationDecision> decline(String quotationId, String reason) async =>
+      QuotationDecision.fromJson(
+        await _api.post(
+          '/api/quotations/$quotationId/decline',
+          body: {'reason': reason.trim()},
+        ) as Map<String, dynamic>,
+      );
 
   /// The API's camelCase quotation in the agent's snake_case shape that [Quotation] reads.
   static Map<String, dynamic> _toProposalShape(Map<String, dynamic> q) => {
@@ -63,18 +78,6 @@ class QuotationsRepository {
     'fx_stale': q['fxStale'],
     'total_usd': q['totalUsd'],
   };
-
-  /// Every trip of the signed-in tourist with its status (GET /api/trip-requests only returns their own).
-  Future<List<TripStatusItem>> tripStatuses() async {
-    final json = await _api.get(
-      '/api/trip-requests',
-      query: {'pageSize': 100, 'sort': '-createdAt'},
-    );
-    return PagedResult.fromJson(
-      json as Map<String, dynamic>,
-      TripStatusItem.fromJson,
-    ).items;
-  }
 }
 
 @riverpod

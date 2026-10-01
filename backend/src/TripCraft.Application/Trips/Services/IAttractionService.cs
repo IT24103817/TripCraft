@@ -8,6 +8,9 @@ public interface IAttractionService
 {
     Task<PagedResult<AttractionDto>> ListAsync(AttractionListQuery query, CancellationToken ct);
     Task<AttractionDto> GetAsync(Guid id, CancellationToken ct);
+
+    /// <summary>The cities that have active attractions, A–Z: the only destinations a trip may choose.</summary>
+    Task<IReadOnlyList<string>> ListCitiesAsync(CancellationToken ct);
     Task<AttractionDto> CreateAsync(CurrentUser user, SaveAttractionRequest request, CancellationToken ct);
     Task<AttractionDto> UpdateAsync(CurrentUser user, Guid id, SaveAttractionRequest request, CancellationToken ct);
     Task DeleteAsync(CurrentUser user, Guid id, CancellationToken ct);

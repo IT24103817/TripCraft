@@ -98,9 +98,11 @@ Map<String, dynamic> _$ScheduleStopToJson(_ScheduleStop instance) =>
 _CheckInResult _$CheckInResultFromJson(Map<String, dynamic> json) =>
     _CheckInResult(
       stopId: json['stopId'] as String,
-      distanceMeters: (json['distanceMeters'] as num).toInt(),
+      distanceMeters: (json['distanceMeters'] as num?)?.toInt(),
       checkedInAt: json['checkedInAt'] as String,
       tripStatus: json['tripStatus'] as String,
+      method: json['method'] as String? ?? 'Gps',
+      stopName: json['stopName'] as String? ?? '',
     );
 
 Map<String, dynamic> _$CheckInResultToJson(_CheckInResult instance) =>
@@ -109,6 +111,8 @@ Map<String, dynamic> _$CheckInResultToJson(_CheckInResult instance) =>
       'distanceMeters': instance.distanceMeters,
       'checkedInAt': instance.checkedInAt,
       'tripStatus': instance.tripStatus,
+      'method': instance.method,
+      'stopName': instance.stopName,
     };
 
 _HotelInfo _$HotelInfoFromJson(Map<String, dynamic> json) => _HotelInfo(

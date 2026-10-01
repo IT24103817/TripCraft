@@ -3,6 +3,7 @@ import { useAuthStore } from '@/auth/authStore';
 import { useWorkflowCount, useWorkflows } from '@/features/quotations/api';
 import { useRevenue } from '@/features/quotations/quotationsApi';
 import { workflowColumns } from '@/features/quotations/workflowColumns';
+import { GuideChangeRequestsPanel } from '@/features/resources/GuideChangeRequestsPanel';
 import { useTripCount } from '@/features/trips/api';
 import { DataTable } from '@/shared/components/DataTable';
 import { KpiCard } from '@/shared/components/KpiCard';
@@ -15,6 +16,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const isManager = useAuthStore((s) => s.user?.role === 'OperationsManager');
   const month = monthRange();
+  // A workflow is PendingApproval while its trip waits for the manager's review.
   const pending = useWorkflowCount('PendingApproval');
   const active = useWorkflowCount('Planning');
   const trips = useTripCount(month.from, month.to);
@@ -29,7 +31,11 @@ export default function DashboardPage() {
     <section className="space-y-6">
       <PageHeader title="Dashboard" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Pending approvals" value={show(pending.data, pending.isError)} />
+        <KpiCard
+          label="Waiting for review"
+          value={show(pending.data, pending.isError)}
+          hint="Ready to send to the client"
+        />
         {isManager && (
           <KpiCard label="Trips this month" value={show(trips.data, trips.isError)} hint="By start date" />
         )}
@@ -37,7 +43,7 @@ export default function DashboardPage() {
           <KpiCard
             label="Revenue this month"
             value={revenue.isError ? 'n/a' : revenueUsd === undefined ? '…' : formatUsd(revenueUsd)}
-            hint="Approved quotations"
+            hint="Quotations sent to clients"
           />
         )}
         <KpiCard
@@ -46,6 +52,8 @@ export default function DashboardPage() {
           hint="Agents still planning"
         />
       </div>
+      {/* Guide change requests are Operations Manager work (the API refuses Admins). */}
+      {isManager && <GuideChangeRequestsPanel />}
       <div>
         <h2 className="mb-2 font-semibold text-slate-900">Latest workflows</h2>
         <PageState

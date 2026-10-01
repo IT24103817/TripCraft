@@ -1,3 +1,5 @@
+using TripCraft.Application.Common.Notifications;
+using TripCraft.Application.Vouchers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
@@ -48,6 +50,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     // Static fallback for the distance provider (PLAN.md section 9).
     public DbSet<CityDistance> CityDistances => Set<CityDistance>();
+
+    // v1.1: notifications, email outbox, vouchers and guide change requests.
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<EmailMessage> EmailOutbox => Set<EmailMessage>();
+    public DbSet<Voucher> Vouchers => Set<Voucher>();
+    public DbSet<GuideChangeRequest> GuideChangeRequests => Set<GuideChangeRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

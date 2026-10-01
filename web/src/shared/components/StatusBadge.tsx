@@ -1,8 +1,19 @@
 import { statusLabel, TONE_CLASSES, toneFor } from '../statuses';
 import { cn } from '../utils/cn';
 
-/** Coloured pill for any status in the PLAN.md status workflows. */
-export function StatusBadge({ status, className }: { status: string; className?: string }) {
+/**
+ * Coloured pill for any status in the PLAN.md status workflows. `label` replaces the generated text when one
+ * status name means something else on a page (e.g. a quotation that is "Approved" was sent to the client).
+ */
+export function StatusBadge({
+  status,
+  label,
+  className,
+}: {
+  status: string;
+  label?: string;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
@@ -11,7 +22,7 @@ export function StatusBadge({ status, className }: { status: string; className?:
         className,
       )}
     >
-      {statusLabel(status)}
+      {label ?? statusLabel(status)}
     </span>
   );
 }

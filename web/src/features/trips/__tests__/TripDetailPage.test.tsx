@@ -1,7 +1,7 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { trip } from '@/test/fixtures';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { trip, WORKFLOW_ID } from '@/test/fixtures';
 import { renderApp, signInAs } from '@/test/render';
 import { API, server } from '@/test/server';
 
@@ -31,6 +31,7 @@ const HISTORY = [
     actor: 'System',
     fromStatus: 'Planning',
     toStatus: 'FailedSafely',
+    reason: 'The agent service did not answer in time.',
   },
 ];
 
@@ -63,7 +64,7 @@ describe('TripDetailPage', () => {
     expect(screen.getByRole('list', { name: 'Status timeline' })).toHaveTextContent('Submitted');
   });
 
-  it.each(['Planning', 'PendingApproval', 'Confirmed'])(
+  it.each(['Planning', 'PendingReview', 'Confirmed'])(
     'does not say it waits for the tourist when the trip is %s',
     async (status) => {
       givenTrip(status);
@@ -71,9 +72,41 @@ describe('TripDetailPage', () => {
 
       expect(await screen.findByRole('heading', { name: 'Trip request' })).toBeInTheDocument();
       expect(screen.queryByText(/Waiting for the tourist/)).not.toBeInTheDocument();
+    },
+  );
+
+  it.each(['Planning', 'InProgress', 'Completed', 'Cancelled'])(
+    'offers no Cancel request button when the trip is %s',
+    async (status) => {
+      givenTrip(status);
+      renderApp(`/trips/${ID}`);
+
+      expect(await screen.findByRole('heading', { name: 'Trip request' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Cancel request' })).not.toBeInTheDocument();
     },
   );
+
+  it('shows the cities and what the status means', async () => {
+    givenTrip('QuotationSent');
+    renderApp(`/trips/${ID}`);
+
+    expect(await screen.findByText('Kandy, Ella')).toBeInTheDocument();
+    expect(screen.getByText(/Waiting for the client to accept or decline/)).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Status timeline' })).toHaveTextContent('Quotation sent');
+  });
+
+  it('links a trip in review to its review page', async () => {
+    givenTrip('PendingReview');
+    server.use(
+      http.get(`${API}/api/trip-requests/${ID}/workflow`, () => HttpResponse.json({ id: WORKFLOW_ID })),
+    );
+    renderApp(`/trips/${ID}`);
+
+    expect(await screen.findByRole('link', { name: 'Open review' })).toHaveAttribute(
+      'href',
+      `/approvals/${WORKFLOW_ID}`,
+    );
+  });
 
   it('shows the history of the trip and its workflow, oldest first, with who did it', async () => {
     givenTrip('Submitted');
@@ -87,14 +120,15 @@ describe('TripDetailPage', () => {
     expect(items[1]).toHaveTextContent('by Tourist');
     expect(items[2]).toHaveTextContent('Agents returned a proposal');
     expect(items[2]).toHaveTextContent('by System');
+    expect(items[2]).toHaveTextContent('Reason: The agent service did not answer in time.');
   });
 
-  it('cancels a Submitted request after confirmation', async () => {
-    givenTrip('Submitted');
-    let cancelled = false;
+  it('cancels a trip only with a reason, and sends the reason', async () => {
+    givenTrip('Confirmed');
+    let body: unknown = null;
     server.use(
-      http.post(`${API}/api/trip-requests/${ID}/cancel`, () => {
-        cancelled = true;
+      http.post(`${API}/api/trip-requests/${ID}/cancel`, async ({ request }) => {
+        body = await request.json();
         return HttpResponse.json(trip({ status: 'Cancelled' }));
       }),
     );
@@ -103,9 +137,14 @@ describe('TripDetailPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Cancel request' }));
     const dialog = await screen.findByRole('dialog', { name: 'Cancel trip request' });
     await user.click(within(dialog).getByRole('button', { name: 'Cancel request' }));
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Give a reason; the tourist sees it.');
+    expect(body).toBeNull();
+
+    await user.type(within(dialog).getByLabelText(/Reason/), 'Flooding on the Kandy road');
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel request' }));
 
     expect(await screen.findByText('Trip request cancelled.')).toBeInTheDocument();
-    expect(cancelled).toBe(true);
+    expect(body).toEqual({ reason: 'Flooding on the Kandy road' });
   });
 
   it('shows the API message when cancelling is refused (409)', async () => {
@@ -126,8 +165,51 @@ describe('TripDetailPage', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Cancel request' }));
     const dialog = await screen.findByRole('dialog', { name: 'Cancel trip request' });
+    await user.type(within(dialog).getByLabelText(/Reason/), 'Tourist asked by phone');
     await user.click(within(dialog).getByRole('button', { name: 'Cancel request' }));
 
     expect(await screen.findByText(/Only a Submitted trip request can be cancelled/)).toBeInTheDocument();
+  });
+
+  describe('vouchers', () => {
+    // jsdom has no object URLs; the download link only needs some URL. Put the originals back afterwards.
+    const original = { create: URL.createObjectURL, revoke: URL.revokeObjectURL };
+    afterEach(() => {
+      URL.createObjectURL = original.create;
+      URL.revokeObjectURL = original.revoke;
+    });
+
+    it('downloads the vouchers PDF of a confirmed trip with the bearer token', async () => {
+      givenTrip('Confirmed');
+      let authorization: string | null = null;
+      server.use(
+        http.get(`${API}/api/trips/${ID}/vouchers.pdf`, ({ request }) => {
+          authorization = request.headers.get('Authorization');
+          return new HttpResponse(new Blob(['%PDF-1.4'], { type: 'application/pdf' }), {
+            headers: { 'Content-Type': 'application/pdf' },
+          });
+        }),
+      );
+      const createObjectURL = vi.fn(() => 'blob:vouchers');
+      URL.createObjectURL = createObjectURL;
+      URL.revokeObjectURL = vi.fn();
+      const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+      const { user } = renderApp(`/trips/${ID}`);
+
+      await user.click(await screen.findByRole('button', { name: 'Download vouchers (PDF)' }));
+
+      await waitFor(() => expect(click).toHaveBeenCalled());
+      expect(authorization).toBe('Bearer test-token');
+      expect(createObjectURL).toHaveBeenCalled();
+      click.mockRestore();
+    });
+
+    it('offers no vouchers before the trip is confirmed', async () => {
+      givenTrip('ClientAccepted');
+      renderApp(`/trips/${ID}`);
+
+      expect(await screen.findByRole('heading', { name: 'Trip request' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Download vouchers (PDF)' })).not.toBeInTheDocument();
+    });
   });
 });

@@ -184,17 +184,22 @@ describe('Itinerary editor', () => {
     expect(await within(failed).findByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
 
-  it.each(['Submitted', 'Planning', 'PendingApproval', 'Approved', 'InProgress', 'Completed'])(
-    'offers no Edit day button when the trip is %s',
-    async (status) => {
-      signInAs('OperationsManager');
-      givenTrip(status);
-      renderApp(`/trips/${ID}`);
+  it.each([
+    'Submitted',
+    'Planning',
+    'PendingReview',
+    'QuotationSent',
+    'ClientAccepted',
+    'InProgress',
+    'Completed',
+  ])('offers no Edit day button when the trip is %s', async (status) => {
+    signInAs('OperationsManager');
+    givenTrip(status);
+    renderApp(`/trips/${ID}`);
 
-      expect(await screen.findByText('Temple of the Tooth (90 min)')).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /Edit day/ })).not.toBeInTheDocument();
-    },
-  );
+    expect(await screen.findByText('Temple of the Tooth (90 min)')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Edit day/ })).not.toBeInTheDocument();
+  });
 
   it('is not available to an Admin (the trip page is Operations Manager only)', async () => {
     signInAs('Admin');

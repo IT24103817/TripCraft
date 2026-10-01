@@ -39,7 +39,7 @@ final class AuthNotifierProvider
   AuthNotifier create() => AuthNotifier();
 }
 
-String _$authNotifierHash() => r'f4d450941ef125977e1846cafc82bc073f3d2402';
+String _$authNotifierHash() => r'49bac857340db535b1b89e746cfa8547b7e4f226';
 
 /// Who is signed in. AsyncLoading while the saved session is read at start-up;
 /// data(null) = signed out; data(user) = signed in. The router listens to this.

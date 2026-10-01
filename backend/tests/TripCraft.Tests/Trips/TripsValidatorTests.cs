@@ -12,7 +12,8 @@ public class TripsValidatorTests
 
     private static CreateTripRequestRequest Valid() => new(
         "5 days in Kandy and Ella", Today.AddDays(7), Today.AddDays(11), 4, 1500,
-        JsonDocument.Parse("""{"language":"en"}""").RootElement, "United Kingdom", "N1234567");
+        JsonDocument.Parse("""{"language":"en"}""").RootElement, "United Kingdom", "N1234567",
+        ["Kandy", "Ella"]);
 
     [Fact]
     public void Valid_request_passes()
@@ -62,5 +63,15 @@ public class TripsValidatorTests
         var fields = _validator.Validate(request).Errors.Select(e => e.PropertyName).ToList();
 
         fields.Should().Contain(["Pax", "BudgetUsd", "Preferences"]);
+    }
+
+    [Fact]
+    public void Cities_are_required_unique_and_at_most_one_per_day()
+    {
+        _validator.Validate(Valid() with { Cities = null }).IsValid.Should().BeFalse();
+        _validator.Validate(Valid() with { Cities = ["Kandy", "kandy"] }).Errors
+            .Should().Contain(e => e.ErrorMessage == "Each city can only be chosen once.");
+        _validator.Validate(Valid() with { EndDate = Valid().StartDate, Cities = ["Kandy", "Ella"] }).Errors
+            .Should().Contain(e => e.ErrorMessage == "Choose at most one city per trip day.");
     }
 }

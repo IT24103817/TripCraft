@@ -19,6 +19,8 @@ public class TripRequestConfiguration : IEntityTypeConfiguration<TripRequest>
         builder.Property(r => r.StartDate).HasColumnType("date");
         builder.Property(r => r.EndDate).HasColumnType("date");
         builder.Property(r => r.Preferences).HasColumnType("jsonb").IsRequired();
+        builder.Ignore(r => r.CityList);
+        builder.Property(r => r.Cities).HasMaxLength(500).IsRequired().HasDefaultValue(string.Empty);
         builder.Property(r => r.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
 
         builder.HasOne(r => r.Tourist)

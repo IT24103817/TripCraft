@@ -26,11 +26,20 @@ public class GuidesController(IGuideService guides, IGuideScheduleService schedu
     [Authorize(Roles = Roles.OperationsManager)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<GuideDto>> Create(SaveGuideRequest request, CancellationToken ct)
+    public async Task<ActionResult<GuideAccountDto>> Create(CreateGuideRequest request, CancellationToken ct)
     {
+        // The guide and their login are created together; the temporary password is in this response only.
         var created = await guides.CreateAsync(User.GetCurrentUser(), request, ct);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        return CreatedAtAction(nameof(GetById), new { id = created.Guide.Id }, created);
     }
+
+    /// <summary>New one-time temporary password; the guide must change it at the next login.</summary>
+    [HttpPost("{id:guid}/reset-password")]
+    [Authorize(Roles = Roles.OperationsManager)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<GuideAccountDto>> ResetPassword(Guid id, CancellationToken ct) =>
+        Ok(await guides.ResetPasswordAsync(User.GetCurrentUser(), id, ct));
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = Roles.OperationsManager)]

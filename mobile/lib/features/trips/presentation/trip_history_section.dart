@@ -16,6 +16,18 @@ const _actionLabels = {
   'AgentWorkflowStarted': 'Planning started',
   'AgentWorkflowFailedSafely': 'Planning could not start',
   'AgentProposalReceived': 'Plan received from the agents',
+  'PassportPhotoUploaded': 'Passport photo added',
+  'QuotationApproved': 'Quotation sent to you',
+  'QuotationRevisionRequested': 'Operator asked for changes',
+  'QuotationRepriced': 'Quotation re-priced',
+  'QuotationAccepted': 'You accepted the quotation',
+  'QuotationDeclined': 'You declined the quotation',
+  'QuotationRejected': 'Quotation rejected',
+  'TripConfirmed': 'Trip confirmed',
+  'TripRequestCancelled': 'Trip cancelled',
+  'StopCheckedIn': 'Checked in at a stop',
+  'GuideChangeRequested': 'Guide asked to be replaced',
+  'GuideChangeResolved': 'New guide assigned',
 };
 
 /// Spec section 8 "status tracking and history": every recorded change of the trip, oldest first.
@@ -57,8 +69,10 @@ class _HistoryTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: const Icon(Icons.history, size: 20),
       title: Text('${_actionLabels[entry.action] ?? entry.action}$change'),
+      // The API's human-readable reason (e.g. why the status changed) goes under the date.
       subtitle: Text(
-        '${formatDateTime(entry.at)} · ${_actorLabel(entry.actor)}',
+        '${formatDateTime(entry.at)} · ${_actorLabel(entry.actor)}'
+        '${entry.reason == null ? '' : '\n${entry.reason}'}',
       ),
     );
   }
@@ -66,6 +80,7 @@ class _HistoryTile extends StatelessWidget {
   static String _actorLabel(String actor) => switch (actor) {
     'OperationsManager' => 'by the operator',
     'Tourist' => 'by you',
+    'Guide' => 'by your guide',
     _ => 'by the system',
   };
 }

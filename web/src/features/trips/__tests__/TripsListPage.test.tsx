@@ -20,7 +20,7 @@ describe('TripsListPage', () => {
           trip({
             id: `trip-${page}-${i}`,
             objective: `Trip ${page}-${i}`,
-            status: i === 0 ? 'Submitted' : 'PendingApproval',
+            status: i === 0 ? 'Submitted' : 'PendingReview',
           }),
         );
         return HttpResponse.json(paged(rows, 45, page, 20));
@@ -33,7 +33,8 @@ describe('TripsListPage', () => {
 
     const table = await screen.findByRole('table', { name: 'Trip requests' });
     expect(within(table).getByText('Trip 1-0')).toBeInTheDocument();
-    expect(within(table).getByText('Pending approval')).toBeInTheDocument();
+    expect(within(table).getByText('Pending review')).toBeInTheDocument();
+    expect(within(table).getAllByText('Kandy, Ella')).toHaveLength(2);
     expect(screen.getByText('1–20 of 45')).toBeInTheDocument();
     expect(screen.getByText('Page 1 of 3')).toBeInTheDocument();
 
@@ -64,6 +65,42 @@ describe('TripsListPage', () => {
     await user.selectOptions(screen.getByLabelText('Status'), 'Submitted');
 
     await expectLast('status', 'Submitted');
+  });
+
+  it('offers every v1.1 status in the status filter, with readable labels', async () => {
+    renderApp('/trips');
+    await screen.findByText('Trip 1-0');
+
+    const options = within(screen.getByLabelText('Status')).getAllByRole('option');
+    expect(options.map((o) => o.textContent)).toEqual([
+      'All',
+      'Submitted',
+      'Planning',
+      'Pending review',
+      'Quotation sent',
+      'Client accepted',
+      'Confirmed',
+      'In progress',
+      'Completed',
+      'Cancelled',
+      'Revision requested',
+      'Failed safely',
+    ]);
+  });
+
+  it('filters by several cities at once (cities=A&cities=B, a trip must visit all of them)', async () => {
+    const { user } = renderApp('/trips');
+    await screen.findByText('Trip 1-0');
+
+    const cities = screen.getByRole('group', { name: 'Cities (all of)' });
+    await user.click(within(cities).getByRole('checkbox', { name: 'Kandy' }));
+    await user.click(within(cities).getByRole('checkbox', { name: 'Ella' }));
+
+    await waitFor(() => expect(requests.at(-1)?.searchParams.getAll('cities')).toEqual(['Kandy', 'Ella']));
+    expect(requests.at(-1)?.search).not.toContain('cities%5B');
+
+    await user.click(within(cities).getByRole('checkbox', { name: 'Kandy' }));
+    await waitFor(() => expect(requests.at(-1)?.searchParams.getAll('cities')).toEqual(['Ella']));
   });
 
   it('shows an error state with Retry on a 500 and recovers', async () => {

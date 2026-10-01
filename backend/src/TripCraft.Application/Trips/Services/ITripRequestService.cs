@@ -15,6 +15,9 @@ public interface ITripRequestService
     /// <summary>Audit events of the trip and its agent workflows, oldest first.</summary>
     Task<IReadOnlyList<TripHistoryEntryDto>> GetHistoryAsync(CurrentUser user, Guid id, CancellationToken ct);
 
-    /// <summary>Submitted → Cancelled. 409 in any other status.</summary>
-    Task<TripRequestDto> CancelAsync(CurrentUser user, Guid id, CancellationToken ct);
+    /// <summary>Cancels with a reason, through TripStatusMachine; the tourist only until the cut-off. Releases holds.</summary>
+    Task<TripRequestDto> CancelAsync(CurrentUser user, Guid id, string reason, CancellationToken ct);
+
+    /// <summary>Whether the caller may cancel now, the last day, and the operator contact.</summary>
+    Task<CancellationInfoDto> GetCancellationInfoAsync(CurrentUser user, Guid id, CancellationToken ct);
 }

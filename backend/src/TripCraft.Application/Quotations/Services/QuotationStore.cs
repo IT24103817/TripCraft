@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using TripCraft.Application.Workflows.Ports;
 
 namespace TripCraft.Application.Quotations.Services;
@@ -22,6 +23,7 @@ public class QuotationStore(IQuotationRepository quotations) : IQuotationStore
             FxRate = draft.FxRate,
             FxAsOf = draft.FxAsOf,
             FxStale = draft.FxStale,
+            ProposalSnapshot = draft.ProposalSnapshot,
             Status = QuotationStatus.Pending
         };
         quotation.Lines = draft.Lines.Select(l => new QuotationLine
@@ -34,21 +36,33 @@ public class QuotationStore(IQuotationRepository quotations) : IQuotationStore
     }
 
     public async Task<QuotationSummary?> GetAsync(Guid quotationId, CancellationToken ct) =>
-        await quotations.FindAsync(quotationId, ct) is { } q
-            ? new QuotationSummary(q.Id, q.TripRequestId, q.Version, q.Status == QuotationStatus.Pending, q.TotalLkr, q.TotalUsd)
-            : null;
+        await quotations.FindAsync(quotationId, ct) is { } q ? Summary(q) : null;
+
+    public async Task<QuotationSummary?> GetLatestForTripAsync(Guid tripRequestId, CancellationToken ct)
+    {
+        var latest = await quotations.Query().Where(q => q.TripRequestId == tripRequestId)
+            .OrderByDescending(q => q.Version).FirstOrDefaultAsync(ct);
+        return latest is null ? null : Summary(latest);
+    }
 
     public async Task SetStatusAsync(Guid quotationId, QuotationDecision status, CancellationToken ct)
     {
         var quotation = await quotations.FindAsync(quotationId, ct)
                         ?? throw new InvalidOperationException($"Quotation {quotationId} not found.");
-        quotation.Status = status switch
+        switch (status)
         {
-            QuotationDecision.Approved => QuotationStatus.Approved,
-            QuotationDecision.Rejected => QuotationStatus.Rejected,
-            _ => QuotationStatus.RevisionRequested
-        };
+            case QuotationDecision.Approved: quotation.Status = QuotationStatus.Approved; break;
+            case QuotationDecision.Rejected: quotation.Status = QuotationStatus.Rejected; break;
+            case QuotationDecision.RevisionRequested: quotation.Status = QuotationStatus.RevisionRequested; break;
+            case QuotationDecision.Declined: quotation.Status = QuotationStatus.Declined; break;
+            case QuotationDecision.Superseded: quotation.Status = QuotationStatus.Superseded; break;
+            case QuotationDecision.Accepted: quotation.AcceptedAt = DateTime.UtcNow; break; // stays Approved
+            case QuotationDecision.Confirmed: break; // the approval_decisions row is the record
+        }
     }
+
+    private static QuotationSummary Summary(Quotation q) =>
+        new(q.Id, q.TripRequestId, q.Version, q.Status.ToString(), q.TotalLkr, q.TotalUsd, q.AcceptedAt);
 
     public void RecordDecision(Guid quotationId, Guid decidedBy, QuotationDecision decision, string? comment) =>
         quotations.Add(new ApprovalDecision

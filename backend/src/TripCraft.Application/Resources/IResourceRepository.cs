@@ -11,12 +11,15 @@ public interface IResourceRepository
     IQueryable<RoomType> RoomTypes();    // of hotels that are not deleted, hotel included
     IQueryable<ResourceHold> Holds();    // every status
     IQueryable<StopCheckIn> CheckIns();
+    IQueryable<GuideChangeRequest> GuideChangeRequests();
+    Task<GuideChangeRequest?> FindGuideChangeRequestAsync(Guid id, CancellationToken ct); // tracked
 
     Task<Guide?> FindGuideAsync(Guid id, CancellationToken ct);       // tracked
     Task<Guide?> FindGuideByUserAsync(Guid userId, CancellationToken ct);
     Task<Vehicle?> FindVehicleAsync(Guid id, CancellationToken ct);   // tracked
     Task<Hotel?> FindHotelAsync(Guid id, CancellationToken ct);       // tracked, with room types
     Task<ResourceHold?> FindHoldAsync(Guid id, CancellationToken ct); // tracked
+    Task<List<ResourceHold>> FindHeldHoldsOfTripAsync(Guid tripRequestId, CancellationToken ct); // tracked, Held only
 
     /// <summary>Held quantity of a resource in [from, to], counting rows staged in this request too.</summary>
     Task<int> HeldQuantityAsync(ResourceType type, Guid resourceId, DateOnly from, DateOnly to, CancellationToken ct);

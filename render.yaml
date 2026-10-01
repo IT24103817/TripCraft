@@ -39,6 +39,14 @@ services:
         sync: false
       - key: FX_FALLBACK_LKR_PER_USD # rate used (flagged stale) if the FX provider fails before any success
         value: "300"
+      - key: VOUCHER_SIGNING_KEY     # v1.1: random, at least 32 bytes; signs voucher QR codes
+        sync: false
+      - key: CANCELLATION_CUTOFF_DAYS # v1.1: tourists may cancel until N days before the start
+        value: "3"
+      - key: OPERATOR_CONTACT        # v1.1: shown when cancellation is closed
+        sync: false
+      - key: SMTP_HOST               # v1.1: optional; without it confirmation emails go to a pickup folder
+        sync: false
       # UPLOADS_DIR is not set here: the image uses /app/uploads. Render's free disk is ephemeral, so passport
       # photos saved there are lost on every redeploy or restart.
 

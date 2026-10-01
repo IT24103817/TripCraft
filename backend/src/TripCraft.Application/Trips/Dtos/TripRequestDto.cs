@@ -13,10 +13,11 @@ public record TripRequestDto(
     JsonElement Preferences,
     string Status,
     DateTime CreatedAt,
-    DateTime UpdatedAt)
+    DateTime UpdatedAt,
+    IReadOnlyList<string> Cities)
 {
     public static TripRequestDto FromEntity(TripRequest t) => new(
         t.Id, t.TouristId, t.Objective, t.StartDate, t.EndDate, t.Pax, t.BudgetUsd,
         JsonDocument.Parse(t.Preferences).RootElement.Clone(),
-        t.Status.ToString(), t.CreatedAt, t.UpdatedAt);
+        t.Status.ToString(), t.CreatedAt, t.UpdatedAt, t.CityList);
 }

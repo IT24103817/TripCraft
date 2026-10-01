@@ -7,14 +7,20 @@ import { StatusBadge } from '@/shared/components/StatusBadge';
 import { useListParams } from '@/shared/hooks/useListParams';
 import { formatDate, formatLkr, formatUsd, shortId } from '@/shared/utils/format';
 import { useQuotations } from './quotationsApi';
-import type { QuotationDto } from './types';
+import { QUOTATION_STATUS_LABELS } from './reviewRules';
+import type { QuotationDto, QuotationStatus } from './types';
 
-const STATUSES = ['Pending', 'Approved', 'Rejected', 'RevisionRequested'];
+const STATUSES = Object.keys(QUOTATION_STATUS_LABELS) as QuotationStatus[];
 
 const columns: Column<QuotationDto>[] = [
   { key: 'trip', header: 'Trip', render: (q) => shortId(q.tripRequestId) },
   { key: 'version', header: 'Version', sortKey: 'version', render: (q) => `v${q.version}` },
-  { key: 'status', header: 'Status', sortKey: 'status', render: (q) => <StatusBadge status={q.status} /> },
+  {
+    key: 'status',
+    header: 'Status',
+    sortKey: 'status',
+    render: (q) => <StatusBadge status={q.status} label={QUOTATION_STATUS_LABELS[q.status]} />,
+  },
   { key: 'totalLkr', header: 'Total (LKR)', sortKey: 'totalLkr', render: (q) => formatLkr(q.totalLkr) },
   { key: 'totalUsd', header: 'Total (USD)', sortKey: 'totalUsd', render: (q) => formatUsd(q.totalUsd) },
   { key: 'fx', header: 'FX', render: (q) => `${q.fxRate}${q.fxStale ? ' (stale)' : ''}` },
@@ -47,7 +53,7 @@ export default function QuotationsPage() {
     <section className="space-y-4">
       <PageHeader
         title="Quotations"
-        description="Every priced version the agents proposed, and its decision."
+        description="Every priced version of every trip, and what happened to it."
       />
       <SearchFilterBar
         search={{
@@ -60,7 +66,7 @@ export default function QuotationsPage() {
             name: 'status',
             label: 'Status',
             value: query.status,
-            options: STATUSES.map((s) => ({ value: s, label: s })),
+            options: STATUSES.map((s) => ({ value: s, label: QUOTATION_STATUS_LABELS[s] })),
             onChange: (status) => list.set({ status }),
           },
         ]}

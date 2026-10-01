@@ -43,6 +43,9 @@ public class AttractionService(
             .ToPagedResultAsync(query.Page, query.PageSize, AttractionDto.FromEntity, ct);
     }
 
+    public async Task<IReadOnlyList<string>> ListCitiesAsync(CancellationToken ct) =>
+        await attractions.ListActiveCitiesAsync(ct);
+
     public async Task<AttractionDto> GetAsync(Guid id, CancellationToken ct) =>
         AttractionDto.FromEntity(await LoadAsync(id, ct));
 

@@ -14,4 +14,5 @@ public record CreateTripRequestRequest(
     decimal BudgetUsd,
     JsonElement? Preferences,
     string Nationality,
-    string PassportNumber) : ITripDetails;
+    string PassportNumber,
+    IReadOnlyList<string>? Cities) : ITripDetails;

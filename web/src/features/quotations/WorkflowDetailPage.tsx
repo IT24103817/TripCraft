@@ -30,8 +30,10 @@ export default function WorkflowDetailPage() {
                 <Link to="/workflows" className="btn-secondary">
                   All workflows
                 </Link>
+                {/* Review, send, confirm: possible once the agents produced a proposal. */}
                 {(workflow.data.status === 'PendingApproval' ||
-                  workflow.data.status === 'RevisionRequested') && (
+                  workflow.data.status === 'RevisionRequested' ||
+                  workflow.data.status === 'Approved') && (
                   <Link to={`/approvals/${id}`} className="btn-primary">
                     Review proposal
                   </Link>

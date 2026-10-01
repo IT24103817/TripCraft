@@ -8,15 +8,17 @@ import 'package:tripcraft_mobile/core/storage/session_storage.dart';
 
 import '../helpers.dart';
 
-AsyncValue<AppUser?> signedIn(String role) => AsyncData(
-  AppUser(
-    id: 'u1',
-    email: 'a@b.lk',
-    fullName: 'Demo',
-    role: role,
-    isActive: true,
-  ),
-);
+AsyncValue<AppUser?> signedIn(String role, {bool mustChange = false}) =>
+    AsyncData(
+      AppUser(
+        id: 'u1',
+        email: 'a@b.lk',
+        fullName: 'Demo',
+        role: role,
+        isActive: true,
+        mustChangePassword: mustChange,
+      ),
+    );
 
 void main() {
   group('authRedirect', () {
@@ -49,6 +51,27 @@ void main() {
       expect(authRedirect(signedIn('Tourist'), '/schedule'), '/trips');
       expect(authRedirect(signedIn('Guide'), '/trips/abc'), '/schedule');
       expect(authRedirect(signedIn('Tourist'), '/trips/abc'), isNull);
+    });
+
+    test('both tourists and guides can open their alerts', () {
+      expect(authRedirect(signedIn('Tourist'), '/alerts'), isNull);
+      expect(authRedirect(signedIn('Guide'), '/alerts'), isNull);
+    });
+
+    test(
+      'mustChangePassword forces /change-password and it cannot be skipped',
+      () {
+        final guide = signedIn('Guide', mustChange: true);
+        expect(authRedirect(guide, '/login'), '/change-password');
+        expect(authRedirect(guide, '/schedule'), '/change-password');
+        expect(authRedirect(guide, '/scan'), '/change-password');
+        expect(authRedirect(guide, '/change-password'), isNull);
+      },
+    );
+
+    test('after the change, /change-password goes home', () {
+      expect(authRedirect(signedIn('Guide'), '/change-password'), '/schedule');
+      expect(authRedirect(signedIn('Tourist'), '/change-password'), '/trips');
     });
   });
 

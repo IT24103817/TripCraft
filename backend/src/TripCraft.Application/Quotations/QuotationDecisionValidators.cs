@@ -11,3 +11,8 @@ public class RequestRevisionRequestValidator : AbstractValidator<RequestRevision
 {
     public RequestRevisionRequestValidator() => RuleFor(r => r.Comment).NotEmpty().MaximumLength(1000);
 }
+
+public class DeclineQuotationRequestValidator : AbstractValidator<DeclineQuotationRequest>
+{
+    public DeclineQuotationRequestValidator() => RuleFor(r => r.Reason).NotEmpty().MaximumLength(1000);
+}

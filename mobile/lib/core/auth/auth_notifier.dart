@@ -18,6 +18,21 @@ class AuthNotifier extends _$AuthNotifier {
     state = AsyncData(user);
   }
 
+  /// Throws a UserFacingException (e.g. wrong current password); on success the router leaves the
+  /// Change password screen because mustChangePassword is now false.
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    final user = await ref
+        .read(authRepositoryProvider)
+        .changePassword(
+          currentPassword: currentPassword,
+          newPassword: newPassword,
+        );
+    state = AsyncData(user);
+  }
+
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);

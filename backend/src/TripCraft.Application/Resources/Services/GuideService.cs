@@ -5,7 +5,9 @@ using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Common.Paging;
 using TripCraft.Application.Common.Security;
+using Microsoft.AspNetCore.Identity;
 using TripCraft.Application.Identity;
+using TripCraft.Application.Identity.Services;
 using TripCraft.Application.Resources.Dtos;
 using TripCraft.Application.Workflows.Ports;
 
@@ -15,14 +17,23 @@ public interface IGuideService
 {
     Task<PagedResult<GuideDto>> ListAsync(GuideListQuery query, CancellationToken ct);
     Task<GuideDto> GetAsync(Guid id, CancellationToken ct);
-    Task<GuideDto> CreateAsync(CurrentUser user, SaveGuideRequest request, CancellationToken ct);
+    Task<GuideAccountDto> CreateAsync(CurrentUser user, CreateGuideRequest request, CancellationToken ct);
+    Task<GuideAccountDto> ResetPasswordAsync(CurrentUser user, Guid id, CancellationToken ct);
     Task<GuideDto> UpdateAsync(CurrentUser user, Guid id, SaveGuideRequest request, CancellationToken ct);
     Task DeleteAsync(CurrentUser user, Guid id, CancellationToken ct);
 }
 
-/// <summary>Guide CRUD (Component B). Every change is audited; delete is soft and refused while the guide holds a future trip.</summary>
-public class GuideService(IResourceRepository resources, IUserRepository users, IAuditLogger audit, IUnitOfWork unitOfWork)
-    : IGuideService
+/// <summary>
+/// Guide CRUD (Component B). Every change is audited; delete is soft and refused while the guide holds a future trip.
+/// v1.1: creating a guide also creates their Guide login with a one-time temporary password (there is no public
+/// guide registration); the manager can reset it. Both force a password change at the next login.
+/// </summary>
+public class GuideService(
+    IResourceRepository resources,
+    IUserRepository users,
+    IPasswordHasher<User> passwordHasher,
+    IAuditLogger audit,
+    IUnitOfWork unitOfWork) : IGuideService
 {
     public static readonly IReadOnlyDictionary<string, Expression<Func<Guide, object>>> SortableFields =
         new Dictionary<string, Expression<Func<Guide, object>>>
@@ -55,25 +66,50 @@ public class GuideService(IResourceRepository resources, IUserRepository users, 
 
     public async Task<GuideDto> GetAsync(Guid id, CancellationToken ct) => GuideDto.FromEntity(await LoadAsync(id, ct));
 
-    public async Task<GuideDto> CreateAsync(CurrentUser user, SaveGuideRequest request, CancellationToken ct)
+    public async Task<GuideAccountDto> CreateAsync(CurrentUser user, CreateGuideRequest request, CancellationToken ct)
     {
-        await EnsureUserLinkAsync(request.UserId, guideId: null, ct);
-        var guide = new Guide();
-        ApplyDetails(guide, request);
+        var email = AuthService.NormaliseEmail(request.Email);
+        if (await users.EmailExistsAsync(email, ct))
+            throw new ConflictException("An account with this email already exists.");
+
+        var password = TemporaryPassword.Create();
+        var login = new User { Email = email, FullName = request.Name.Trim(), Role = UserRole.Guide, IsActive = true,
+            MustChangePassword = true };
+        login.PasswordHash = passwordHasher.HashPassword(login, password);
+        await users.AddAsync(login, ct);
+
+        var guide = new Guide { UserId = login.Id };
+        ApplyDetails(guide, new SaveGuideRequest(request.Name, request.Phone, request.Languages, request.DayRateLkr,
+            request.MaxPax, request.IsActive));
         guide.Languages = request.Languages
             .Select(code => new GuideLanguage { GuideId = guide.Id, LanguageCode = code.Trim().ToLower() })
             .ToList();
         resources.Add(guide);
 
-        audit.Record(user.Id, "GuideCreated", nameof(Guide), guide.Id, null, GuideDto.FromEntity(guide));
+        // The audit row has the email but never the password.
+        audit.Record(user.Id, "GuideCreated", nameof(Guide), guide.Id, null, new { Guide = GuideDto.FromEntity(guide), Email = email });
         await unitOfWork.SaveChangesAsync(ct);
-        return GuideDto.FromEntity(guide);
+        return new GuideAccountDto(GuideDto.FromEntity(guide), email, password);
+    }
+
+    public async Task<GuideAccountDto> ResetPasswordAsync(CurrentUser user, Guid id, CancellationToken ct)
+    {
+        var guide = await LoadAsync(id, ct);
+        var login = guide.UserId is { } userId ? await users.GetByIdAsync(userId, ct) : null;
+        if (login is null)
+            throw new ConflictException("This guide has no login to reset.");
+
+        var password = TemporaryPassword.Create();
+        login.PasswordHash = passwordHasher.HashPassword(login, password);
+        login.MustChangePassword = true;
+        audit.Record(user.Id, "GuidePasswordReset", nameof(Guide), guide.Id, null, new { login.Email });
+        await unitOfWork.SaveChangesAsync(ct);
+        return new GuideAccountDto(GuideDto.FromEntity(guide), login.Email, password);
     }
 
     public async Task<GuideDto> UpdateAsync(CurrentUser user, Guid id, SaveGuideRequest request, CancellationToken ct)
     {
         var guide = await LoadAsync(id, ct);
-        await EnsureUserLinkAsync(request.UserId, guide.Id, ct);
         var before = GuideDto.FromEntity(guide);
 
         // Keep the languages that stay, remove the dropped ones, add the new ones (unique per guide).
@@ -113,18 +149,6 @@ public class GuideService(IResourceRepository resources, IUserRepository users, 
     private async Task<Guide> LoadAsync(Guid id, CancellationToken ct) =>
         await resources.FindGuideAsync(id, ct) ?? throw new NotFoundException("Guide not found.");
 
-    /// <summary>A linked login must be an active Guide user and not linked to another guide (409).</summary>
-    private async Task EnsureUserLinkAsync(Guid? userId, Guid? guideId, CancellationToken ct)
-    {
-        if (userId is null)
-            return;
-        var user = await users.GetByIdAsync(userId.Value, ct);
-        if (user is null || user.Role != UserRole.Guide)
-            throw new ConflictException("The linked user must be an existing user with the Guide role.");
-        if (await resources.Guides().AnyAsync(g => g.UserId == userId && g.Id != guideId, ct))
-            throw new ConflictException("That user is already linked to another guide.");
-    }
-
     private static void ApplyDetails(Guide guide, SaveGuideRequest request)
     {
         guide.Name = request.Name.Trim();
@@ -132,6 +156,5 @@ public class GuideService(IResourceRepository resources, IUserRepository users, 
         guide.DayRateLkr = request.DayRateLkr;
         guide.MaxPax = request.MaxPax;
         guide.IsActive = request.IsActive;
-        guide.UserId = request.UserId;
     }
 }

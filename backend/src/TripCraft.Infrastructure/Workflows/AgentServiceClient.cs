@@ -33,6 +33,7 @@ public class AgentServiceClient(HttpClient http, IConfiguration configuration, I
         r.PreferencesJson,
         r.Skeleton,
         PreviousViolations = r.PreviousViolations ?? [],
+        Cities = r.Cities ?? [],
         ManagerComment = managerComment,
         CallbackBaseUrl = configuration["AGENT_CALLBACK_BASE_URL"]
     };

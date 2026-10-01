@@ -30,6 +30,14 @@ export const guideSchema = z.object({
 });
 export type GuideForm = z.infer<typeof guideSchema>;
 
+/** A new guide also gets a login: CreateGuideRequestValidator requires a valid email. */
+export const newGuideSchema = guideSchema.extend({
+  email: z.string().trim().email('Enter a valid email address.').max(256),
+});
+/** Editing keeps the same form shape; the login email is not changed there, so any value passes. */
+export const editGuideSchema = guideSchema.extend({ email: z.string() });
+export type GuideAccountForm = z.infer<typeof newGuideSchema>;
+
 export const VEHICLE_TYPES = ['Car', 'Van', 'Coach'] as const;
 
 /** Mirrors SaveVehicleRequestValidator. */

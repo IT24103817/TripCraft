@@ -14,11 +14,17 @@ export interface TripRequestDto {
   status: TripRequestStatus;
   createdAt: string;
   updatedAt: string;
+  /** The cities the trip visits, in order (v1.1). */
+  cities: string[];
 }
 
-/** Query of GET /api/trip-requests. Sortable: createdAt, startDate, budgetUsd, pax, status. Search matches the objective. */
+/**
+ * Query of GET /api/trip-requests. Sortable: createdAt, startDate, budgetUsd, pax, status. Search matches the
+ * objective. `cities` keeps only trips that visit every listed city (sent as cities=A&cities=B).
+ */
 export interface TripRequestListQuery {
   status?: string;
+  cities?: string[];
   from?: string;
   to?: string;
   search?: string;
@@ -92,4 +98,11 @@ export interface TripHistoryEntryDto {
   actor: string;
   fromStatus: string | null;
   toStatus: string | null;
+  /** Why the status changed (v1.1), e.g. "Declined by the client: too expensive". */
+  reason?: string | null;
+}
+
+/** Body of POST /api/trip-requests/{id}/cancel: the reason is required (at most 500 characters). */
+export interface CancelTripRequest {
+  reason: string;
 }

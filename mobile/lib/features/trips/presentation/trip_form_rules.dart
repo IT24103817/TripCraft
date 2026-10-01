@@ -7,6 +7,7 @@ class TripFormRules {
   static const maxTripDays = 30;
   static const maxPax = 50;
   static const maxBudgetUsd = 1000000;
+  static const maxCities = 10;
 
   static String? objective(String? value) {
     final text = value?.trim() ?? '';
@@ -28,6 +29,23 @@ class TripFormRules {
     if (DateUtils.dateOnly(range.end).difference(start).inDays + 1 >
         maxTripDays) {
       return 'Trips can be at most $maxTripDays days.';
+    }
+    return null;
+  }
+
+  /// Cities come from the list (so they are always valid names): 1–10 of them, and at most one per trip day.
+  static String? cities(List<String> chosen, DateTimeRange? dates) {
+    if (chosen.isEmpty) return 'Choose at least one city.';
+    if (chosen.length > maxCities) return 'Choose at most $maxCities cities.';
+    if (dates != null) {
+      final days =
+          DateUtils.dateOnly(dates.end)
+              .difference(DateUtils.dateOnly(dates.start))
+              .inDays +
+          1;
+      if (chosen.length > days) {
+        return 'At most one city per day: your trip has $days day${days == 1 ? '' : 's'}.';
+      }
     }
     return null;
   }

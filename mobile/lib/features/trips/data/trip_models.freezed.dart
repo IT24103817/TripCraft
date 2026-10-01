@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$TripRequest {
 
- String get id; String get objective; String get startDate; String get endDate; int get pax; double get budgetUsd; Map<String, dynamic> get preferences; String get status; String get createdAt;
+ String get id; String get objective; String get startDate; String get endDate; int get pax; double get budgetUsd; Map<String, dynamic> get preferences; String get status; String get createdAt; List<String> get cities;
 /// Create a copy of TripRequest
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +30,20 @@ $TripRequestCopyWith<TripRequest> get copyWith => _$TripRequestCopyWithImpl<Trip
 @override
 bool operator ==(Object other) {
   final _this = this as TripRequest;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripRequest&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.objective, _this.objective) || other.objective == _this.objective)&&(identical(other.startDate, _this.startDate) || other.startDate == _this.startDate)&&(identical(other.endDate, _this.endDate) || other.endDate == _this.endDate)&&(identical(other.pax, _this.pax) || other.pax == _this.pax)&&(identical(other.budgetUsd, _this.budgetUsd) || other.budgetUsd == _this.budgetUsd)&&const DeepCollectionEquality().equals(other.preferences, _this.preferences)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripRequest&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.objective, _this.objective) || other.objective == _this.objective)&&(identical(other.startDate, _this.startDate) || other.startDate == _this.startDate)&&(identical(other.endDate, _this.endDate) || other.endDate == _this.endDate)&&(identical(other.pax, _this.pax) || other.pax == _this.pax)&&(identical(other.budgetUsd, _this.budgetUsd) || other.budgetUsd == _this.budgetUsd)&&const DeepCollectionEquality().equals(other.preferences, _this.preferences)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&const DeepCollectionEquality().equals(other.cities, _this.cities));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as TripRequest;
-  return Object.hash(runtimeType,_this.id,_this.objective,_this.startDate,_this.endDate,_this.pax,_this.budgetUsd,const DeepCollectionEquality().hash(_this.preferences),_this.status,_this.createdAt);
+  return Object.hash(runtimeType,_this.id,_this.objective,_this.startDate,_this.endDate,_this.pax,_this.budgetUsd,const DeepCollectionEquality().hash(_this.preferences),_this.status,_this.createdAt,const DeepCollectionEquality().hash(_this.cities));
 }
 
 @override
 String toString() {
   final _this = this as TripRequest;
-  return 'TripRequest(id: ${_this.id}, objective: ${_this.objective}, startDate: ${_this.startDate}, endDate: ${_this.endDate}, pax: ${_this.pax}, budgetUsd: ${_this.budgetUsd}, preferences: ${_this.preferences}, status: ${_this.status}, createdAt: ${_this.createdAt})';
+  return 'TripRequest(id: ${_this.id}, objective: ${_this.objective}, startDate: ${_this.startDate}, endDate: ${_this.endDate}, pax: ${_this.pax}, budgetUsd: ${_this.budgetUsd}, preferences: ${_this.preferences}, status: ${_this.status}, createdAt: ${_this.createdAt}, cities: ${_this.cities})';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $TripRequestCopyWith<$Res>  {
   factory $TripRequestCopyWith(TripRequest value, $Res Function(TripRequest) _then) = _$TripRequestCopyWithImpl;
 @useResult
 $Res call({
- String id, String objective, String startDate, String endDate, int pax, double budgetUsd, Map<String, dynamic> preferences, String status, String createdAt
+ String id, String objective, String startDate, String endDate, int pax, double budgetUsd, Map<String, dynamic> preferences, String status, String createdAt, List<String> cities
 });
 
 
@@ -71,7 +71,7 @@ class _$TripRequestCopyWithImpl<$Res>
 
 /// Create a copy of TripRequest
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? objective = null,Object? startDate = null,Object? endDate = null,Object? pax = null,Object? budgetUsd = null,Object? preferences = null,Object? status = null,Object? createdAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? objective = null,Object? startDate = null,Object? endDate = null,Object? pax = null,Object? budgetUsd = null,Object? preferences = null,Object? status = null,Object? createdAt = null,Object? cities = null,}) {
   return _then(TripRequest(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,objective: null == objective ? _self.objective : objective // ignore: cast_nullable_to_non_nullable
@@ -82,7 +82,8 @@ as int,budgetUsd: null == budgetUsd ? _self.budgetUsd : budgetUsd // ignore: cas
 as double,preferences: null == preferences ? _self.preferences : preferences // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cities: null == cities ? _self.cities : cities // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 
@@ -167,10 +168,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String objective,  String startDate,  String endDate,  int pax,  double budgetUsd,  Map<String, dynamic> preferences,  String status,  String createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String objective,  String startDate,  String endDate,  int pax,  double budgetUsd,  Map<String, dynamic> preferences,  String status,  String createdAt,  List<String> cities)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TripRequest() when $default != null:
-return $default(_that.id,_that.objective,_that.startDate,_that.endDate,_that.pax,_that.budgetUsd,_that.preferences,_that.status,_that.createdAt);case _:
+return $default(_that.id,_that.objective,_that.startDate,_that.endDate,_that.pax,_that.budgetUsd,_that.preferences,_that.status,_that.createdAt,_that.cities);case _:
   return orElse();
 
 }
@@ -188,10 +189,10 @@ return $default(_that.id,_that.objective,_that.startDate,_that.endDate,_that.pax
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String objective,  String startDate,  String endDate,  int pax,  double budgetUsd,  Map<String, dynamic> preferences,  String status,  String createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String objective,  String startDate,  String endDate,  int pax,  double budgetUsd,  Map<String, dynamic> preferences,  String status,  String createdAt,  List<String> cities)  $default,) {final _that = this;
 switch (_that) {
 case _TripRequest():
-return $default(_that.id,_that.objective,_that.startDate,_that.endDate,_that.pax,_that.budgetUsd,_that.preferences,_that.status,_that.createdAt);case _:
+return $default(_that.id,_that.objective,_that.startDate,_that.endDate,_that.pax,_that.budgetUsd,_that.preferences,_that.status,_that.createdAt,_that.cities);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -208,10 +209,10 @@ return $default(_that.id,_that.objective,_that.startDate,_that.endDate,_that.pax
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String objective,  String startDate,  String endDate,  int pax,  double budgetUsd,  Map<String, dynamic> preferences,  String status,  String createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String objective,  String startDate,  String endDate,  int pax,  double budgetUsd,  Map<String, dynamic> preferences,  String status,  String createdAt,  List<String> cities)?  $default,) {final _that = this;
 switch (_that) {
 case _TripRequest() when $default != null:
-return $default(_that.id,_that.objective,_that.startDate,_that.endDate,_that.pax,_that.budgetUsd,_that.preferences,_that.status,_that.createdAt);case _:
+return $default(_that.id,_that.objective,_that.startDate,_that.endDate,_that.pax,_that.budgetUsd,_that.preferences,_that.status,_that.createdAt,_that.cities);case _:
   return null;
 
 }
@@ -223,7 +224,7 @@ return $default(_that.id,_that.objective,_that.startDate,_that.endDate,_that.pax
 @JsonSerializable()
 
 class _TripRequest implements TripRequest {
-  const _TripRequest({required this.id, required this.objective, required this.startDate, required this.endDate, required this.pax, required this.budgetUsd,  Map<String, dynamic> preferences = const <String, dynamic>{}, required this.status, required this.createdAt}): _preferences = preferences;
+  const _TripRequest({required this.id, required this.objective, required this.startDate, required this.endDate, required this.pax, required this.budgetUsd,  Map<String, dynamic> preferences = const <String, dynamic>{}, required this.status, required this.createdAt,  List<String> cities = const <String>[]}): _preferences = preferences,_cities = cities;
   factory _TripRequest.fromJson(Map<String, dynamic> json) => _$TripRequestFromJson(json);
 
 @override final  String id;
@@ -241,6 +242,13 @@ class _TripRequest implements TripRequest {
 
 @override final  String status;
 @override final  String createdAt;
+ final  List<String> _cities;
+@override@JsonKey() List<String> get cities {
+  if (_cities is EqualUnmodifiableListView) return _cities;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_cities);
+}
+
 
 /// Create a copy of TripRequest
 /// with the given fields replaced by the non-null parameter values.
@@ -255,18 +263,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripRequest&&(identical(other.id, id) || other.id == id)&&(identical(other.objective, objective) || other.objective == objective)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.pax, pax) || other.pax == pax)&&(identical(other.budgetUsd, budgetUsd) || other.budgetUsd == budgetUsd)&&const DeepCollectionEquality().equals(other.preferences, _preferences)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripRequest&&(identical(other.id, id) || other.id == id)&&(identical(other.objective, objective) || other.objective == objective)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.pax, pax) || other.pax == pax)&&(identical(other.budgetUsd, budgetUsd) || other.budgetUsd == budgetUsd)&&const DeepCollectionEquality().equals(other.preferences, _preferences)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&const DeepCollectionEquality().equals(other.cities, _cities));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,objective,startDate,endDate,pax,budgetUsd,const DeepCollectionEquality().hash(_preferences),status,createdAt);
+    return Object.hash(runtimeType,id,objective,startDate,endDate,pax,budgetUsd,const DeepCollectionEquality().hash(_preferences),status,createdAt,const DeepCollectionEquality().hash(_cities));
 }
 
 @override
 String toString() {
-    return 'TripRequest(id: $id, objective: $objective, startDate: $startDate, endDate: $endDate, pax: $pax, budgetUsd: $budgetUsd, preferences: $preferences, status: $status, createdAt: $createdAt)';
+    return 'TripRequest(id: $id, objective: $objective, startDate: $startDate, endDate: $endDate, pax: $pax, budgetUsd: $budgetUsd, preferences: $preferences, status: $status, createdAt: $createdAt, cities: $cities)';
 }
 
 
@@ -277,7 +285,7 @@ abstract mixin class _$TripRequestCopyWith<$Res> implements $TripRequestCopyWith
   factory _$TripRequestCopyWith(_TripRequest value, $Res Function(_TripRequest) _then) = __$TripRequestCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String objective, String startDate, String endDate, int pax, double budgetUsd, Map<String, dynamic> preferences, String status, String createdAt
+ String id, String objective, String startDate, String endDate, int pax, double budgetUsd, Map<String, dynamic> preferences, String status, String createdAt, List<String> cities
 });
 
 
@@ -294,7 +302,7 @@ class __$TripRequestCopyWithImpl<$Res>
 
 /// Create a copy of TripRequest
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? objective = null,Object? startDate = null,Object? endDate = null,Object? pax = null,Object? budgetUsd = null,Object? preferences = null,Object? status = null,Object? createdAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? objective = null,Object? startDate = null,Object? endDate = null,Object? pax = null,Object? budgetUsd = null,Object? preferences = null,Object? status = null,Object? createdAt = null,Object? cities = null,}) {
   return _then(_TripRequest(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,objective: null == objective ? _self.objective : objective // ignore: cast_nullable_to_non_nullable
@@ -305,7 +313,8 @@ as int,budgetUsd: null == budgetUsd ? _self.budgetUsd : budgetUsd // ignore: cas
 as double,preferences: null == preferences ? _self._preferences : preferences // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cities: null == cities ? _self._cities : cities // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 
@@ -316,7 +325,7 @@ as String,
 /// @nodoc
 mixin _$CreateTripRequest {
 
- String get objective; String get startDate; String get endDate; int get pax; double get budgetUsd; Map<String, dynamic> get preferences; String get nationality; String get passportNumber;
+ String get objective; String get startDate; String get endDate; int get pax; double get budgetUsd; Map<String, dynamic> get preferences; String get nationality; String get passportNumber; List<String> get cities;
 /// Create a copy of CreateTripRequest
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -330,20 +339,20 @@ $CreateTripRequestCopyWith<CreateTripRequest> get copyWith => _$CreateTripReques
 @override
 bool operator ==(Object other) {
   final _this = this as CreateTripRequest;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CreateTripRequest&&(identical(other.objective, _this.objective) || other.objective == _this.objective)&&(identical(other.startDate, _this.startDate) || other.startDate == _this.startDate)&&(identical(other.endDate, _this.endDate) || other.endDate == _this.endDate)&&(identical(other.pax, _this.pax) || other.pax == _this.pax)&&(identical(other.budgetUsd, _this.budgetUsd) || other.budgetUsd == _this.budgetUsd)&&const DeepCollectionEquality().equals(other.preferences, _this.preferences)&&(identical(other.nationality, _this.nationality) || other.nationality == _this.nationality)&&(identical(other.passportNumber, _this.passportNumber) || other.passportNumber == _this.passportNumber));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CreateTripRequest&&(identical(other.objective, _this.objective) || other.objective == _this.objective)&&(identical(other.startDate, _this.startDate) || other.startDate == _this.startDate)&&(identical(other.endDate, _this.endDate) || other.endDate == _this.endDate)&&(identical(other.pax, _this.pax) || other.pax == _this.pax)&&(identical(other.budgetUsd, _this.budgetUsd) || other.budgetUsd == _this.budgetUsd)&&const DeepCollectionEquality().equals(other.preferences, _this.preferences)&&(identical(other.nationality, _this.nationality) || other.nationality == _this.nationality)&&(identical(other.passportNumber, _this.passportNumber) || other.passportNumber == _this.passportNumber)&&const DeepCollectionEquality().equals(other.cities, _this.cities));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as CreateTripRequest;
-  return Object.hash(runtimeType,_this.objective,_this.startDate,_this.endDate,_this.pax,_this.budgetUsd,const DeepCollectionEquality().hash(_this.preferences),_this.nationality,_this.passportNumber);
+  return Object.hash(runtimeType,_this.objective,_this.startDate,_this.endDate,_this.pax,_this.budgetUsd,const DeepCollectionEquality().hash(_this.preferences),_this.nationality,_this.passportNumber,const DeepCollectionEquality().hash(_this.cities));
 }
 
 @override
 String toString() {
   final _this = this as CreateTripRequest;
-  return 'CreateTripRequest(objective: ${_this.objective}, startDate: ${_this.startDate}, endDate: ${_this.endDate}, pax: ${_this.pax}, budgetUsd: ${_this.budgetUsd}, preferences: ${_this.preferences}, nationality: ${_this.nationality}, passportNumber: ${_this.passportNumber})';
+  return 'CreateTripRequest(objective: ${_this.objective}, startDate: ${_this.startDate}, endDate: ${_this.endDate}, pax: ${_this.pax}, budgetUsd: ${_this.budgetUsd}, preferences: ${_this.preferences}, nationality: ${_this.nationality}, passportNumber: ${_this.passportNumber}, cities: ${_this.cities})';
 }
 
 
@@ -354,7 +363,7 @@ abstract mixin class $CreateTripRequestCopyWith<$Res>  {
   factory $CreateTripRequestCopyWith(CreateTripRequest value, $Res Function(CreateTripRequest) _then) = _$CreateTripRequestCopyWithImpl;
 @useResult
 $Res call({
- String objective, String startDate, String endDate, int pax, double budgetUsd, Map<String, dynamic> preferences, String nationality, String passportNumber
+ String objective, String startDate, String endDate, int pax, double budgetUsd, Map<String, dynamic> preferences, String nationality, String passportNumber, List<String> cities
 });
 
 
@@ -371,7 +380,7 @@ class _$CreateTripRequestCopyWithImpl<$Res>
 
 /// Create a copy of CreateTripRequest
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? objective = null,Object? startDate = null,Object? endDate = null,Object? pax = null,Object? budgetUsd = null,Object? preferences = null,Object? nationality = null,Object? passportNumber = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? objective = null,Object? startDate = null,Object? endDate = null,Object? pax = null,Object? budgetUsd = null,Object? preferences = null,Object? nationality = null,Object? passportNumber = null,Object? cities = null,}) {
   return _then(CreateTripRequest(
 objective: null == objective ? _self.objective : objective // ignore: cast_nullable_to_non_nullable
 as String,startDate: null == startDate ? _self.startDate : startDate // ignore: cast_nullable_to_non_nullable
@@ -381,7 +390,8 @@ as int,budgetUsd: null == budgetUsd ? _self.budgetUsd : budgetUsd // ignore: cas
 as double,preferences: null == preferences ? _self.preferences : preferences // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>,nationality: null == nationality ? _self.nationality : nationality // ignore: cast_nullable_to_non_nullable
 as String,passportNumber: null == passportNumber ? _self.passportNumber : passportNumber // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cities: null == cities ? _self.cities : cities // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 
@@ -466,10 +476,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String objective,  String startDate,  String endDate,  int pax,  double budgetUsd,  Map<String, dynamic> preferences,  String nationality,  String passportNumber)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String objective,  String startDate,  String endDate,  int pax,  double budgetUsd,  Map<String, dynamic> preferences,  String nationality,  String passportNumber,  List<String> cities)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CreateTripRequest() when $default != null:
-return $default(_that.objective,_that.startDate,_that.endDate,_that.pax,_that.budgetUsd,_that.preferences,_that.nationality,_that.passportNumber);case _:
+return $default(_that.objective,_that.startDate,_that.endDate,_that.pax,_that.budgetUsd,_that.preferences,_that.nationality,_that.passportNumber,_that.cities);case _:
   return orElse();
 
 }
@@ -487,10 +497,10 @@ return $default(_that.objective,_that.startDate,_that.endDate,_that.pax,_that.bu
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String objective,  String startDate,  String endDate,  int pax,  double budgetUsd,  Map<String, dynamic> preferences,  String nationality,  String passportNumber)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String objective,  String startDate,  String endDate,  int pax,  double budgetUsd,  Map<String, dynamic> preferences,  String nationality,  String passportNumber,  List<String> cities)  $default,) {final _that = this;
 switch (_that) {
 case _CreateTripRequest():
-return $default(_that.objective,_that.startDate,_that.endDate,_that.pax,_that.budgetUsd,_that.preferences,_that.nationality,_that.passportNumber);case _:
+return $default(_that.objective,_that.startDate,_that.endDate,_that.pax,_that.budgetUsd,_that.preferences,_that.nationality,_that.passportNumber,_that.cities);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -507,10 +517,10 @@ return $default(_that.objective,_that.startDate,_that.endDate,_that.pax,_that.bu
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String objective,  String startDate,  String endDate,  int pax,  double budgetUsd,  Map<String, dynamic> preferences,  String nationality,  String passportNumber)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String objective,  String startDate,  String endDate,  int pax,  double budgetUsd,  Map<String, dynamic> preferences,  String nationality,  String passportNumber,  List<String> cities)?  $default,) {final _that = this;
 switch (_that) {
 case _CreateTripRequest() when $default != null:
-return $default(_that.objective,_that.startDate,_that.endDate,_that.pax,_that.budgetUsd,_that.preferences,_that.nationality,_that.passportNumber);case _:
+return $default(_that.objective,_that.startDate,_that.endDate,_that.pax,_that.budgetUsd,_that.preferences,_that.nationality,_that.passportNumber,_that.cities);case _:
   return null;
 
 }
@@ -522,7 +532,7 @@ return $default(_that.objective,_that.startDate,_that.endDate,_that.pax,_that.bu
 @JsonSerializable()
 
 class _CreateTripRequest implements CreateTripRequest {
-  const _CreateTripRequest({required this.objective, required this.startDate, required this.endDate, required this.pax, required this.budgetUsd, required  Map<String, dynamic> preferences, required this.nationality, required this.passportNumber}): _preferences = preferences;
+  const _CreateTripRequest({required this.objective, required this.startDate, required this.endDate, required this.pax, required this.budgetUsd, required  Map<String, dynamic> preferences, required this.nationality, required this.passportNumber, required  List<String> cities}): _preferences = preferences,_cities = cities;
   factory _CreateTripRequest.fromJson(Map<String, dynamic> json) => _$CreateTripRequestFromJson(json);
 
 @override final  String objective;
@@ -539,6 +549,13 @@ class _CreateTripRequest implements CreateTripRequest {
 
 @override final  String nationality;
 @override final  String passportNumber;
+ final  List<String> _cities;
+@override List<String> get cities {
+  if (_cities is EqualUnmodifiableListView) return _cities;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_cities);
+}
+
 
 /// Create a copy of CreateTripRequest
 /// with the given fields replaced by the non-null parameter values.
@@ -553,18 +570,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CreateTripRequest&&(identical(other.objective, objective) || other.objective == objective)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.pax, pax) || other.pax == pax)&&(identical(other.budgetUsd, budgetUsd) || other.budgetUsd == budgetUsd)&&const DeepCollectionEquality().equals(other.preferences, _preferences)&&(identical(other.nationality, nationality) || other.nationality == nationality)&&(identical(other.passportNumber, passportNumber) || other.passportNumber == passportNumber));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CreateTripRequest&&(identical(other.objective, objective) || other.objective == objective)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.pax, pax) || other.pax == pax)&&(identical(other.budgetUsd, budgetUsd) || other.budgetUsd == budgetUsd)&&const DeepCollectionEquality().equals(other.preferences, _preferences)&&(identical(other.nationality, nationality) || other.nationality == nationality)&&(identical(other.passportNumber, passportNumber) || other.passportNumber == passportNumber)&&const DeepCollectionEquality().equals(other.cities, _cities));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,objective,startDate,endDate,pax,budgetUsd,const DeepCollectionEquality().hash(_preferences),nationality,passportNumber);
+    return Object.hash(runtimeType,objective,startDate,endDate,pax,budgetUsd,const DeepCollectionEquality().hash(_preferences),nationality,passportNumber,const DeepCollectionEquality().hash(_cities));
 }
 
 @override
 String toString() {
-    return 'CreateTripRequest(objective: $objective, startDate: $startDate, endDate: $endDate, pax: $pax, budgetUsd: $budgetUsd, preferences: $preferences, nationality: $nationality, passportNumber: $passportNumber)';
+    return 'CreateTripRequest(objective: $objective, startDate: $startDate, endDate: $endDate, pax: $pax, budgetUsd: $budgetUsd, preferences: $preferences, nationality: $nationality, passportNumber: $passportNumber, cities: $cities)';
 }
 
 
@@ -575,7 +592,7 @@ abstract mixin class _$CreateTripRequestCopyWith<$Res> implements $CreateTripReq
   factory _$CreateTripRequestCopyWith(_CreateTripRequest value, $Res Function(_CreateTripRequest) _then) = __$CreateTripRequestCopyWithImpl;
 @override @useResult
 $Res call({
- String objective, String startDate, String endDate, int pax, double budgetUsd, Map<String, dynamic> preferences, String nationality, String passportNumber
+ String objective, String startDate, String endDate, int pax, double budgetUsd, Map<String, dynamic> preferences, String nationality, String passportNumber, List<String> cities
 });
 
 
@@ -592,7 +609,7 @@ class __$CreateTripRequestCopyWithImpl<$Res>
 
 /// Create a copy of CreateTripRequest
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? objective = null,Object? startDate = null,Object? endDate = null,Object? pax = null,Object? budgetUsd = null,Object? preferences = null,Object? nationality = null,Object? passportNumber = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? objective = null,Object? startDate = null,Object? endDate = null,Object? pax = null,Object? budgetUsd = null,Object? preferences = null,Object? nationality = null,Object? passportNumber = null,Object? cities = null,}) {
   return _then(_CreateTripRequest(
 objective: null == objective ? _self.objective : objective // ignore: cast_nullable_to_non_nullable
 as String,startDate: null == startDate ? _self.startDate : startDate // ignore: cast_nullable_to_non_nullable
@@ -602,7 +619,8 @@ as int,budgetUsd: null == budgetUsd ? _self.budgetUsd : budgetUsd // ignore: cas
 as double,preferences: null == preferences ? _self._preferences : preferences // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>,nationality: null == nationality ? _self.nationality : nationality // ignore: cast_nullable_to_non_nullable
 as String,passportNumber: null == passportNumber ? _self.passportNumber : passportNumber // ignore: cast_nullable_to_non_nullable
-as String,
+as String,cities: null == cities ? _self._cities : cities // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 
@@ -3995,7 +4013,7 @@ as String,
 /// @nodoc
 mixin _$TripHistoryEntry {
 
- String get at; String get action; String get actor; String? get fromStatus; String? get toStatus;
+ String get at; String get action; String get actor; String? get fromStatus; String? get toStatus; String? get reason;
 /// Create a copy of TripHistoryEntry
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -4009,20 +4027,20 @@ $TripHistoryEntryCopyWith<TripHistoryEntry> get copyWith => _$TripHistoryEntryCo
 @override
 bool operator ==(Object other) {
   final _this = this as TripHistoryEntry;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripHistoryEntry&&(identical(other.at, _this.at) || other.at == _this.at)&&(identical(other.action, _this.action) || other.action == _this.action)&&(identical(other.actor, _this.actor) || other.actor == _this.actor)&&(identical(other.fromStatus, _this.fromStatus) || other.fromStatus == _this.fromStatus)&&(identical(other.toStatus, _this.toStatus) || other.toStatus == _this.toStatus));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripHistoryEntry&&(identical(other.at, _this.at) || other.at == _this.at)&&(identical(other.action, _this.action) || other.action == _this.action)&&(identical(other.actor, _this.actor) || other.actor == _this.actor)&&(identical(other.fromStatus, _this.fromStatus) || other.fromStatus == _this.fromStatus)&&(identical(other.toStatus, _this.toStatus) || other.toStatus == _this.toStatus)&&(identical(other.reason, _this.reason) || other.reason == _this.reason));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as TripHistoryEntry;
-  return Object.hash(runtimeType,_this.at,_this.action,_this.actor,_this.fromStatus,_this.toStatus);
+  return Object.hash(runtimeType,_this.at,_this.action,_this.actor,_this.fromStatus,_this.toStatus,_this.reason);
 }
 
 @override
 String toString() {
   final _this = this as TripHistoryEntry;
-  return 'TripHistoryEntry(at: ${_this.at}, action: ${_this.action}, actor: ${_this.actor}, fromStatus: ${_this.fromStatus}, toStatus: ${_this.toStatus})';
+  return 'TripHistoryEntry(at: ${_this.at}, action: ${_this.action}, actor: ${_this.actor}, fromStatus: ${_this.fromStatus}, toStatus: ${_this.toStatus}, reason: ${_this.reason})';
 }
 
 
@@ -4033,7 +4051,7 @@ abstract mixin class $TripHistoryEntryCopyWith<$Res>  {
   factory $TripHistoryEntryCopyWith(TripHistoryEntry value, $Res Function(TripHistoryEntry) _then) = _$TripHistoryEntryCopyWithImpl;
 @useResult
 $Res call({
- String at, String action, String actor, String? fromStatus, String? toStatus
+ String at, String action, String actor, String? fromStatus, String? toStatus, String? reason
 });
 
 
@@ -4050,13 +4068,14 @@ class _$TripHistoryEntryCopyWithImpl<$Res>
 
 /// Create a copy of TripHistoryEntry
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? at = null,Object? action = null,Object? actor = null,Object? fromStatus = freezed,Object? toStatus = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? at = null,Object? action = null,Object? actor = null,Object? fromStatus = freezed,Object? toStatus = freezed,Object? reason = freezed,}) {
   return _then(TripHistoryEntry(
 at: null == at ? _self.at : at // ignore: cast_nullable_to_non_nullable
 as String,action: null == action ? _self.action : action // ignore: cast_nullable_to_non_nullable
 as String,actor: null == actor ? _self.actor : actor // ignore: cast_nullable_to_non_nullable
 as String,fromStatus: freezed == fromStatus ? _self.fromStatus : fromStatus // ignore: cast_nullable_to_non_nullable
 as String?,toStatus: freezed == toStatus ? _self.toStatus : toStatus // ignore: cast_nullable_to_non_nullable
+as String?,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -4142,10 +4161,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String at,  String action,  String actor,  String? fromStatus,  String? toStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String at,  String action,  String actor,  String? fromStatus,  String? toStatus,  String? reason)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TripHistoryEntry() when $default != null:
-return $default(_that.at,_that.action,_that.actor,_that.fromStatus,_that.toStatus);case _:
+return $default(_that.at,_that.action,_that.actor,_that.fromStatus,_that.toStatus,_that.reason);case _:
   return orElse();
 
 }
@@ -4163,10 +4182,10 @@ return $default(_that.at,_that.action,_that.actor,_that.fromStatus,_that.toStatu
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String at,  String action,  String actor,  String? fromStatus,  String? toStatus)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String at,  String action,  String actor,  String? fromStatus,  String? toStatus,  String? reason)  $default,) {final _that = this;
 switch (_that) {
 case _TripHistoryEntry():
-return $default(_that.at,_that.action,_that.actor,_that.fromStatus,_that.toStatus);case _:
+return $default(_that.at,_that.action,_that.actor,_that.fromStatus,_that.toStatus,_that.reason);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -4183,10 +4202,10 @@ return $default(_that.at,_that.action,_that.actor,_that.fromStatus,_that.toStatu
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String at,  String action,  String actor,  String? fromStatus,  String? toStatus)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String at,  String action,  String actor,  String? fromStatus,  String? toStatus,  String? reason)?  $default,) {final _that = this;
 switch (_that) {
 case _TripHistoryEntry() when $default != null:
-return $default(_that.at,_that.action,_that.actor,_that.fromStatus,_that.toStatus);case _:
+return $default(_that.at,_that.action,_that.actor,_that.fromStatus,_that.toStatus,_that.reason);case _:
   return null;
 
 }
@@ -4198,7 +4217,7 @@ return $default(_that.at,_that.action,_that.actor,_that.fromStatus,_that.toStatu
 @JsonSerializable()
 
 class _TripHistoryEntry implements TripHistoryEntry {
-  const _TripHistoryEntry({required this.at, required this.action, required this.actor, this.fromStatus, this.toStatus});
+  const _TripHistoryEntry({required this.at, required this.action, required this.actor, this.fromStatus, this.toStatus, this.reason});
   factory _TripHistoryEntry.fromJson(Map<String, dynamic> json) => _$TripHistoryEntryFromJson(json);
 
 @override final  String at;
@@ -4206,6 +4225,7 @@ class _TripHistoryEntry implements TripHistoryEntry {
 @override final  String actor;
 @override final  String? fromStatus;
 @override final  String? toStatus;
+@override final  String? reason;
 
 /// Create a copy of TripHistoryEntry
 /// with the given fields replaced by the non-null parameter values.
@@ -4220,18 +4240,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripHistoryEntry&&(identical(other.at, at) || other.at == at)&&(identical(other.action, action) || other.action == action)&&(identical(other.actor, actor) || other.actor == actor)&&(identical(other.fromStatus, fromStatus) || other.fromStatus == fromStatus)&&(identical(other.toStatus, toStatus) || other.toStatus == toStatus));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripHistoryEntry&&(identical(other.at, at) || other.at == at)&&(identical(other.action, action) || other.action == action)&&(identical(other.actor, actor) || other.actor == actor)&&(identical(other.fromStatus, fromStatus) || other.fromStatus == fromStatus)&&(identical(other.toStatus, toStatus) || other.toStatus == toStatus)&&(identical(other.reason, reason) || other.reason == reason));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,at,action,actor,fromStatus,toStatus);
+    return Object.hash(runtimeType,at,action,actor,fromStatus,toStatus,reason);
 }
 
 @override
 String toString() {
-    return 'TripHistoryEntry(at: $at, action: $action, actor: $actor, fromStatus: $fromStatus, toStatus: $toStatus)';
+    return 'TripHistoryEntry(at: $at, action: $action, actor: $actor, fromStatus: $fromStatus, toStatus: $toStatus, reason: $reason)';
 }
 
 
@@ -4242,7 +4262,7 @@ abstract mixin class _$TripHistoryEntryCopyWith<$Res> implements $TripHistoryEnt
   factory _$TripHistoryEntryCopyWith(_TripHistoryEntry value, $Res Function(_TripHistoryEntry) _then) = __$TripHistoryEntryCopyWithImpl;
 @override @useResult
 $Res call({
- String at, String action, String actor, String? fromStatus, String? toStatus
+ String at, String action, String actor, String? fromStatus, String? toStatus, String? reason
 });
 
 
@@ -4259,14 +4279,588 @@ class __$TripHistoryEntryCopyWithImpl<$Res>
 
 /// Create a copy of TripHistoryEntry
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? at = null,Object? action = null,Object? actor = null,Object? fromStatus = freezed,Object? toStatus = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? at = null,Object? action = null,Object? actor = null,Object? fromStatus = freezed,Object? toStatus = freezed,Object? reason = freezed,}) {
   return _then(_TripHistoryEntry(
 at: null == at ? _self.at : at // ignore: cast_nullable_to_non_nullable
 as String,action: null == action ? _self.action : action // ignore: cast_nullable_to_non_nullable
 as String,actor: null == actor ? _self.actor : actor // ignore: cast_nullable_to_non_nullable
 as String,fromStatus: freezed == fromStatus ? _self.fromStatus : fromStatus // ignore: cast_nullable_to_non_nullable
 as String?,toStatus: freezed == toStatus ? _self.toStatus : toStatus // ignore: cast_nullable_to_non_nullable
+as String?,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
 as String?,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
+mixin _$CancellationInfo {
+
+ bool get canCancel; String get cancelUntil; int get cutoffDays; String? get closedReason; String get operatorContact;
+/// Create a copy of CancellationInfo
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$CancellationInfoCopyWith<CancellationInfo> get copyWith => _$CancellationInfoCopyWithImpl<CancellationInfo>(this as CancellationInfo, _$identity);
+
+  /// Serializes this CancellationInfo to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as CancellationInfo;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CancellationInfo&&(identical(other.canCancel, _this.canCancel) || other.canCancel == _this.canCancel)&&(identical(other.cancelUntil, _this.cancelUntil) || other.cancelUntil == _this.cancelUntil)&&(identical(other.cutoffDays, _this.cutoffDays) || other.cutoffDays == _this.cutoffDays)&&(identical(other.closedReason, _this.closedReason) || other.closedReason == _this.closedReason)&&(identical(other.operatorContact, _this.operatorContact) || other.operatorContact == _this.operatorContact));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as CancellationInfo;
+  return Object.hash(runtimeType,_this.canCancel,_this.cancelUntil,_this.cutoffDays,_this.closedReason,_this.operatorContact);
+}
+
+@override
+String toString() {
+  final _this = this as CancellationInfo;
+  return 'CancellationInfo(canCancel: ${_this.canCancel}, cancelUntil: ${_this.cancelUntil}, cutoffDays: ${_this.cutoffDays}, closedReason: ${_this.closedReason}, operatorContact: ${_this.operatorContact})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $CancellationInfoCopyWith<$Res>  {
+  factory $CancellationInfoCopyWith(CancellationInfo value, $Res Function(CancellationInfo) _then) = _$CancellationInfoCopyWithImpl;
+@useResult
+$Res call({
+ bool canCancel, String cancelUntil, int cutoffDays, String? closedReason, String operatorContact
+});
+
+
+
+
+}
+/// @nodoc
+class _$CancellationInfoCopyWithImpl<$Res>
+    implements $CancellationInfoCopyWith<$Res> {
+  _$CancellationInfoCopyWithImpl(this._self, this._then);
+
+  final CancellationInfo _self;
+  final $Res Function(CancellationInfo) _then;
+
+/// Create a copy of CancellationInfo
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? canCancel = null,Object? cancelUntil = null,Object? cutoffDays = null,Object? closedReason = freezed,Object? operatorContact = null,}) {
+  return _then(CancellationInfo(
+canCancel: null == canCancel ? _self.canCancel : canCancel // ignore: cast_nullable_to_non_nullable
+as bool,cancelUntil: null == cancelUntil ? _self.cancelUntil : cancelUntil // ignore: cast_nullable_to_non_nullable
+as String,cutoffDays: null == cutoffDays ? _self.cutoffDays : cutoffDays // ignore: cast_nullable_to_non_nullable
+as int,closedReason: freezed == closedReason ? _self.closedReason : closedReason // ignore: cast_nullable_to_non_nullable
+as String?,operatorContact: null == operatorContact ? _self.operatorContact : operatorContact // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [CancellationInfo].
+extension CancellationInfoPatterns on CancellationInfo {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _CancellationInfo value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _CancellationInfo() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _CancellationInfo value)  $default,){
+final _that = this;
+switch (_that) {
+case _CancellationInfo():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _CancellationInfo value)?  $default,){
+final _that = this;
+switch (_that) {
+case _CancellationInfo() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool canCancel,  String cancelUntil,  int cutoffDays,  String? closedReason,  String operatorContact)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _CancellationInfo() when $default != null:
+return $default(_that.canCancel,_that.cancelUntil,_that.cutoffDays,_that.closedReason,_that.operatorContact);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool canCancel,  String cancelUntil,  int cutoffDays,  String? closedReason,  String operatorContact)  $default,) {final _that = this;
+switch (_that) {
+case _CancellationInfo():
+return $default(_that.canCancel,_that.cancelUntil,_that.cutoffDays,_that.closedReason,_that.operatorContact);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool canCancel,  String cancelUntil,  int cutoffDays,  String? closedReason,  String operatorContact)?  $default,) {final _that = this;
+switch (_that) {
+case _CancellationInfo() when $default != null:
+return $default(_that.canCancel,_that.cancelUntil,_that.cutoffDays,_that.closedReason,_that.operatorContact);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _CancellationInfo implements CancellationInfo {
+  const _CancellationInfo({required this.canCancel, required this.cancelUntil, required this.cutoffDays, this.closedReason, required this.operatorContact});
+  factory _CancellationInfo.fromJson(Map<String, dynamic> json) => _$CancellationInfoFromJson(json);
+
+@override final  bool canCancel;
+@override final  String cancelUntil;
+@override final  int cutoffDays;
+@override final  String? closedReason;
+@override final  String operatorContact;
+
+/// Create a copy of CancellationInfo
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$CancellationInfoCopyWith<_CancellationInfo> get copyWith => __$CancellationInfoCopyWithImpl<_CancellationInfo>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$CancellationInfoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CancellationInfo&&(identical(other.canCancel, canCancel) || other.canCancel == canCancel)&&(identical(other.cancelUntil, cancelUntil) || other.cancelUntil == cancelUntil)&&(identical(other.cutoffDays, cutoffDays) || other.cutoffDays == cutoffDays)&&(identical(other.closedReason, closedReason) || other.closedReason == closedReason)&&(identical(other.operatorContact, operatorContact) || other.operatorContact == operatorContact));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,canCancel,cancelUntil,cutoffDays,closedReason,operatorContact);
+}
+
+@override
+String toString() {
+    return 'CancellationInfo(canCancel: $canCancel, cancelUntil: $cancelUntil, cutoffDays: $cutoffDays, closedReason: $closedReason, operatorContact: $operatorContact)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$CancellationInfoCopyWith<$Res> implements $CancellationInfoCopyWith<$Res> {
+  factory _$CancellationInfoCopyWith(_CancellationInfo value, $Res Function(_CancellationInfo) _then) = __$CancellationInfoCopyWithImpl;
+@override @useResult
+$Res call({
+ bool canCancel, String cancelUntil, int cutoffDays, String? closedReason, String operatorContact
+});
+
+
+
+
+}
+/// @nodoc
+class __$CancellationInfoCopyWithImpl<$Res>
+    implements _$CancellationInfoCopyWith<$Res> {
+  __$CancellationInfoCopyWithImpl(this._self, this._then);
+
+  final _CancellationInfo _self;
+  final $Res Function(_CancellationInfo) _then;
+
+/// Create a copy of CancellationInfo
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? canCancel = null,Object? cancelUntil = null,Object? cutoffDays = null,Object? closedReason = freezed,Object? operatorContact = null,}) {
+  return _then(_CancellationInfo(
+canCancel: null == canCancel ? _self.canCancel : canCancel // ignore: cast_nullable_to_non_nullable
+as bool,cancelUntil: null == cancelUntil ? _self.cancelUntil : cancelUntil // ignore: cast_nullable_to_non_nullable
+as String,cutoffDays: null == cutoffDays ? _self.cutoffDays : cutoffDays // ignore: cast_nullable_to_non_nullable
+as int,closedReason: freezed == closedReason ? _self.closedReason : closedReason // ignore: cast_nullable_to_non_nullable
+as String?,operatorContact: null == operatorContact ? _self.operatorContact : operatorContact // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
+mixin _$TripVoucher {
+
+ String get id; String get type; String? get hotelId; String? get hotelName; String? get night; int get rooms; String get code; String get qrPayload;
+/// Create a copy of TripVoucher
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$TripVoucherCopyWith<TripVoucher> get copyWith => _$TripVoucherCopyWithImpl<TripVoucher>(this as TripVoucher, _$identity);
+
+  /// Serializes this TripVoucher to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as TripVoucher;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripVoucher&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.hotelId, _this.hotelId) || other.hotelId == _this.hotelId)&&(identical(other.hotelName, _this.hotelName) || other.hotelName == _this.hotelName)&&(identical(other.night, _this.night) || other.night == _this.night)&&(identical(other.rooms, _this.rooms) || other.rooms == _this.rooms)&&(identical(other.code, _this.code) || other.code == _this.code)&&(identical(other.qrPayload, _this.qrPayload) || other.qrPayload == _this.qrPayload));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as TripVoucher;
+  return Object.hash(runtimeType,_this.id,_this.type,_this.hotelId,_this.hotelName,_this.night,_this.rooms,_this.code,_this.qrPayload);
+}
+
+@override
+String toString() {
+  final _this = this as TripVoucher;
+  return 'TripVoucher(id: ${_this.id}, type: ${_this.type}, hotelId: ${_this.hotelId}, hotelName: ${_this.hotelName}, night: ${_this.night}, rooms: ${_this.rooms}, code: ${_this.code}, qrPayload: ${_this.qrPayload})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $TripVoucherCopyWith<$Res>  {
+  factory $TripVoucherCopyWith(TripVoucher value, $Res Function(TripVoucher) _then) = _$TripVoucherCopyWithImpl;
+@useResult
+$Res call({
+ String id, String type, String? hotelId, String? hotelName, String? night, int rooms, String code, String qrPayload
+});
+
+
+
+
+}
+/// @nodoc
+class _$TripVoucherCopyWithImpl<$Res>
+    implements $TripVoucherCopyWith<$Res> {
+  _$TripVoucherCopyWithImpl(this._self, this._then);
+
+  final TripVoucher _self;
+  final $Res Function(TripVoucher) _then;
+
+/// Create a copy of TripVoucher
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? type = null,Object? hotelId = freezed,Object? hotelName = freezed,Object? night = freezed,Object? rooms = null,Object? code = null,Object? qrPayload = null,}) {
+  return _then(TripVoucher(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String,hotelId: freezed == hotelId ? _self.hotelId : hotelId // ignore: cast_nullable_to_non_nullable
+as String?,hotelName: freezed == hotelName ? _self.hotelName : hotelName // ignore: cast_nullable_to_non_nullable
+as String?,night: freezed == night ? _self.night : night // ignore: cast_nullable_to_non_nullable
+as String?,rooms: null == rooms ? _self.rooms : rooms // ignore: cast_nullable_to_non_nullable
+as int,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
+as String,qrPayload: null == qrPayload ? _self.qrPayload : qrPayload // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [TripVoucher].
+extension TripVoucherPatterns on TripVoucher {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _TripVoucher value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _TripVoucher() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _TripVoucher value)  $default,){
+final _that = this;
+switch (_that) {
+case _TripVoucher():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _TripVoucher value)?  $default,){
+final _that = this;
+switch (_that) {
+case _TripVoucher() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String type,  String? hotelId,  String? hotelName,  String? night,  int rooms,  String code,  String qrPayload)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _TripVoucher() when $default != null:
+return $default(_that.id,_that.type,_that.hotelId,_that.hotelName,_that.night,_that.rooms,_that.code,_that.qrPayload);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String type,  String? hotelId,  String? hotelName,  String? night,  int rooms,  String code,  String qrPayload)  $default,) {final _that = this;
+switch (_that) {
+case _TripVoucher():
+return $default(_that.id,_that.type,_that.hotelId,_that.hotelName,_that.night,_that.rooms,_that.code,_that.qrPayload);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String type,  String? hotelId,  String? hotelName,  String? night,  int rooms,  String code,  String qrPayload)?  $default,) {final _that = this;
+switch (_that) {
+case _TripVoucher() when $default != null:
+return $default(_that.id,_that.type,_that.hotelId,_that.hotelName,_that.night,_that.rooms,_that.code,_that.qrPayload);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _TripVoucher implements TripVoucher {
+  const _TripVoucher({required this.id, required this.type, this.hotelId, this.hotelName, this.night, required this.rooms, required this.code, required this.qrPayload});
+  factory _TripVoucher.fromJson(Map<String, dynamic> json) => _$TripVoucherFromJson(json);
+
+@override final  String id;
+@override final  String type;
+@override final  String? hotelId;
+@override final  String? hotelName;
+@override final  String? night;
+@override final  int rooms;
+@override final  String code;
+@override final  String qrPayload;
+
+/// Create a copy of TripVoucher
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$TripVoucherCopyWith<_TripVoucher> get copyWith => __$TripVoucherCopyWithImpl<_TripVoucher>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$TripVoucherToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripVoucher&&(identical(other.id, id) || other.id == id)&&(identical(other.type, type) || other.type == type)&&(identical(other.hotelId, hotelId) || other.hotelId == hotelId)&&(identical(other.hotelName, hotelName) || other.hotelName == hotelName)&&(identical(other.night, night) || other.night == night)&&(identical(other.rooms, rooms) || other.rooms == rooms)&&(identical(other.code, code) || other.code == code)&&(identical(other.qrPayload, qrPayload) || other.qrPayload == qrPayload));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,id,type,hotelId,hotelName,night,rooms,code,qrPayload);
+}
+
+@override
+String toString() {
+    return 'TripVoucher(id: $id, type: $type, hotelId: $hotelId, hotelName: $hotelName, night: $night, rooms: $rooms, code: $code, qrPayload: $qrPayload)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$TripVoucherCopyWith<$Res> implements $TripVoucherCopyWith<$Res> {
+  factory _$TripVoucherCopyWith(_TripVoucher value, $Res Function(_TripVoucher) _then) = __$TripVoucherCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, String type, String? hotelId, String? hotelName, String? night, int rooms, String code, String qrPayload
+});
+
+
+
+
+}
+/// @nodoc
+class __$TripVoucherCopyWithImpl<$Res>
+    implements _$TripVoucherCopyWith<$Res> {
+  __$TripVoucherCopyWithImpl(this._self, this._then);
+
+  final _TripVoucher _self;
+  final $Res Function(_TripVoucher) _then;
+
+/// Create a copy of TripVoucher
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? type = null,Object? hotelId = freezed,Object? hotelName = freezed,Object? night = freezed,Object? rooms = null,Object? code = null,Object? qrPayload = null,}) {
+  return _then(_TripVoucher(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String,hotelId: freezed == hotelId ? _self.hotelId : hotelId // ignore: cast_nullable_to_non_nullable
+as String?,hotelName: freezed == hotelName ? _self.hotelName : hotelName // ignore: cast_nullable_to_non_nullable
+as String?,night: freezed == night ? _self.night : night // ignore: cast_nullable_to_non_nullable
+as String?,rooms: null == rooms ? _self.rooms : rooms // ignore: cast_nullable_to_non_nullable
+as int,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
+as String,qrPayload: null == qrPayload ? _self.qrPayload : qrPayload // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

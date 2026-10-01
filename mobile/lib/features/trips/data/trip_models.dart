@@ -17,13 +17,15 @@ abstract class TripRequest with _$TripRequest {
     @Default(<String, dynamic>{}) Map<String, dynamic> preferences,
     required String status,
     required String createdAt,
+    @Default(<String>[]) List<String> cities,
   }) = _TripRequest;
 
   factory TripRequest.fromJson(Map<String, dynamic> json) =>
       _$TripRequestFromJson(json);
 }
 
-/// Body of POST /api/trip-requests (CreateTripRequestRequest).
+/// Body of POST /api/trip-requests (CreateTripRequestRequest). [cities] come from GET /api/attractions/cities,
+/// in the order the tourist wants to visit them.
 @freezed
 abstract class CreateTripRequest with _$CreateTripRequest {
   const factory CreateTripRequest({
@@ -35,6 +37,7 @@ abstract class CreateTripRequest with _$CreateTripRequest {
     required Map<String, dynamic> preferences,
     required String nationality,
     required String passportNumber,
+    required List<String> cities,
   }) = _CreateTripRequest;
 
   factory CreateTripRequest.fromJson(Map<String, dynamic> json) =>
@@ -189,8 +192,44 @@ abstract class TripHistoryEntry with _$TripHistoryEntry {
     required String actor,
     String? fromStatus,
     String? toStatus,
+    String? reason,
   }) = _TripHistoryEntry;
 
   factory TripHistoryEntry.fromJson(Map<String, dynamic> json) =>
       _$TripHistoryEntryFromJson(json);
+}
+
+/// GET /api/trip-requests/{id}/cancellation (CancellationInfoDto). When [canCancel] is false, [closedReason]
+/// says why and the app offers [operatorContact] instead.
+@freezed
+abstract class CancellationInfo with _$CancellationInfo {
+  const factory CancellationInfo({
+    required bool canCancel,
+    required String cancelUntil,
+    required int cutoffDays,
+    String? closedReason,
+    required String operatorContact,
+  }) = _CancellationInfo;
+
+  factory CancellationInfo.fromJson(Map<String, dynamic> json) =>
+      _$CancellationInfoFromJson(json);
+}
+
+/// One voucher of GET /api/trips/{id}/vouchers (VoucherDto). [type] is "Trip" or "HotelNight".
+/// The QR code shows [qrPayload] ("TRIPCRAFT-VOUCHER:...").
+@freezed
+abstract class TripVoucher with _$TripVoucher {
+  const factory TripVoucher({
+    required String id,
+    required String type,
+    String? hotelId,
+    String? hotelName,
+    String? night,
+    required int rooms,
+    required String code,
+    required String qrPayload,
+  }) = _TripVoucher;
+
+  factory TripVoucher.fromJson(Map<String, dynamic> json) =>
+      _$TripVoucherFromJson(json);
 }

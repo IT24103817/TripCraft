@@ -254,6 +254,211 @@ final class TripWorkflowFamily extends $Family
   String toString() => r'tripWorkflowProvider';
 }
 
+@ProviderFor(cancellationInfo)
+final cancellationInfoProvider = CancellationInfoFamily._();
+
+final class CancellationInfoProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CancellationInfo>,
+          CancellationInfo,
+          FutureOr<CancellationInfo>
+        >
+    with $FutureModifier<CancellationInfo>, $FutureProvider<CancellationInfo> {
+  CancellationInfoProvider._({
+    required CancellationInfoFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'cancellationInfoProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$cancellationInfoHash();
+
+  @override
+  String toString() {
+    return r'cancellationInfoProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<CancellationInfo> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<CancellationInfo> create(Ref ref) {
+    final argument = this.argument as String;
+    return cancellationInfo(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CancellationInfoProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$cancellationInfoHash() => r'ac5509665f8932a5bb5cf13c5c0a59fab3c7aedc';
+
+final class CancellationInfoFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<CancellationInfo>, String> {
+  CancellationInfoFamily._()
+    : super(
+        retry: null,
+        name: r'cancellationInfoProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  CancellationInfoProvider call(String tripId) =>
+      CancellationInfoProvider._(argument: tripId, from: this);
+
+  @override
+  String toString() => r'cancellationInfoProvider';
+}
+
+/// The trip's vouchers, trip voucher first, then the hotel nights in date order.
+
+@ProviderFor(tripVouchers)
+final tripVouchersProvider = TripVouchersFamily._();
+
+/// The trip's vouchers, trip voucher first, then the hotel nights in date order.
+
+final class TripVouchersProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<TripVoucher>>,
+          List<TripVoucher>,
+          FutureOr<List<TripVoucher>>
+        >
+    with
+        $FutureModifier<List<TripVoucher>>,
+        $FutureProvider<List<TripVoucher>> {
+  /// The trip's vouchers, trip voucher first, then the hotel nights in date order.
+  TripVouchersProvider._({
+    required TripVouchersFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'tripVouchersProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$tripVouchersHash();
+
+  @override
+  String toString() {
+    return r'tripVouchersProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<TripVoucher>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<TripVoucher>> create(Ref ref) {
+    final argument = this.argument as String;
+    return tripVouchers(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TripVouchersProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$tripVouchersHash() => r'f56b97f957303ab688c4705fc8e509968021ba78';
+
+/// The trip's vouchers, trip voucher first, then the hotel nights in date order.
+
+final class TripVouchersFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<TripVoucher>>, String> {
+  TripVouchersFamily._()
+    : super(
+        retry: null,
+        name: r'tripVouchersProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The trip's vouchers, trip voucher first, then the hotel nights in date order.
+
+  TripVouchersProvider call(String tripId) =>
+      TripVouchersProvider._(argument: tripId, from: this);
+
+  @override
+  String toString() => r'tripVouchersProvider';
+}
+
+/// The cities the trip form offers (GET /api/attractions/cities).
+
+@ProviderFor(tripCities)
+final tripCitiesProvider = TripCitiesProvider._();
+
+/// The cities the trip form offers (GET /api/attractions/cities).
+
+final class TripCitiesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<String>>,
+          List<String>,
+          FutureOr<List<String>>
+        >
+    with $FutureModifier<List<String>>, $FutureProvider<List<String>> {
+  /// The cities the trip form offers (GET /api/attractions/cities).
+  TripCitiesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'tripCitiesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$tripCitiesHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<String>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<String>> create(Ref ref) {
+    return tripCities(ref);
+  }
+}
+
+String _$tripCitiesHash() => r'7f1251aaa9cee207bf0dfcdfdb162f09cec575a9';
+
 @ProviderFor(tripHistory)
 final tripHistoryProvider = TripHistoryFamily._();
 

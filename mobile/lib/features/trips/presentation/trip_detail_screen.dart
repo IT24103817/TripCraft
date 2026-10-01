@@ -3,30 +3,37 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
-import '../../../shared/theme/app_theme.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/utils/friendly_error.dart';
 import '../../../shared/widgets/async_view.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
-import '../../../shared/widgets/status_timeline.dart';
 import '../application/trips_providers.dart';
 import '../data/trip_models.dart';
 import '../data/trips_repository.dart';
+import 'cancel_trip_section.dart';
 import 'trip_history_section.dart';
 import 'trip_map.dart';
+import 'trip_progress_card.dart';
+import 'vouchers_section.dart';
 
-/// The main path a tourist sees (PLAN.md section 6, steps 1, 3, 8 and 11).
-const tripTimelineSteps = [
-  'Submitted',
-  'Planning',
-  'PendingApproval',
+/// From QuotationSent on, the tourist can open the quotation (before that the operator is still reviewing it).
+const quotationVisibleStatuses = {
+  'QuotationSent',
+  'ClientAccepted',
   'Confirmed',
-];
+  'InProgress',
+  'Completed',
+};
 
-/// Maps the trip status onto the tourist's timeline. Approved is shown as Confirmed (they happen together).
-String timelineStatus(String tripStatus) =>
-    tripStatus == 'Approved' ? 'Confirmed' : tripStatus;
+/// Vouchers exist once the operator has confirmed the trip.
+const voucherStatuses = {'Confirmed', 'InProgress', 'Completed'};
+
+/// A finished or cancelled trip has nothing left to cancel.
+const noCancelStatuses = {'Completed', 'Cancelled'};
+
+/// Only the tourist may (re)start planning: a new request, or after planning failed safely.
+const canStartPlanningStatuses = {'Submitted', 'FailedSafely'};
 
 class TripDetailScreen extends ConsumerWidget {
   const TripDetailScreen({super.key, required this.tripId});
@@ -43,6 +50,7 @@ class TripDetailScreen extends ConsumerWidget {
       if (previous?.value?.status != next.value?.status) {
         ref.invalidate(tripDetailProvider(tripId));
         ref.invalidate(tripHistoryProvider(tripId));
+        ref.invalidate(cancellationInfoProvider(tripId));
       }
     });
 
@@ -51,6 +59,8 @@ class TripDetailScreen extends ConsumerWidget {
       ref.invalidate(savedItineraryProvider(tripId));
       ref.invalidate(tripDetailProvider(tripId));
       ref.invalidate(tripHistoryProvider(tripId));
+      ref.invalidate(cancellationInfoProvider(tripId));
+      ref.invalidate(tripVouchersProvider(tripId));
       await ref.read(tripDetailProvider(tripId).future);
     }
 
@@ -65,25 +75,22 @@ class TripDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             children: [
               _Summary(trip: t),
-              if (t.status == 'Submitted') _CancelButton(tripId: t.id),
               const SizedBox(height: 12),
-              if (t.status == 'PendingApproval') ...[
-                const _AwaitingApproval(),
+              TripProgressCard(status: t.status),
+              const SizedBox(height: 12),
+              _WorkflowSection(trip: t, workflow: workflow, onBack: refresh),
+              const SizedBox(height: 12),
+              if (voucherStatuses.contains(t.status)) ...[
+                VouchersSection(tripId: tripId),
                 const SizedBox(height: 12),
               ],
-              SectionCard(
-                title: 'Progress',
-                child: StatusTimeline(
-                  steps: tripTimelineSteps,
-                  current: timelineStatus(t.status),
-                ),
-              ),
-              const SizedBox(height: 12),
-              _WorkflowSection(trip: t, workflow: workflow),
-              const SizedBox(height: 12),
               _ItinerarySection(tripId: tripId, workflow: workflow.value),
               const SizedBox(height: 12),
               TripHistorySection(tripId: tripId),
+              if (!noCancelStatuses.contains(t.status)) ...[
+                const SizedBox(height: 12),
+                CancelTripSection(tripId: tripId),
+              ],
             ],
           ),
         ),
@@ -107,6 +114,8 @@ class _Summary extends StatelessWidget {
         children: [
           Text(trip.objective),
           const SizedBox(height: 8),
+          if (trip.cities.isNotEmpty)
+            Text('Cities: ${trip.cities.join(' → ')}'),
           Text('${formatDate(trip.startDate)} – ${formatDate(trip.endDate)}'),
           Text('${trip.pax} travellers · budget ${formatUsd(trip.budgetUsd)}'),
         ],
@@ -115,32 +124,18 @@ class _Summary extends StatelessWidget {
   }
 }
 
-class _AwaitingApproval extends StatelessWidget {
-  const _AwaitingApproval();
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      liveRegion: true,
-      child: Card(
-        color: AppColors.warning.withValues(alpha: 0.1),
-        child: const ListTile(
-          leading: Icon(Icons.hourglass_top, color: AppColors.warning),
-          title: Text('Awaiting operator approval'),
-          subtitle: Text(
-            'Your itinerary and quotation are ready. An operator is checking them now.',
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _WorkflowSection extends ConsumerWidget {
-  const _WorkflowSection({required this.trip, required this.workflow});
+  const _WorkflowSection({
+    required this.trip,
+    required this.workflow,
+    required this.onBack,
+  });
 
   final TripRequest trip;
   final AsyncValue<TripWorkflow?> workflow;
+
+  /// Reloads the trip after the quotation screen closes (the tourist may have accepted or declined).
+  final Future<void> Function() onBack;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -158,8 +153,24 @@ class _WorkflowSection extends ConsumerWidget {
   }
 
   Widget _body(BuildContext context, TripWorkflow? w) {
+    final mayStart = canStartPlanningStatuses.contains(trip.status);
+    if (trip.status == 'FailedSafely' || w?.status == 'FailedSafely') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Planning could not finish: ${w?.errorSummary ?? 'unknown reason'}.',
+          ),
+          // Only the tourist may start planning (API rule), so the retry lives here.
+          if (mayStart) ...[
+            const SizedBox(height: 8),
+            _StartPlanningButton(tripId: trip.id, label: 'Try again'),
+          ],
+        ],
+      );
+    }
     if (w == null) {
-      return trip.status == 'Submitted'
+      return mayStart
           ? _StartPlanningButton(tripId: trip.id, label: 'Start planning')
           : const Text('Planning has not started yet.');
     }
@@ -180,28 +191,31 @@ class _WorkflowSection extends ConsumerWidget {
         ],
       );
     }
-    if (w.status == 'FailedSafely') {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Planning could not finish: ${w.errorSummary ?? 'unknown reason'}.',
-          ),
-          // Only the tourist may start planning (API rule), so the retry lives here.
-          if (trip.status == 'Submitted') ...[
-            const SizedBox(height: 8),
-            _StartPlanningButton(tripId: trip.id, label: 'Try again'),
-          ],
-        ],
+    if (!quotationVisibleStatuses.contains(trip.status)) {
+      return const Text(
+        'The agents have finished. The operator is reviewing your plan before sending you the quotation.',
       );
     }
+
+    Future<void> openQuotation() async {
+      await context.push(Routes.quotation(trip.id));
+      await onBack();
+    }
+
+    // At QuotationSent the tourist has to decide, so the button stands out.
     return Align(
       alignment: Alignment.centerLeft,
-      child: OutlinedButton.icon(
-        icon: const Icon(Icons.receipt_long),
-        label: const Text('View quotation'),
-        onPressed: () => context.push(Routes.quotation(trip.id)),
-      ),
+      child: trip.status == 'QuotationSent'
+          ? FilledButton.icon(
+              icon: const Icon(Icons.receipt_long),
+              label: const Text('Review quotation'),
+              onPressed: openQuotation,
+            )
+          : OutlinedButton.icon(
+              icon: const Icon(Icons.receipt_long),
+              label: const Text('View quotation'),
+              onPressed: openQuotation,
+            ),
     );
   }
 }
@@ -307,58 +321,6 @@ class _StartPlanningButton extends ConsumerWidget {
         }
       },
       child: Text(label),
-    );
-  }
-}
-
-/// Submitted → Cancelled after a confirmation. The API refuses (409) once planning has started.
-class _CancelButton extends ConsumerWidget {
-  const _CancelButton({required this.tripId});
-
-  final String tripId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: TextButton.icon(
-        icon: const Icon(Icons.cancel_outlined),
-        label: const Text('Cancel request'),
-        onPressed: () async {
-          final messenger = ScaffoldMessenger.of(context);
-          final confirmed = await showDialog<bool>(
-            context: context,
-            builder: (dialogContext) => AlertDialog(
-              title: const Text('Cancel this trip request?'),
-              content: const Text('It can no longer be planned.'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext, false),
-                  child: const Text('Keep it'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(dialogContext, true),
-                  child: const Text('Cancel request'),
-                ),
-              ],
-            ),
-          );
-          if (confirmed != true) return;
-          try {
-            await ref.read(tripsRepositoryProvider).cancel(tripId);
-            ref.invalidate(myTripsProvider);
-            ref.invalidate(tripDetailProvider(tripId));
-            ref.invalidate(tripHistoryProvider(tripId));
-            messenger.showSnackBar(
-              const SnackBar(content: Text('Trip request cancelled.')),
-            );
-          } catch (error) {
-            messenger.showSnackBar(
-              SnackBar(content: Text(friendlyMessage(error))),
-            );
-          }
-        },
-      ),
     );
   }
 }

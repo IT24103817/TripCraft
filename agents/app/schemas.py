@@ -27,6 +27,9 @@ class WorkflowRequest(ApiModel):
         default_factory=dict,
         validation_alias=AliasChoices("preferences", "preferencesJson", "preferences_json"))
     manager_comment: str | None = Field(default=None, max_length=1000)
+    # v1.1: the destinations the tourist picked from the API's city list, in travel order. When given, they are
+    # the trip's cities; the Planner does not guess them from the objective text.
+    cities: list[str] = Field(default_factory=list, max_length=10)
     # Where to POST step reports and the proposal. Defaults to API_BASE_URL when missing.
     callback_base_url: str | None = None
 

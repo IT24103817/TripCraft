@@ -24,7 +24,7 @@ export function freshTripDates(today = new Date()) {
   return { startDate: isoDate(start), endDate: isoDate(end), label };
 }
 
-/** The demo request from PLAN.md section 6, on fresh dates (see freshTripDates). */
+/** The demo request from PLAN.md section 6, on fresh dates (see freshTripDates). Cities are required in v1.1. */
 export function demoTrip(budgetUsd = 1500) {
   const { startDate, endDate, label } = freshTripDates();
   return {
@@ -33,6 +33,7 @@ export function demoTrip(budgetUsd = 1500) {
     endDate,
     pax: 4,
     budgetUsd,
+    cities: ['Kandy', 'Ella'],
     preferences: { transport: 'train', language: 'en' },
     nationality: 'United Kingdom',
     passportNumber: 'N1234567',
@@ -82,4 +83,23 @@ export async function tripStatus(request: APIRequestContext, token: string, trip
   const response = await request.get(`${API_URL}/api/trip-requests/${tripId}`, { headers: auth(token) });
   expect(response.status()).toBe(200);
   return (await response.json()).status;
+}
+
+/** The trip's newest agent workflow (GET /api/trip-requests/{id}/workflow), as the tourist's app reads it. */
+export async function tripWorkflow(request: APIRequestContext, token: string, tripId: string) {
+  const response = await request.get(`${API_URL}/api/trip-requests/${tripId}/workflow`, { headers: auth(token) });
+  expect(response.status()).toBe(200);
+  return response.json();
+}
+
+/**
+ * The tourist accepts the quotation that was sent (QuotationSent -> ClientAccepted), like the Flutter app does:
+ * the quotation id is finalOutcome.proposal.quotationId of the trip's workflow.
+ */
+export async function acceptQuotation(request: APIRequestContext, token: string, tripId: string) {
+  const workflow = await tripWorkflow(request, token, tripId);
+  const quotationId = workflow.finalOutcome.proposal.quotationId as string;
+  const response = await request.post(`${API_URL}/api/quotations/${quotationId}/accept`, { headers: auth(token) });
+  expect(response.status(), await response.text()).toBe(200);
+  return response.json();
 }

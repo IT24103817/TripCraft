@@ -11,6 +11,7 @@ import '../../features/trips/presentation/my_trips_screen.dart';
 import '../../features/trips/presentation/new_trip_screen.dart';
 import '../../features/trips/presentation/trip_detail_screen.dart';
 import '../auth/auth_notifier.dart';
+import '../auth/change_password_screen.dart';
 import '../auth/login_screen.dart';
 import '../auth/register_screen.dart';
 import '../auth/simple_screens.dart';
@@ -37,6 +38,10 @@ GoRouter appRouter(Ref ref) {
       GoRoute(path: Routes.splash, builder: (_, _) => const SplashScreen()),
       GoRoute(path: Routes.login, builder: (_, _) => const LoginScreen()),
       GoRoute(path: Routes.register, builder: (_, _) => const RegisterScreen()),
+      GoRoute(
+        path: Routes.changePassword,
+        builder: (_, _) => const ChangePasswordScreen(),
+      ),
       GoRoute(
         path: Routes.notSupported,
         builder: (_, _) => const NotSupportedScreen(),
@@ -77,7 +82,11 @@ GoRouter appRouter(Ref ref) {
               );
             },
           ),
-          GoRoute(path: Routes.scan, builder: (_, _) => const QrScanScreen()),
+          GoRoute(
+            path: Routes.scan,
+            builder: (_, s) =>
+                QrScanScreen(tripId: s.uri.queryParameters['trip']),
+          ),
         ],
       ),
     ],

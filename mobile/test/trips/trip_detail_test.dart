@@ -3,14 +3,20 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tripcraft_mobile/core/api/user_facing_exception.dart';
+import 'package:tripcraft_mobile/features/trips/presentation/cancel_trip_section.dart';
 import 'package:tripcraft_mobile/features/trips/presentation/trip_detail_screen.dart';
+import 'package:tripcraft_mobile/features/trips/presentation/trip_progress_card.dart';
 
 import '../helpers.dart';
 
 void main() {
   late MockApiClient api;
 
-  void givenTrip(String status, {Map<String, dynamic>? workflow}) {
+  void givenTrip(
+    String status, {
+    Map<String, dynamic>? workflow,
+    Map<String, dynamic>? cancellation,
+  }) {
     when(() => api.get('/api/trip-requests/trip-1'))
         .thenAnswer((_) async => tripJson(status: status));
     when(() => api.get('/api/trip-requests/trip-1/workflow'))
@@ -26,6 +32,10 @@ void main() {
     when(() => api.get('/api/trip-requests/trip-1/itinerary')).thenThrow(
       const UserFacingException('We could not find that.', statusCode: 404),
     );
+    when(() => api.get('/api/trip-requests/trip-1/cancellation'))
+        .thenAnswer((_) async => cancellation ?? cancellationJson());
+    when(() => api.get('/api/trips/trip-1/vouchers'))
+        .thenAnswer((_) async => <Object>[]);
     when(() => api.get('/api/trip-requests/trip-1/history')).thenAnswer(
       (_) async => [
         {
@@ -48,11 +58,11 @@ void main() {
   setUp(() => api = MockApiClient());
 
   testWidgets(
-    'PendingApproval highlights that step and says it awaits the operator',
+    'PendingReview highlights that step and says the operator is checking',
     (tester) async {
       usePhoneSize(tester, phoneSizes.currentValue!);
       givenTrip(
-        'PendingApproval',
+        'PendingReview',
         workflow: {
           'id': 'wf-1',
           'status': 'PendingApproval',
@@ -79,21 +89,25 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Awaiting operator approval'), findsOneWidget);
+      expect(find.text(whatHappensNext('PendingReview')), findsOneWidget);
       expect(find.byKey(const ValueKey('step-Submitted-done')), findsOneWidget);
       expect(find.byKey(const ValueKey('step-Planning-done')), findsOneWidget);
       expect(
-        find.byKey(const ValueKey('step-PendingApproval-current')),
+        find.byKey(const ValueKey('step-PendingReview-current')),
         findsOneWidget,
       );
-      expect(find.byKey(const ValueKey('step-Confirmed-todo')), findsOneWidget);
-      // The planning card and the itinerary are below the fold on a small phone.
+      // The rest of the timeline is below the fold on a small phone.
       await tester.scrollUntilVisible(
-        find.text('View quotation'),
+        find.byKey(const ValueKey('step-Completed-todo')),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('View quotation'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('step-QuotationSent-todo')),
+        findsOneWidget,
+      );
+      // The tourist cannot see the price until the operator sends it.
+      expect(find.text('View quotation'), findsNothing);
       await tester.scrollUntilVisible(
         find.text('Day 1 — Kandy'),
         200,
@@ -104,7 +118,7 @@ void main() {
     variant: phoneSizes,
   );
 
-  testWidgets('Confirmed is the last step and there is no approval banner', (
+  testWidgets('Confirmed: earlier steps done, later steps still to come', (
     tester,
   ) async {
     givenTrip('Confirmed', workflow: {'id': 'wf-1', 'status': 'Completed'});
@@ -116,11 +130,21 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text(whatHappensNext('Confirmed')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('step-Completed-todo')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(
+      find.byKey(const ValueKey('step-ClientAccepted-done')),
+      findsOneWidget,
+    );
     expect(
       find.byKey(const ValueKey('step-Confirmed-current')),
       findsOneWidget,
     );
-    expect(find.text('Awaiting operator approval'), findsNothing);
+    expect(find.byKey(const ValueKey('step-InProgress-todo')), findsOneWidget);
   });
 
   testWidgets('a Submitted trip without a workflow offers Start planning', (
@@ -139,14 +163,19 @@ void main() {
       find.byKey(const ValueKey('step-Submitted-current')),
       findsOneWidget,
     );
+    await tester.scrollUntilVisible(
+      find.text('Start planning'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Start planning'), findsOneWidget);
   });
 
   testWidgets(
-    'a FailedSafely workflow shows the reason, hides its days and offers Try again',
+    'a FailedSafely trip shows the reason, hides its days and offers Try again',
     (tester) async {
       givenTrip(
-        'Submitted',
+        'FailedSafely',
         workflow: {
           'id': 'wf-1',
           'status': 'FailedSafely',
@@ -174,7 +203,18 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Planning could not finish'), findsOneWidget);
+      expect(find.text(whatHappensNext('FailedSafely')), findsOneWidget);
+      // FailedSafely is still on the Planning step of the timeline.
+      expect(
+        find.byKey(const ValueKey('step-Planning-current')),
+        findsOneWidget,
+      );
+      await tester.scrollUntilVisible(
+        find.text('Try again'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.textContaining('Planning could not finish:'), findsOneWidget);
       expect(find.text('Try again'), findsOneWidget);
       final empty = find.text(
         'Your day-by-day plan appears here once the agents have drafted it.',
@@ -236,12 +276,23 @@ void main() {
     expect(find.textContaining('by the system'), findsOneWidget);
   });
 
-  testWidgets('a Submitted trip can be cancelled after confirming', (
+  Future<void> scrollToCancellation(WidgetTester tester) =>
+      tester.scrollUntilVisible(
+        find.text('Cancellation'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+
+  testWidgets('before the cut-off a trip is cancelled with a required reason', (
     tester,
   ) async {
-    givenTrip('Submitted');
-    when(() => api.post('/api/trip-requests/trip-1/cancel'))
-        .thenAnswer((_) async => tripJson(status: 'Cancelled'));
+    givenTrip('Confirmed', workflow: {'id': 'wf-1', 'status': 'Completed'});
+    when(
+      () => api.post(
+        '/api/trip-requests/trip-1/cancel',
+        body: any(named: 'body'),
+      ),
+    ).thenAnswer((_) async => tripJson(status: 'Cancelled'));
 
     await pumpScreen(
       tester,
@@ -249,19 +300,122 @@ void main() {
       api: api,
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Cancel request'));
+    await scrollToCancellation(tester);
+    await tester.scrollUntilVisible(
+      find.text('Cancel trip'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(
+      find.text(
+        'You can cancel this trip until 7 Oct 2026 (3 days before it starts).',
+      ),
+      findsOneWidget,
+    );
+
+    // Bring the whole button on screen (the last card is at the bottom edge).
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -300));
     await tester.pumpAndSettle();
-    expect(find.text('Cancel this trip request?'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, 'Cancel request'));
+    await tester.tap(find.text('Cancel trip'));
+    await tester.pumpAndSettle();
+    expect(find.text('Cancel this trip?'), findsOneWidget);
+
+    // The reason is required.
+    await tester.tap(find.widgetWithText(FilledButton, 'Cancel trip'));
+    await tester.pumpAndSettle();
+    expect(find.text('Please give a reason.'), findsOneWidget);
+    verifyNever(() => api.post(any(), body: any(named: 'body')));
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Reason'),
+      'Family emergency',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Cancel trip'));
     await tester.pumpAndSettle();
 
-    verify(() => api.post('/api/trip-requests/trip-1/cancel')).called(1);
-    expect(find.text('Trip request cancelled.'), findsOneWidget);
+    final body =
+        verify(
+              () => api.post(
+                '/api/trip-requests/trip-1/cancel',
+                body: captureAny(named: 'body'),
+              ),
+            ).captured.single
+            as Map<String, dynamic>;
+    expect(body, {'reason': 'Family emergency'});
+    expect(find.text('Trip cancelled.'), findsOneWidget);
   });
 
-  testWidgets('a trip past Submitted has no Cancel button', (tester) async {
+  testWidgets(
+    'after the cut-off the closed reason and the operator contact are shown',
+    (tester) async {
+      givenTrip(
+        'Confirmed',
+        workflow: {'id': 'wf-1', 'status': 'Completed'},
+        cancellation: cancellationJson(
+          canCancel: false,
+          closedReason: 'Cancellation closed on 07 Oct 2026, 3 days before the start. Please contact the operator: operations@tripcraft.test.',
+        ),
+      );
+
+      await pumpScreen(
+        tester,
+        const TripDetailScreen(tripId: 'trip-1'),
+        api: api,
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Contact operator'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+
+      expect(
+        find.textContaining('Cancellation closed on 07 Oct 2026'),
+        findsOneWidget,
+      );
+      expect(find.text('operations@tripcraft.test'), findsOneWidget);
+      expect(find.text('Contact operator'), findsOneWidget);
+      expect(find.text('Cancel trip'), findsNothing);
+    },
+  );
+
+  test('the operator contact becomes a mailto or tel link', () {
+    expect(
+      operatorContactUri('operations@tripcraft.test').toString(),
+      'mailto:operations@tripcraft.test',
+    );
+    expect(
+      operatorContactUri('+94 11 234 5678').toString(),
+      'tel:+94112345678',
+    );
+    expect(operatorContactUri('the front desk'), isNull);
+  });
+
+  testWidgets('a cancelled or completed trip has no Cancellation section', (
+    tester,
+  ) async {
+    givenTrip('Cancelled');
+
+    await pumpScreen(
+      tester,
+      const TripDetailScreen(tripId: 'trip-1'),
+      api: api,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(whatHappensNext('Cancelled')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('History'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text('Cancellation'), findsNothing);
+    verifyNever(() => api.get('/api/trip-requests/trip-1/cancellation'));
+  });
+
+  testWidgets('RevisionRequested says a new version is coming', (tester) async {
     givenTrip(
-      'PendingApproval',
+      'RevisionRequested',
       workflow: {'id': 'wf-1', 'status': 'PendingApproval'},
     );
 
@@ -272,7 +426,36 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Cancel request'), findsNothing);
+    expect(
+      find.text('The operator asked for changes; a new version is coming.'),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('step-PendingReview-current')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('QuotationSent offers Review quotation', (tester) async {
+    givenTrip('QuotationSent', workflow: {'id': 'wf-1', 'status': 'Approved'});
+
+    await pumpScreen(
+      tester,
+      const TripDetailScreen(tripId: 'trip-1'),
+      api: api,
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Review quotation'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text(whatHappensNext('QuotationSent')), findsOneWidget);
+    expect(
+      find.widgetWithText(FilledButton, 'Review quotation'),
+      findsOneWidget,
+    );
   });
 
   testWidgets(
@@ -292,7 +475,11 @@ void main() {
         api: api,
       );
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Retry'));
+      await tester.scrollUntilVisible(
+        find.text('Retry'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
 
       expect(
@@ -310,7 +497,10 @@ void main() {
       await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(find.text('Retry'), findsNothing);
-      expect(find.text('View quotation'), findsOneWidget);
+      expect(
+        find.textContaining('The operator is reviewing your plan'),
+        findsOneWidget,
+      );
     },
   );
 
@@ -318,7 +508,7 @@ void main() {
     tester,
   ) async {
     givenTrip(
-      'PendingApproval',
+      'PendingReview',
       workflow: {
         'id': 'wf-1',
         'status': 'PendingApproval',
@@ -379,8 +569,9 @@ void main() {
     );
   });
 
-  test('Approved is shown as Confirmed on the tourist timeline', () {
-    expect(timelineStatus('Approved'), 'Confirmed');
-    expect(timelineStatus('Planning'), 'Planning');
+  test('side states sit on the step they came from', () {
+    expect(timelineStatus('RevisionRequested'), 'PendingReview');
+    expect(timelineStatus('FailedSafely'), 'Planning');
+    expect(timelineStatus('QuotationSent'), 'QuotationSent');
   });
 }

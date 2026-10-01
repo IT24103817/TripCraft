@@ -6,6 +6,7 @@ import 'routes.dart';
 /// Pure redirect rule used by GoRouter (unit-tested without widgets). Returns null to stay.
 /// - while the saved session is being read: /splash;
 /// - signed out: only /login and /register;
+/// - signed in with mustChangePassword: only /change-password (it cannot be skipped);
 /// - signed in: /login, /register and /splash go home; each role stays in its own area.
 String? authRedirect(AsyncValue<AppUser?> auth, String location) {
   if (auth.isLoading && !auth.hasValue) {
@@ -18,13 +19,18 @@ String? authRedirect(AsyncValue<AppUser?> auth, String location) {
   }
 
   final home = homeForRole(user.role);
-  if (Routes.publicPaths.contains(location) || location == Routes.splash) {
-    return home;
-  }
   if (home == Routes.notSupported) return location == home ? null : home;
 
-  final touristArea =
-      location.startsWith(Routes.trips) || location.startsWith(Routes.alerts);
+  if (user.mustChangePassword) {
+    return location == Routes.changePassword ? null : Routes.changePassword;
+  }
+  if (Routes.publicPaths.contains(location) ||
+      location == Routes.splash ||
+      location == Routes.changePassword) {
+    return home;
+  }
+
+  final touristArea = location.startsWith(Routes.trips);
   final guideArea =
       location.startsWith(Routes.schedule) || location.startsWith(Routes.scan);
   if (user.role == 'Tourist' && guideArea) return home;

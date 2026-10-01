@@ -5,6 +5,7 @@ import type { PagedResult } from '@/shared/api/types';
 import type {
   AttractionDto,
   AttractionListQuery,
+  CancelTripRequest,
   ItineraryDto,
   SaveAttractionRequest,
   TripHistoryEntryDto,
@@ -13,10 +14,12 @@ import type {
   UpdateItineraryDayRequest,
 } from './types';
 
-/** Drops empty values so the API only sees filters that are set. */
+/** Drops empty values (and empty lists) so the API only sees filters that are set. */
 function clean<T extends object>(query: T): Partial<T> {
   return Object.fromEntries(
-    Object.entries(query).filter(([, v]) => v !== '' && v !== undefined),
+    Object.entries(query).filter(
+      ([, v]) => v !== '' && v !== undefined && !(Array.isArray(v) && v.length === 0),
+    ),
   ) as Partial<T>;
 }
 
@@ -25,14 +28,33 @@ export const tripKeys = {
   detail: (id: string) => [queryRoots.trips, 'detail', id] as const,
   itinerary: (id: string) => [queryRoots.trips, 'itinerary', id] as const,
   history: (id: string) => [queryRoots.trips, 'history', id] as const,
+  workflow: (id: string) => [queryRoots.trips, 'workflow', id] as const,
 };
 
+/**
+ * GET /api/trip-requests. `indexes: null` makes Axios send a list as cities=Kandy&cities=Ella (what ASP.NET
+ * Core binds to a List), instead of its default cities[]=Kandy.
+ */
 export function useTrips(query: TripRequestListQuery) {
   return useQuery({
     queryKey: tripKeys.list(query),
     queryFn: async () =>
-      (await http.get<PagedResult<TripRequestDto>>('/api/trip-requests', { params: clean(query) })).data,
+      (
+        await http.get<PagedResult<TripRequestDto>>('/api/trip-requests', {
+          params: clean(query),
+          paramsSerializer: { indexes: null },
+        })
+      ).data,
     placeholderData: keepPreviousData,
+  });
+}
+
+/** GET /api/attractions/cities: the cities TripCraft covers (for the trips list's city filter). */
+export function useCities() {
+  return useQuery({
+    queryKey: [queryRoots.attractions, 'cities'],
+    queryFn: async () => (await http.get<string[]>('/api/attractions/cities')).data,
+    staleTime: 5 * 60_000,
   });
 }
 
@@ -81,13 +103,50 @@ export function useTripHistory(id: string) {
   });
 }
 
-/** Submitted → Cancelled (409 in any other status). Refreshes the trip, its history and the lists. */
+/**
+ * Cancel with a reason (a manager may cancel at any time before the trip starts; 409 otherwise). The holds are
+ * released by the API in the same transaction. Refreshes the trip, its history and the lists.
+ */
 export function useCancelTrip(id: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async () => (await http.post<TripRequestDto>(`/api/trip-requests/${id}/cancel`)).data,
+    mutationFn: async (body: CancelTripRequest) =>
+      (await http.post<TripRequestDto>(`/api/trip-requests/${id}/cancel`, body)).data,
     onSuccess: () => client.invalidateQueries({ queryKey: [queryRoots.trips] }),
   });
+}
+
+/**
+ * The id of the trip's newest agent workflow (GET /api/trip-requests/{id}/workflow), so the trip page can link
+ * to the review page. Only asked for when `enabled`; a 404 (no workflow yet) is returned as null.
+ */
+export function useTripWorkflowId(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: tripKeys.workflow(id),
+    queryFn: async () => {
+      const response = await http.get<{ id: string }>(`/api/trip-requests/${id}/workflow`, {
+        validateStatus: (status) => status === 200 || status === 404,
+      });
+      return response.status === 404 ? null : response.data.id;
+    },
+    enabled,
+  });
+}
+
+/**
+ * GET /api/trips/{id}/vouchers.pdf needs the bearer token, so a plain link cannot open it. The PDF is fetched
+ * through the API client as a blob and handed to the browser as a download.
+ */
+export async function downloadVouchersPdf(tripId: string): Promise<void> {
+  const response = await http.get<Blob>(`/api/trips/${tripId}/vouchers.pdf`, { responseType: 'blob' });
+  const url = URL.createObjectURL(response.data);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `tripcraft-vouchers-${tripId}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 /** Trips starting in [from, to]; only the total is used (dashboard KPI). */

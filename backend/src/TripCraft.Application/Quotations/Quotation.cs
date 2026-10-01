@@ -23,16 +23,28 @@ public class Quotation : BaseEntity
     public bool FxStale { get; set; }
     public QuotationStatus Status { get; set; } = QuotationStatus.Pending;
 
-    /// <summary>When the tourist accepted the approved price in the app.</summary>
+    /// <summary>When the tourist accepted the price in the app.</summary>
     public DateTime? AcceptedAt { get; set; }
+
+    /// <summary>
+    /// The itinerary and resources this version priced (JSON of the stored proposal), so the review page can show
+    /// version 1 and version 2 side by side after a revision or a direct edit.
+    /// </summary>
+    public string? ProposalSnapshot { get; set; }
 
     public List<QuotationLine> Lines { get; set; } = [];
 }
 
+/// <summary>
+/// Pending = waiting for the manager; Approved = sent to the tourist; Declined = the tourist said no;
+/// RevisionRequested / Superseded = replaced by a newer version; Rejected = the operator turned the trip down.
+/// </summary>
 public enum QuotationStatus
 {
     Pending,
     Approved,
     Rejected,
-    RevisionRequested
+    RevisionRequested,
+    Declined,
+    Superseded
 }

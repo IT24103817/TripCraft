@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { PageState } from '@/shared/components/PageState';
@@ -5,20 +6,30 @@ import { StatusBadge } from '@/shared/components/StatusBadge';
 import { formatDate, formatUsd } from '@/shared/utils/format';
 import { useTripSummary, useWorkflow } from './api';
 import { DecisionActions } from './DecisionActions';
+import { ProposalEditor } from './ProposalEditor';
 import { ProposedItinerary, ProposedResources } from './ProposalDetails';
 import { QuotationPanel } from './QuotationPanel';
+import { QuotationVersions } from './QuotationVersions';
 import { toPanelQuotation, useQuotation } from './quotationsApi';
-import { RepriceButton } from './RepriceButton';
+import { QUOTATION_STATUS_LABELS } from './reviewRules';
+import { ReviewStatusBanner } from './ReviewStatusBanner';
 import { ValidationChecklist } from './ValidationChecklist';
 
-/** Everything the manager needs for the decision (PLAN.md section 6, step 9). :id is the workflow id. */
+/**
+ * The manager's review of one trip (PLAN.md section 6, step 9; v1.1 lifecycle). :id is the workflow id.
+ * A status banner says what the trip's status means; in PendingReview the manager sends, edits, re-prices,
+ * asks for a revision or rejects; at ClientAccepted they confirm or reopen the review.
+ */
 export default function ApprovalReviewPage() {
   const { id = '' } = useParams();
   const workflow = useWorkflow(id);
   const trip = useTripSummary(workflow.data?.tripRequestId);
   const proposal = workflow.data?.finalOutcome?.proposal;
-  // The stored quotation (quotations table) once it exists; the agent's proposal before that.
+  // The stored quotation (the newest version) once it exists; the agent's proposal before that.
   const stored = useQuotation(proposal?.quotationId);
+  const [editing, setEditing] = useState(false);
+  const names = workflow.data?.resourceNames ?? {};
+  const inReview = trip.data?.status === 'PendingReview';
 
   return (
     <PageState
@@ -36,6 +47,9 @@ export default function ApprovalReviewPage() {
               <>
                 <Link to="/approvals" className="btn-secondary">
                   Back to approvals
+                </Link>
+                <Link to={`/trips/${workflow.data.tripRequestId}`} className="btn-secondary">
+                  Trip details
                 </Link>
                 <Link to={`/workflows/${id}`} className="btn-secondary">
                   Agent timeline
@@ -56,12 +70,17 @@ export default function ApprovalReviewPage() {
                 <span>
                   {formatDate(trip.data.startDate)} – {formatDate(trip.data.endDate)}
                 </span>
+                <span>{trip.data.cities.join(', ')}</span>
                 <span>{trip.data.pax} travellers</span>
                 <span>Budget {formatUsd(trip.data.budgetUsd)}</span>
               </>
             )}
             {proposal && proposal.replans > 0 && <span>Re-planned {proposal.replans}×</span>}
           </div>
+
+          {trip.data && (
+            <ReviewStatusBanner tripId={trip.data.id} tripStatus={trip.data.status} quotation={stored.data} />
+          )}
 
           <PageState
             isLoading={false}
@@ -78,10 +97,40 @@ export default function ApprovalReviewPage() {
                   <p className="text-sm text-slate-600">Not validated yet.</p>
                 )}
               </div>
-              <div className="card space-y-3">
-                <h2 className="font-semibold text-slate-900">Decision</h2>
-                <DecisionActions workflow={workflow.data} />
-              </div>
+              {inReview && (
+                <div className="card space-y-3">
+                  <h2 className="font-semibold text-slate-900">Decision</h2>
+                  <DecisionActions workflow={workflow.data} quotation={stored.data} />
+                </div>
+              )}
+              {inReview && trip.data && (
+                <div className="card space-y-3 lg:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="font-semibold text-slate-900">Edit directly</h2>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      aria-expanded={editing}
+                      onClick={() => setEditing((open) => !open)}
+                    >
+                      {editing ? 'Close editor' : 'Edit directly'}
+                    </button>
+                  </div>
+                  {workflow.data.finalOutcome?.editedSinceQuotation && (
+                    <p className="text-sm text-amber-900">
+                      Edited since the last price: re-price before sending it to the client.
+                    </p>
+                  )}
+                  {editing && (
+                    <ProposalEditor
+                      trip={trip.data}
+                      days={proposal?.days ?? []}
+                      resources={proposal?.resources ?? null}
+                      names={names}
+                    />
+                  )}
+                </div>
+              )}
               <div className="card">
                 <h2 className="mb-3 font-semibold text-slate-900">Itinerary</h2>
                 <ProposedItinerary days={proposal?.days ?? []} />
@@ -89,18 +138,18 @@ export default function ApprovalReviewPage() {
               <div className="card">
                 <h2 className="mb-3 font-semibold text-slate-900">Proposed guide, vehicle and rooms</h2>
                 {proposal?.resources ? (
-                  <ProposedResources resources={proposal.resources} names={workflow.data.resourceNames} />
+                  <ProposedResources resources={proposal.resources} names={names} />
                 ) : (
                   <p className="text-sm">None.</p>
                 )}
               </div>
               <div className="card lg:col-span-2">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="font-semibold text-slate-900">
-                    Quotation{stored.data ? ` v${stored.data.version} (${stored.data.status})` : ''}
-                  </h2>
-                  {stored.data?.status === 'Pending' && <RepriceButton quotationId={stored.data.id} />}
-                </div>
+                <h2 className="mb-3 font-semibold text-slate-900">
+                  Quotation
+                  {stored.data
+                    ? ` v${stored.data.version} (${QUOTATION_STATUS_LABELS[stored.data.status]})`
+                    : ''}
+                </h2>
                 {stored.data ? (
                   <QuotationPanel quotation={toPanelQuotation(stored.data)} />
                 ) : proposal?.quotation ? (
@@ -109,6 +158,7 @@ export default function ApprovalReviewPage() {
                   <p className="text-sm">None.</p>
                 )}
               </div>
+              <QuotationVersions tripRequestId={workflow.data.tripRequestId} names={names} />
             </div>
           </PageState>
         </section>

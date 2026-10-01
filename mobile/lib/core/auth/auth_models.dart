@@ -4,6 +4,8 @@ part 'auth_models.freezed.dart';
 part 'auth_models.g.dart';
 
 /// UserDto from the API. role is "Tourist", "Guide", "OperationsManager" or "Admin".
+/// [mustChangePassword] is true after a manager created the account (or reset its password): the app then
+/// forces the Change password screen before anything else.
 @freezed
 abstract class AppUser with _$AppUser {
   const factory AppUser({
@@ -12,6 +14,7 @@ abstract class AppUser with _$AppUser {
     required String fullName,
     required String role,
     required bool isActive,
+    @Default(false) bool mustChangePassword,
   }) = _AppUser;
 
   factory AppUser.fromJson(Map<String, dynamic> json) =>

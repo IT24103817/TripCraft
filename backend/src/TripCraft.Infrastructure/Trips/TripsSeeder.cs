@@ -100,6 +100,7 @@ public static class TripsSeeder
             Pax = 2,
             BudgetUsd = 900m,
             Preferences = """{"language":"en","transport":"train","pace":"relaxed"}""",
+            Cities = TripRequest.JoinCities(["Kandy", "Ella"]),
             Status = TripRequestStatus.Completed
         };
 

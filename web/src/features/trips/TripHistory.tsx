@@ -11,9 +11,20 @@ const ACTION_LABELS: Record<string, string> = {
   AgentWorkflowStarted: 'Agents started planning',
   AgentWorkflowFailedSafely: 'Agents could not start',
   AgentProposalReceived: 'Agents returned a proposal',
-  QuotationApproved: 'Quotation approved',
-  QuotationRejected: 'Quotation rejected',
+  QuotationApproved: 'Quotation sent to the client',
+  QuotationRejected: 'Trip rejected by the operator',
   QuotationRevisionRequested: 'Revision requested',
+  QuotationRepriced: 'Quotation re-priced (new version)',
+  QuotationAccepted: 'Client accepted the quotation',
+  QuotationDeclined: 'Client declined the quotation',
+  ProposalDayEdited: 'Proposal day edited',
+  ProposalResourcesSwapped: 'Guide, vehicle or hotel swapped',
+  TripConfirmed: 'Trip confirmed and booked',
+  TripRequestCancelled: 'Trip cancelled',
+  ItineraryDayEdited: 'Itinerary day edited',
+  GuideChangeRequested: 'Guide asked to be replaced',
+  GuideChangeResolved: 'Guide replaced',
+  StopCheckedIn: 'Stop checked in',
 };
 
 /** Spec section 5 "history": every audited change of the trip and its workflows, oldest first. */
@@ -42,6 +53,7 @@ export function TripHistory({ tripId }: { tripId: string }) {
             <span className="text-slate-500">
               by {entry.actor === 'OperationsManager' ? 'Operations Manager' : entry.actor}
             </span>
+            {entry.reason && <span className="w-full text-slate-600">Reason: {entry.reason}</span>}
           </li>
         ))}
       </ol>

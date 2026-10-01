@@ -53,11 +53,35 @@ class TripsRepository {
     await _api.postMultipart('/api/trip-requests/$tripId/passport-photo', form);
   }
 
-  /// POST /api/trip-requests/{id}/cancel: Submitted → Cancelled (409 in any other status).
-  Future<TripRequest> cancel(String tripId) async => TripRequest.fromJson(
-    await _api.post('/api/trip-requests/$tripId/cancel')
-        as Map<String, dynamic>,
-  );
+  /// POST /api/trip-requests/{id}/cancel {reason}. 409 after the cut-off (the message names the operator contact).
+  Future<TripRequest> cancel(String tripId, String reason) async =>
+      TripRequest.fromJson(
+        await _api.post(
+          '/api/trip-requests/$tripId/cancel',
+          body: {'reason': reason.trim()},
+        ) as Map<String, dynamic>,
+      );
+
+  /// GET /api/trip-requests/{id}/cancellation: may the tourist cancel now, and until when.
+  Future<CancellationInfo> cancellationInfo(String tripId) async =>
+      CancellationInfo.fromJson(
+        await _api.get('/api/trip-requests/$tripId/cancellation')
+            as Map<String, dynamic>,
+      );
+
+  /// GET /api/trips/{id}/vouchers: the trip voucher and one per hotel night (issued when the trip is confirmed).
+  Future<List<TripVoucher>> vouchers(String tripId) async {
+    final json = await _api.get('/api/trips/$tripId/vouchers') as List<dynamic>;
+    return json
+        .map((e) => TripVoucher.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// GET /api/attractions/cities: the only cities a trip may visit.
+  Future<List<String>> cities() async {
+    final json = await _api.get('/api/attractions/cities') as List<dynamic>;
+    return json.map((city) => '$city').toList();
+  }
 
   /// GET /api/trip-requests/{id}/history: audited events, oldest first.
   Future<List<TripHistoryEntry>> history(String tripId) async {

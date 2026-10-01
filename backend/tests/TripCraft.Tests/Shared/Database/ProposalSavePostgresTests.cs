@@ -72,7 +72,7 @@ public class ProposalSavePostgresTests(PostgresFixture postgres)
             (await db.TripRequests.SingleAsync(t => t.Id == trip.Id)).Status,
             await db.Quotations.CountAsync(q => q.TripRequestId == trip.Id)));
         workflow.Status.Should().Be(AgentWorkflowStatus.FailedSafely);
-        tripStatus.Should().Be(TripRequestStatus.Submitted); // the tourist can try again
+        tripStatus.Should().Be(TripRequestStatus.FailedSafely); // the tourist can try again
         quotations.Should().Be(0);
     }
 }

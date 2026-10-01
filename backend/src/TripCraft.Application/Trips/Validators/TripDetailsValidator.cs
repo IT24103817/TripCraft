@@ -23,6 +23,15 @@ public class TripDetailsValidator : AbstractValidator<ITripDetails>
             .WithMessage($"Trips can be at most {TripPlanningRules.MaxTripDays} days.");
         RuleFor(x => x.Pax).InclusiveBetween(1, 50);
         RuleFor(x => x.BudgetUsd).GreaterThan(0).LessThanOrEqualTo(1_000_000);
+        RuleFor(x => x.Cities).NotEmpty().WithMessage("Choose at least one city from the list.");
+        RuleFor(x => x.Cities!.Count).LessThanOrEqualTo(10).When(x => x.Cities is not null).WithName("cities")
+            .WithMessage("Choose at most 10 cities.");
+        RuleFor(x => x.Cities).Must(c => c!.Distinct(StringComparer.OrdinalIgnoreCase).Count() == c!.Count)
+            .When(x => x.Cities is not null).WithMessage("Each city can only be chosen once.");
+        RuleFor(x => x.Cities).Must((x, c) => c!.Count <= TripPlanningRules.TripDays(x.StartDate, x.EndDate))
+            .When(x => x.Cities is not null && x.EndDate >= x.StartDate)
+            .WithMessage("Choose at most one city per trip day.");
+        RuleForEach(x => x.Cities).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Preferences)
             .Must(p => p is null || p.Value.ValueKind == JsonValueKind.Object)
             .WithMessage("Preferences must be a JSON object.");

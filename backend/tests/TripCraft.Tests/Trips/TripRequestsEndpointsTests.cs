@@ -16,10 +16,11 @@ public class TripRequestsEndpointsTests(TestWebApplicationFactory factory) : ICl
 
     private static readonly DateOnly Start = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(14);
 
-    public static CreateTripRequestRequest NewTrip(string objective = "5 days in Kandy and Ella with the hill-country train", decimal budget = 1500) =>
+    public static CreateTripRequestRequest NewTrip(string objective = "5 days in Kandy and Ella with the hill-country train",
+        decimal budget = 1500, string[]? cities = null) =>
         new(objective, Start, Start.AddDays(4), 4, budget,
             JsonDocument.Parse("""{"language":"en","transport":"train"}""").RootElement,
-            "United Kingdom", "N1234567");
+            "United Kingdom", "N1234567", cities ?? ["Kandy", "Ella"]);
 
     private async Task<TripRequestDto> CreateTripAsync(string tourist, CreateTripRequestRequest? request = null)
     {
@@ -154,7 +155,7 @@ public class TripRequestsEndpointsTests(TestWebApplicationFactory factory) : ICl
     {
         var trip = await CreateTripAsync("tourist1@tripcraft.test");
         var client = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
-        var update = new UpdateTripRequestRequest(trip.Objective, trip.StartDate, trip.EndDate, 6, 2500, null);
+        var update = new UpdateTripRequestRequest(trip.Objective, trip.StartDate, trip.EndDate, 6, 2500, null, trip.Cities);
 
         var response = await client.PutAsJsonAsync($"/api/trip-requests/{trip.Id}", update);
 
@@ -210,7 +211,7 @@ public class TripRequestsEndpointsTests(TestWebApplicationFactory factory) : ICl
         var tourist = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
         await tourist.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
         var client = await factory.CreateClientAsAsync(Manager);
-        var update = new UpdateTripRequestRequest(trip.Objective, trip.StartDate, trip.EndDate, 2, 900, null);
+        var update = new UpdateTripRequestRequest(trip.Objective, trip.StartDate, trip.EndDate, 2, 900, null, trip.Cities);
 
         var response = await client.PutAsJsonAsync($"/api/trip-requests/{trip.Id}", update);
 
@@ -218,15 +219,63 @@ public class TripRequestsEndpointsTests(TestWebApplicationFactory factory) : ICl
     }
 
     [Fact]
-    public async Task Start_planning_without_a_known_city_returns_400()
+    public async Task Free_text_city_is_rejected_with_the_supported_cities_named()
     {
-        var trip = await CreateTripAsync("tourist1@tripcraft.test", NewTrip("Somewhere sunny with good food please"));
+        var client = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
+
+        var response = await client.PostAsJsonAsync("/api/trip-requests", NewTrip(cities: ["Kandy", "Atlantis"]));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("'Atlantis' is not a city we cover").And.Contain("Supported cities:").And.Contain("Ella");
+    }
+
+    [Fact]
+    public async Task Trip_without_cities_is_rejected()
+    {
+        var client = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
+
+        var response = await client.PostAsJsonAsync("/api/trip-requests", NewTrip(cities: []));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("Choose at least one city");
+    }
+
+    [Fact]
+    public async Task Cities_are_stored_in_canonical_spelling_and_drive_the_skeleton()
+    {
+        var trip = await CreateTripAsync("tourist1@tripcraft.test", NewTrip("A quiet holiday, no city named here", cities: ["ella", "KANDY"]));
         var client = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
 
         var response = await client.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await response.Content.ReadAsStringAsync()).Should().Contain("Objective must mention at least one destination");
+        trip.Cities.Should().Equal("Ella", "Kandy");
+        var result = await response.Content.ReadFromJsonAsync<StartPlanningResponse>(TestJson.Options);
+        result!.Skeleton.Select(d => d.City).Distinct().Should().Equal("Ella", "Kandy");
+    }
+
+    [Fact]
+    public async Task List_filters_by_every_chosen_city()
+    {
+        await CreateTripAsync("tourist2@tripcraft.test", NewTrip("Galle beach only", cities: ["Galle"]));
+        await CreateTripAsync("tourist2@tripcraft.test", NewTrip("Kandy and Galle", cities: ["Kandy", "Galle"]));
+        var client = await factory.CreateClientAsAsync("tourist2@tripcraft.test");
+
+        var page = await client.GetFromJsonAsync<PagedResult<TripRequestDto>>(
+            "/api/trip-requests?cities=Galle&cities=Kandy&pageSize=100", TestJson.Options);
+
+        page!.Items.Should().OnlyContain(t => t.Cities.Contains("Galle") && t.Cities.Contains("Kandy"));
+        page.Items.Should().Contain(t => t.Objective == "Kandy and Galle");
+    }
+
+    [Fact]
+    public async Task Attraction_cities_endpoint_lists_the_supported_cities()
+    {
+        var client = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
+
+        var cities = await client.GetFromJsonAsync<List<string>>("/api/attractions/cities", TestJson.Options);
+
+        cities.Should().Contain(["Kandy", "Ella", "Galle"]).And.BeInAscendingOrder();
     }
 
     [Fact]

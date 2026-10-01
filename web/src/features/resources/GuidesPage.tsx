@@ -8,10 +8,11 @@ import { SearchFilterBar } from '@/shared/components/SearchFilterBar';
 import { useToast } from '@/shared/components/Toast';
 import { useListParams } from '@/shared/hooks/useListParams';
 import { formatLkr } from '@/shared/utils/format';
-import { useDeleteGuide, useGuides } from './api';
+import { useDeleteGuide, useGuides, useResetGuidePassword } from './api';
 import { DeleteButton } from './DeleteButton';
 import { GuideFormDialog } from './GuideFormDialog';
-import type { GuideDto } from './types';
+import { TemporaryPasswordDialog } from './TemporaryPasswordDialog';
+import type { GuideAccountDto, GuideDto } from './types';
 
 const LANGUAGES = ['en', 'de', 'fr', 'ja', 'zh', 'si'];
 
@@ -28,10 +29,14 @@ export default function GuidesPage() {
   };
   const guides = useGuides(query);
   const remove = useDeleteGuide();
+  const resetPassword = useResetGuidePassword();
   const toast = useToast();
   const [editing, setEditing] = useState<GuideDto | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [toDelete, setToDelete] = useState<GuideDto | null>(null);
+  const [toReset, setToReset] = useState<GuideDto | null>(null);
+  // The one-time password to show (after a create or a reset), and the dialog title for it.
+  const [account, setAccount] = useState<{ value: GuideAccountDto; title: string } | null>(null);
 
   const openForm = (guide: GuideDto | null) => {
     setEditing(guide);
@@ -44,7 +49,23 @@ export default function GuidesPage() {
     { key: 'maxPax', header: 'Max group', sortKey: 'maxPax', render: (g) => g.maxPax },
     { key: 'rate', header: 'Day rate', sortKey: 'dayRateLkr', render: (g) => formatLkr(g.dayRateLkr) },
     { key: 'active', header: 'Status', render: (g) => (g.isActive ? 'Active' : 'Inactive') },
-    { key: 'login', header: 'App login', render: (g) => (g.userId ? 'Linked' : '—') },
+    {
+      key: 'password',
+      header: 'App login',
+      render: (g) => (
+        <button
+          type="button"
+          className="text-brand-700 hover:underline"
+          aria-label={`Reset password for ${g.name}`}
+          onClick={(event) => {
+            event.stopPropagation(); // the row click opens the edit form
+            setToReset(g);
+          }}
+        >
+          Reset password
+        </button>
+      ),
+    },
     {
       key: 'delete',
       header: 'Delete',
@@ -120,7 +141,37 @@ export default function GuidesPage() {
           />
         )}
       </PageState>
-      <GuideFormDialog open={formOpen} guide={editing} onClose={() => setFormOpen(false)} />
+      <GuideFormDialog
+        open={formOpen}
+        guide={editing}
+        onClose={() => setFormOpen(false)}
+        onCreated={(value) => setAccount({ value, title: 'Guide login created' })}
+      />
+      {account && (
+        <TemporaryPasswordDialog
+          account={account.value}
+          title={account.title}
+          onClose={() => setAccount(null)}
+        />
+      )}
+      <ConfirmDialog
+        open={toReset !== null}
+        title="Reset password"
+        message={`Make a new temporary password for ${toReset?.name ?? ''}? The old password stops working at once.`}
+        confirmLabel="Reset password"
+        isPending={resetPassword.isPending}
+        onCancel={() => setToReset(null)}
+        onConfirm={() =>
+          toReset &&
+          resetPassword.mutate(toReset.id, {
+            onSuccess: (value) => {
+              setToReset(null);
+              setAccount({ value, title: 'Password reset' });
+            },
+            onError: (error) => toast.error(getErrorMessage(error)),
+          })
+        }
+      />
       <ConfirmDialog
         open={toDelete !== null}
         title="Delete guide"

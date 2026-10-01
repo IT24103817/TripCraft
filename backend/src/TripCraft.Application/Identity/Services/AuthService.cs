@@ -1,3 +1,5 @@
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Identity;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Identity.Dtos;
@@ -50,6 +52,19 @@ public class AuthService(
     {
         var user = await users.GetByIdAsync(userId, ct)
                    ?? throw new NotFoundException("User not found.");
+        return UserDto.FromEntity(user);
+    }
+
+    /// <summary>Checks the current password, saves the new one and clears MustChangePassword.</summary>
+    public async Task<UserDto> ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken ct)
+    {
+        var user = await users.GetByIdAsync(userId, ct) ?? throw new NotFoundException("User not found.");
+        if (passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword) == PasswordVerificationResult.Failed)
+            throw new ValidationException([new ValidationFailure("currentPassword", "The current password is not correct.")]);
+
+        user.PasswordHash = passwordHasher.HashPassword(user, request.NewPassword);
+        user.MustChangePassword = false;
+        await users.SaveChangesAsync(ct);
         return UserDto.FromEntity(user);
     }
 

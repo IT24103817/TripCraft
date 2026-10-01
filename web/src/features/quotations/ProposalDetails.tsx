@@ -32,7 +32,7 @@ export function ProposedItinerary({ days }: { days: ProposalDay[] }) {
   );
 }
 
-/** Ids only for now: names come from Resource Management once it is merged. */
+/** Guide, vehicle and rooms with the names the API sends (an id without a name is shown as it is). */
 export function ProposedResources({
   resources,
   names = {},

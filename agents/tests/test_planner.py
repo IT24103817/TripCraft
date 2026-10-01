@@ -2,7 +2,7 @@ from app.graph import initial_state
 from app.nodes.planner import planner_node
 from app.schemas import ReplanRequest
 from app.state import FAILED_SAFELY, RUNNING
-from tests.conftest import DEMO_REQUEST, load_fixture
+from tests.conftest import DEMO_REQUEST, demo_request, load_fixture
 
 
 async def test_planner_golden_plan_and_constraints(fake_llm, api, demo_state):
@@ -23,6 +23,21 @@ async def test_planner_golden_plan_and_constraints(fake_llm, api, demo_state):
 
     user_message = fake_llm.calls_for("planner")[0][1].content
     assert user_message.startswith("<DATA>") and user_message.endswith("</DATA>")
+
+
+async def test_planner_uses_the_cities_the_tourist_chose_not_the_models_guess(fake_llm, api):
+    state = dict(initial_state(demo_request(cities=["Ella", "Galle"])))
+
+    update = await planner_node(state)
+
+    assert update["status"] == RUNNING
+    assert update["plan"]["constraints"]["cities"] == ["Ella", "Galle"]  # fixture says Kandy, Ella
+
+
+async def test_planner_without_requested_cities_keeps_the_models_cities(fake_llm, api, demo_state):
+    update = await planner_node(demo_state)
+
+    assert update["plan"]["constraints"]["cities"] == ["Kandy", "Ella"]
 
 
 async def test_planner_budget_replan_forces_budget_hotel_tier(fake_llm, api, demo_state):

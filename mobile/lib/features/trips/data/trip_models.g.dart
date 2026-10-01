@@ -17,6 +17,9 @@ _TripRequest _$TripRequestFromJson(Map<String, dynamic> json) => _TripRequest(
       json['preferences'] as Map<String, dynamic>? ?? const <String, dynamic>{},
   status: json['status'] as String,
   createdAt: json['createdAt'] as String,
+  cities:
+      (json['cities'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const <String>[],
 );
 
 Map<String, dynamic> _$TripRequestToJson(_TripRequest instance) =>
@@ -30,6 +33,7 @@ Map<String, dynamic> _$TripRequestToJson(_TripRequest instance) =>
       'preferences': instance.preferences,
       'status': instance.status,
       'createdAt': instance.createdAt,
+      'cities': instance.cities,
     };
 
 _CreateTripRequest _$CreateTripRequestFromJson(Map<String, dynamic> json) =>
@@ -42,6 +46,9 @@ _CreateTripRequest _$CreateTripRequestFromJson(Map<String, dynamic> json) =>
       preferences: json['preferences'] as Map<String, dynamic>,
       nationality: json['nationality'] as String,
       passportNumber: json['passportNumber'] as String,
+      cities: (json['cities'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
     );
 
 Map<String, dynamic> _$CreateTripRequestToJson(_CreateTripRequest instance) =>
@@ -54,6 +61,7 @@ Map<String, dynamic> _$CreateTripRequestToJson(_CreateTripRequest instance) =>
       'preferences': instance.preferences,
       'nationality': instance.nationality,
       'passportNumber': instance.passportNumber,
+      'cities': instance.cities,
     };
 
 _StartPlanningResult _$StartPlanningResultFromJson(Map<String, dynamic> json) =>
@@ -209,6 +217,7 @@ _TripHistoryEntry _$TripHistoryEntryFromJson(Map<String, dynamic> json) =>
       actor: json['actor'] as String,
       fromStatus: json['fromStatus'] as String?,
       toStatus: json['toStatus'] as String?,
+      reason: json['reason'] as String?,
     );
 
 Map<String, dynamic> _$TripHistoryEntryToJson(_TripHistoryEntry instance) =>
@@ -218,4 +227,46 @@ Map<String, dynamic> _$TripHistoryEntryToJson(_TripHistoryEntry instance) =>
       'actor': instance.actor,
       'fromStatus': instance.fromStatus,
       'toStatus': instance.toStatus,
+      'reason': instance.reason,
+    };
+
+_CancellationInfo _$CancellationInfoFromJson(Map<String, dynamic> json) =>
+    _CancellationInfo(
+      canCancel: json['canCancel'] as bool,
+      cancelUntil: json['cancelUntil'] as String,
+      cutoffDays: (json['cutoffDays'] as num).toInt(),
+      closedReason: json['closedReason'] as String?,
+      operatorContact: json['operatorContact'] as String,
+    );
+
+Map<String, dynamic> _$CancellationInfoToJson(_CancellationInfo instance) =>
+    <String, dynamic>{
+      'canCancel': instance.canCancel,
+      'cancelUntil': instance.cancelUntil,
+      'cutoffDays': instance.cutoffDays,
+      'closedReason': instance.closedReason,
+      'operatorContact': instance.operatorContact,
+    };
+
+_TripVoucher _$TripVoucherFromJson(Map<String, dynamic> json) => _TripVoucher(
+  id: json['id'] as String,
+  type: json['type'] as String,
+  hotelId: json['hotelId'] as String?,
+  hotelName: json['hotelName'] as String?,
+  night: json['night'] as String?,
+  rooms: (json['rooms'] as num).toInt(),
+  code: json['code'] as String,
+  qrPayload: json['qrPayload'] as String,
+);
+
+Map<String, dynamic> _$TripVoucherToJson(_TripVoucher instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'type': instance.type,
+      'hotelId': instance.hotelId,
+      'hotelName': instance.hotelName,
+      'night': instance.night,
+      'rooms': instance.rooms,
+      'code': instance.code,
+      'qrPayload': instance.qrPayload,
     };

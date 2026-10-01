@@ -8,6 +8,7 @@ import { useListParams } from '@/shared/hooks/useListParams';
 import { statusLabel, TRIP_STATUSES } from '@/shared/statuses';
 import { formatDate, formatUsd } from '@/shared/utils/format';
 import { useTrips } from './api';
+import { CityFilter } from './CityFilter';
 import type { TripRequestDto } from './types';
 
 const columns: Column<TripRequestDto>[] = [
@@ -17,6 +18,7 @@ const columns: Column<TripRequestDto>[] = [
     render: (t) => t.objective,
     className: 'max-w-xs truncate px-4 py-2 text-slate-900',
   },
+  { key: 'cities', header: 'Cities', render: (t) => t.cities.join(', ') || '—' },
   { key: 'startDate', header: 'Start', sortKey: 'startDate', render: (t) => formatDate(t.startDate) },
   { key: 'endDate', header: 'End', render: (t) => formatDate(t.endDate) },
   { key: 'pax', header: 'Pax', sortKey: 'pax', render: (t) => t.pax },
@@ -28,8 +30,11 @@ const columns: Column<TripRequestDto>[] = [
 export default function TripsListPage() {
   const navigate = useNavigate();
   const list = useListParams({ sort: '-createdAt' });
+  // The ticked cities live in the URL as "Kandy,Ella", like every other filter.
+  const cities = list.get('cities') ? list.get('cities').split(',') : [];
   const query = {
     status: list.get('status'),
+    cities,
     from: list.get('from'),
     to: list.get('to'),
     search: list.search,
@@ -41,7 +46,10 @@ export default function TripsListPage() {
 
   return (
     <section className="space-y-4">
-      <PageHeader title="Trip requests" description="Every trip request submitted from the mobile app." />
+      <PageHeader
+        title="Trip requests"
+        description="Every trip request submitted from the mobile app, through review, booking and the trip itself."
+      />
       <SearchFilterBar
         search={{
           value: list.search,
@@ -63,7 +71,9 @@ export default function TripsListPage() {
           to: query.to,
           onChange: (from, to) => list.set({ from, to }),
         }}
-      />
+      >
+        <CityFilter value={cities} onChange={(next) => list.set({ cities: next.join(',') })} />
+      </SearchFilterBar>
       <PageState
         isLoading={trips.isLoading}
         isError={trips.isError}
@@ -75,7 +85,7 @@ export default function TripsListPage() {
           <button
             type="button"
             className="btn-secondary"
-            onClick={() => list.set({ status: '', from: '', to: '', search: '' })}
+            onClick={() => list.set({ status: '', cities: '', from: '', to: '', search: '' })}
           >
             Clear filters
           </button>

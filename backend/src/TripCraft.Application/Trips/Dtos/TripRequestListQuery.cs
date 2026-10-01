@@ -2,7 +2,7 @@ using TripCraft.Application.Common.Paging;
 
 namespace TripCraft.Application.Trips.Dtos;
 
-/// <summary>GET /api/trip-requests?status=&amp;from=&amp;to=&amp;search=&amp;sort=&amp;page=&amp;pageSize=</summary>
+/// <summary>GET /api/trip-requests?status=&amp;from=&amp;to=&amp;cities=Kandy&amp;cities=Ella&amp;search=&amp;sort=&amp;page=&amp;pageSize=</summary>
 public class TripRequestListQuery : PagedQuery
 {
     public TripRequestStatus? Status { get; set; }
@@ -12,4 +12,7 @@ public class TripRequestListQuery : PagedQuery
 
     /// <summary>Only trips starting on or before this date.</summary>
     public DateOnly? To { get; set; }
+
+    /// <summary>Only trips that visit every one of these cities.</summary>
+    public List<string>? Cities { get; set; }
 }

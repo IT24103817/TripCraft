@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppUser {
 
- String get id; String get email; String get fullName; String get role; bool get isActive;
+ String get id; String get email; String get fullName; String get role; bool get isActive; bool get mustChangePassword;
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +30,20 @@ $AppUserCopyWith<AppUser> get copyWith => _$AppUserCopyWithImpl<AppUser>(this as
 @override
 bool operator ==(Object other) {
   final _this = this as AppUser;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppUser&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.email, _this.email) || other.email == _this.email)&&(identical(other.fullName, _this.fullName) || other.fullName == _this.fullName)&&(identical(other.role, _this.role) || other.role == _this.role)&&(identical(other.isActive, _this.isActive) || other.isActive == _this.isActive));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppUser&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.email, _this.email) || other.email == _this.email)&&(identical(other.fullName, _this.fullName) || other.fullName == _this.fullName)&&(identical(other.role, _this.role) || other.role == _this.role)&&(identical(other.isActive, _this.isActive) || other.isActive == _this.isActive)&&(identical(other.mustChangePassword, _this.mustChangePassword) || other.mustChangePassword == _this.mustChangePassword));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as AppUser;
-  return Object.hash(runtimeType,_this.id,_this.email,_this.fullName,_this.role,_this.isActive);
+  return Object.hash(runtimeType,_this.id,_this.email,_this.fullName,_this.role,_this.isActive,_this.mustChangePassword);
 }
 
 @override
 String toString() {
   final _this = this as AppUser;
-  return 'AppUser(id: ${_this.id}, email: ${_this.email}, fullName: ${_this.fullName}, role: ${_this.role}, isActive: ${_this.isActive})';
+  return 'AppUser(id: ${_this.id}, email: ${_this.email}, fullName: ${_this.fullName}, role: ${_this.role}, isActive: ${_this.isActive}, mustChangePassword: ${_this.mustChangePassword})';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $AppUserCopyWith<$Res>  {
   factory $AppUserCopyWith(AppUser value, $Res Function(AppUser) _then) = _$AppUserCopyWithImpl;
 @useResult
 $Res call({
- String id, String email, String fullName, String role, bool isActive
+ String id, String email, String fullName, String role, bool isActive, bool mustChangePassword
 });
 
 
@@ -71,13 +71,14 @@ class _$AppUserCopyWithImpl<$Res>
 
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? email = null,Object? fullName = null,Object? role = null,Object? isActive = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? email = null,Object? fullName = null,Object? role = null,Object? isActive = null,Object? mustChangePassword = null,}) {
   return _then(AppUser(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,fullName: null == fullName ? _self.fullName : fullName // ignore: cast_nullable_to_non_nullable
 as String,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
+as bool,mustChangePassword: null == mustChangePassword ? _self.mustChangePassword : mustChangePassword // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -163,10 +164,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email,  String fullName,  String role,  bool isActive)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email,  String fullName,  String role,  bool isActive,  bool mustChangePassword)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppUser() when $default != null:
-return $default(_that.id,_that.email,_that.fullName,_that.role,_that.isActive);case _:
+return $default(_that.id,_that.email,_that.fullName,_that.role,_that.isActive,_that.mustChangePassword);case _:
   return orElse();
 
 }
@@ -184,10 +185,10 @@ return $default(_that.id,_that.email,_that.fullName,_that.role,_that.isActive);c
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email,  String fullName,  String role,  bool isActive)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email,  String fullName,  String role,  bool isActive,  bool mustChangePassword)  $default,) {final _that = this;
 switch (_that) {
 case _AppUser():
-return $default(_that.id,_that.email,_that.fullName,_that.role,_that.isActive);case _:
+return $default(_that.id,_that.email,_that.fullName,_that.role,_that.isActive,_that.mustChangePassword);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -204,10 +205,10 @@ return $default(_that.id,_that.email,_that.fullName,_that.role,_that.isActive);c
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email,  String fullName,  String role,  bool isActive)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email,  String fullName,  String role,  bool isActive,  bool mustChangePassword)?  $default,) {final _that = this;
 switch (_that) {
 case _AppUser() when $default != null:
-return $default(_that.id,_that.email,_that.fullName,_that.role,_that.isActive);case _:
+return $default(_that.id,_that.email,_that.fullName,_that.role,_that.isActive,_that.mustChangePassword);case _:
   return null;
 
 }
@@ -219,7 +220,7 @@ return $default(_that.id,_that.email,_that.fullName,_that.role,_that.isActive);c
 @JsonSerializable()
 
 class _AppUser implements AppUser {
-  const _AppUser({required this.id, required this.email, required this.fullName, required this.role, required this.isActive});
+  const _AppUser({required this.id, required this.email, required this.fullName, required this.role, required this.isActive, this.mustChangePassword = false});
   factory _AppUser.fromJson(Map<String, dynamic> json) => _$AppUserFromJson(json);
 
 @override final  String id;
@@ -227,6 +228,7 @@ class _AppUser implements AppUser {
 @override final  String fullName;
 @override final  String role;
 @override final  bool isActive;
+@override@JsonKey() final  bool mustChangePassword;
 
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
@@ -241,18 +243,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppUser&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.fullName, fullName) || other.fullName == fullName)&&(identical(other.role, role) || other.role == role)&&(identical(other.isActive, isActive) || other.isActive == isActive));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppUser&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.fullName, fullName) || other.fullName == fullName)&&(identical(other.role, role) || other.role == role)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.mustChangePassword, mustChangePassword) || other.mustChangePassword == mustChangePassword));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,email,fullName,role,isActive);
+    return Object.hash(runtimeType,id,email,fullName,role,isActive,mustChangePassword);
 }
 
 @override
 String toString() {
-    return 'AppUser(id: $id, email: $email, fullName: $fullName, role: $role, isActive: $isActive)';
+    return 'AppUser(id: $id, email: $email, fullName: $fullName, role: $role, isActive: $isActive, mustChangePassword: $mustChangePassword)';
 }
 
 
@@ -263,7 +265,7 @@ abstract mixin class _$AppUserCopyWith<$Res> implements $AppUserCopyWith<$Res> {
   factory _$AppUserCopyWith(_AppUser value, $Res Function(_AppUser) _then) = __$AppUserCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String email, String fullName, String role, bool isActive
+ String id, String email, String fullName, String role, bool isActive, bool mustChangePassword
 });
 
 
@@ -280,13 +282,14 @@ class __$AppUserCopyWithImpl<$Res>
 
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? email = null,Object? fullName = null,Object? role = null,Object? isActive = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? email = null,Object? fullName = null,Object? role = null,Object? isActive = null,Object? mustChangePassword = null,}) {
   return _then(_AppUser(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,fullName: null == fullName ? _self.fullName : fullName // ignore: cast_nullable_to_non_nullable
 as String,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
+as bool,mustChangePassword: null == mustChangePassword ? _self.mustChangePassword : mustChangePassword // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

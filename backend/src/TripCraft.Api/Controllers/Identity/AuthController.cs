@@ -34,6 +34,15 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(await authService.LoginAsync(request, ct));
     }
 
+    /// <summary>Replaces the signed-in user's password and clears must-change-password (a guide's first login).</summary>
+    [HttpPost("change-password")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<UserDto>> ChangePassword(ChangePasswordRequest request, CancellationToken ct)
+    {
+        return Ok(await authService.ChangePasswordAsync(User.GetUserId(), request, ct));
+    }
+
     [HttpGet("me")]
     public async Task<ActionResult<UserDto>> Me(CancellationToken ct)
     {

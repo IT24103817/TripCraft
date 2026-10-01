@@ -1174,7 +1174,7 @@ as String?,
 /// @nodoc
 mixin _$CheckInResult {
 
- String get stopId; int get distanceMeters; String get checkedInAt; String get tripStatus;
+ String get stopId; int? get distanceMeters; String get checkedInAt; String get tripStatus; String get method; String get stopName;
 /// Create a copy of CheckInResult
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1188,20 +1188,20 @@ $CheckInResultCopyWith<CheckInResult> get copyWith => _$CheckInResultCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as CheckInResult;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CheckInResult&&(identical(other.stopId, _this.stopId) || other.stopId == _this.stopId)&&(identical(other.distanceMeters, _this.distanceMeters) || other.distanceMeters == _this.distanceMeters)&&(identical(other.checkedInAt, _this.checkedInAt) || other.checkedInAt == _this.checkedInAt)&&(identical(other.tripStatus, _this.tripStatus) || other.tripStatus == _this.tripStatus));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CheckInResult&&(identical(other.stopId, _this.stopId) || other.stopId == _this.stopId)&&(identical(other.distanceMeters, _this.distanceMeters) || other.distanceMeters == _this.distanceMeters)&&(identical(other.checkedInAt, _this.checkedInAt) || other.checkedInAt == _this.checkedInAt)&&(identical(other.tripStatus, _this.tripStatus) || other.tripStatus == _this.tripStatus)&&(identical(other.method, _this.method) || other.method == _this.method)&&(identical(other.stopName, _this.stopName) || other.stopName == _this.stopName));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as CheckInResult;
-  return Object.hash(runtimeType,_this.stopId,_this.distanceMeters,_this.checkedInAt,_this.tripStatus);
+  return Object.hash(runtimeType,_this.stopId,_this.distanceMeters,_this.checkedInAt,_this.tripStatus,_this.method,_this.stopName);
 }
 
 @override
 String toString() {
   final _this = this as CheckInResult;
-  return 'CheckInResult(stopId: ${_this.stopId}, distanceMeters: ${_this.distanceMeters}, checkedInAt: ${_this.checkedInAt}, tripStatus: ${_this.tripStatus})';
+  return 'CheckInResult(stopId: ${_this.stopId}, distanceMeters: ${_this.distanceMeters}, checkedInAt: ${_this.checkedInAt}, tripStatus: ${_this.tripStatus}, method: ${_this.method}, stopName: ${_this.stopName})';
 }
 
 
@@ -1212,7 +1212,7 @@ abstract mixin class $CheckInResultCopyWith<$Res>  {
   factory $CheckInResultCopyWith(CheckInResult value, $Res Function(CheckInResult) _then) = _$CheckInResultCopyWithImpl;
 @useResult
 $Res call({
- String stopId, int distanceMeters, String checkedInAt, String tripStatus
+ String stopId, int? distanceMeters, String checkedInAt, String tripStatus, String method, String stopName
 });
 
 
@@ -1229,12 +1229,14 @@ class _$CheckInResultCopyWithImpl<$Res>
 
 /// Create a copy of CheckInResult
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? stopId = null,Object? distanceMeters = null,Object? checkedInAt = null,Object? tripStatus = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? stopId = null,Object? distanceMeters = freezed,Object? checkedInAt = null,Object? tripStatus = null,Object? method = null,Object? stopName = null,}) {
   return _then(CheckInResult(
 stopId: null == stopId ? _self.stopId : stopId // ignore: cast_nullable_to_non_nullable
-as String,distanceMeters: null == distanceMeters ? _self.distanceMeters : distanceMeters // ignore: cast_nullable_to_non_nullable
-as int,checkedInAt: null == checkedInAt ? _self.checkedInAt : checkedInAt // ignore: cast_nullable_to_non_nullable
+as String,distanceMeters: freezed == distanceMeters ? _self.distanceMeters : distanceMeters // ignore: cast_nullable_to_non_nullable
+as int?,checkedInAt: null == checkedInAt ? _self.checkedInAt : checkedInAt // ignore: cast_nullable_to_non_nullable
 as String,tripStatus: null == tripStatus ? _self.tripStatus : tripStatus // ignore: cast_nullable_to_non_nullable
+as String,method: null == method ? _self.method : method // ignore: cast_nullable_to_non_nullable
+as String,stopName: null == stopName ? _self.stopName : stopName // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -1320,10 +1322,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String stopId,  int distanceMeters,  String checkedInAt,  String tripStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String stopId,  int? distanceMeters,  String checkedInAt,  String tripStatus,  String method,  String stopName)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CheckInResult() when $default != null:
-return $default(_that.stopId,_that.distanceMeters,_that.checkedInAt,_that.tripStatus);case _:
+return $default(_that.stopId,_that.distanceMeters,_that.checkedInAt,_that.tripStatus,_that.method,_that.stopName);case _:
   return orElse();
 
 }
@@ -1341,10 +1343,10 @@ return $default(_that.stopId,_that.distanceMeters,_that.checkedInAt,_that.tripSt
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String stopId,  int distanceMeters,  String checkedInAt,  String tripStatus)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String stopId,  int? distanceMeters,  String checkedInAt,  String tripStatus,  String method,  String stopName)  $default,) {final _that = this;
 switch (_that) {
 case _CheckInResult():
-return $default(_that.stopId,_that.distanceMeters,_that.checkedInAt,_that.tripStatus);case _:
+return $default(_that.stopId,_that.distanceMeters,_that.checkedInAt,_that.tripStatus,_that.method,_that.stopName);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1361,10 +1363,10 @@ return $default(_that.stopId,_that.distanceMeters,_that.checkedInAt,_that.tripSt
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String stopId,  int distanceMeters,  String checkedInAt,  String tripStatus)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String stopId,  int? distanceMeters,  String checkedInAt,  String tripStatus,  String method,  String stopName)?  $default,) {final _that = this;
 switch (_that) {
 case _CheckInResult() when $default != null:
-return $default(_that.stopId,_that.distanceMeters,_that.checkedInAt,_that.tripStatus);case _:
+return $default(_that.stopId,_that.distanceMeters,_that.checkedInAt,_that.tripStatus,_that.method,_that.stopName);case _:
   return null;
 
 }
@@ -1376,13 +1378,15 @@ return $default(_that.stopId,_that.distanceMeters,_that.checkedInAt,_that.tripSt
 @JsonSerializable()
 
 class _CheckInResult implements CheckInResult {
-  const _CheckInResult({required this.stopId, required this.distanceMeters, required this.checkedInAt, required this.tripStatus});
+  const _CheckInResult({required this.stopId, this.distanceMeters, required this.checkedInAt, required this.tripStatus, this.method = 'Gps', this.stopName = ''});
   factory _CheckInResult.fromJson(Map<String, dynamic> json) => _$CheckInResultFromJson(json);
 
 @override final  String stopId;
-@override final  int distanceMeters;
+@override final  int? distanceMeters;
 @override final  String checkedInAt;
 @override final  String tripStatus;
+@override@JsonKey() final  String method;
+@override@JsonKey() final  String stopName;
 
 /// Create a copy of CheckInResult
 /// with the given fields replaced by the non-null parameter values.
@@ -1397,18 +1401,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CheckInResult&&(identical(other.stopId, stopId) || other.stopId == stopId)&&(identical(other.distanceMeters, distanceMeters) || other.distanceMeters == distanceMeters)&&(identical(other.checkedInAt, checkedInAt) || other.checkedInAt == checkedInAt)&&(identical(other.tripStatus, tripStatus) || other.tripStatus == tripStatus));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CheckInResult&&(identical(other.stopId, stopId) || other.stopId == stopId)&&(identical(other.distanceMeters, distanceMeters) || other.distanceMeters == distanceMeters)&&(identical(other.checkedInAt, checkedInAt) || other.checkedInAt == checkedInAt)&&(identical(other.tripStatus, tripStatus) || other.tripStatus == tripStatus)&&(identical(other.method, method) || other.method == method)&&(identical(other.stopName, stopName) || other.stopName == stopName));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,stopId,distanceMeters,checkedInAt,tripStatus);
+    return Object.hash(runtimeType,stopId,distanceMeters,checkedInAt,tripStatus,method,stopName);
 }
 
 @override
 String toString() {
-    return 'CheckInResult(stopId: $stopId, distanceMeters: $distanceMeters, checkedInAt: $checkedInAt, tripStatus: $tripStatus)';
+    return 'CheckInResult(stopId: $stopId, distanceMeters: $distanceMeters, checkedInAt: $checkedInAt, tripStatus: $tripStatus, method: $method, stopName: $stopName)';
 }
 
 
@@ -1419,7 +1423,7 @@ abstract mixin class _$CheckInResultCopyWith<$Res> implements $CheckInResultCopy
   factory _$CheckInResultCopyWith(_CheckInResult value, $Res Function(_CheckInResult) _then) = __$CheckInResultCopyWithImpl;
 @override @useResult
 $Res call({
- String stopId, int distanceMeters, String checkedInAt, String tripStatus
+ String stopId, int? distanceMeters, String checkedInAt, String tripStatus, String method, String stopName
 });
 
 
@@ -1436,12 +1440,14 @@ class __$CheckInResultCopyWithImpl<$Res>
 
 /// Create a copy of CheckInResult
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? stopId = null,Object? distanceMeters = null,Object? checkedInAt = null,Object? tripStatus = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? stopId = null,Object? distanceMeters = freezed,Object? checkedInAt = null,Object? tripStatus = null,Object? method = null,Object? stopName = null,}) {
   return _then(_CheckInResult(
 stopId: null == stopId ? _self.stopId : stopId // ignore: cast_nullable_to_non_nullable
-as String,distanceMeters: null == distanceMeters ? _self.distanceMeters : distanceMeters // ignore: cast_nullable_to_non_nullable
-as int,checkedInAt: null == checkedInAt ? _self.checkedInAt : checkedInAt // ignore: cast_nullable_to_non_nullable
+as String,distanceMeters: freezed == distanceMeters ? _self.distanceMeters : distanceMeters // ignore: cast_nullable_to_non_nullable
+as int?,checkedInAt: null == checkedInAt ? _self.checkedInAt : checkedInAt // ignore: cast_nullable_to_non_nullable
 as String,tripStatus: null == tripStatus ? _self.tripStatus : tripStatus // ignore: cast_nullable_to_non_nullable
+as String,method: null == method ? _self.method : method // ignore: cast_nullable_to_non_nullable
+as String,stopName: null == stopName ? _self.stopName : stopName // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

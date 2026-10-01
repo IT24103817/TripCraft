@@ -14,6 +14,13 @@ public record GuideStopDto(Guid StopId, int Sequence, string AttractionName, dou
     DateTime? CheckedInAt);
 
 /// <summary>POST /api/check-ins: the guide's GPS position at a stop.</summary>
-public record CheckInRequest(Guid ItineraryStopId, double Latitude, double Longitude);
+/// <summary>
+/// POST /api/check-ins. Either VoucherCode (the guide scanned the tourist's trip voucher; TripRequestId optionally
+/// names the trip the guide expects) or the GPS fields ItineraryStopId + Latitude + Longitude.
+/// </summary>
+public record CheckInRequest(Guid? ItineraryStopId, double? Latitude, double? Longitude, string? VoucherCode = null,
+    Guid? TripRequestId = null);
 
-public record CheckInResultDto(Guid StopId, int DistanceMeters, DateTime CheckedInAt, string TripStatus);
+/// <summary>Method is "Gps" or "Voucher"; DistanceMeters is only set for GPS.</summary>
+public record CheckInResultDto(Guid StopId, int? DistanceMeters, DateTime CheckedInAt, string TripStatus, string Method,
+    string StopName);

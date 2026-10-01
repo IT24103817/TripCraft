@@ -6,6 +6,7 @@ using TripCraft.Application.Common.Paging;
 using TripCraft.Application.Quotations;
 using TripCraft.Application.Quotations.Dtos;
 using TripCraft.Application.Quotations.Reports;
+using TripCraft.Application.Workflows.Dtos;
 using TripCraft.Tests.Common;
 using TripCraft.Tests.Workflows;
 
@@ -44,7 +45,7 @@ public class QuotationsEndpointsTests
     }
 
     [Fact]
-    public async Task Calculate_reprices_a_pending_quotation_with_named_lines_and_the_current_rate()
+    public async Task Reprice_makes_version_2_with_named_lines_and_supersedes_version_1()
     {
         await using var factory = new RealComponentsFactory();
         var (_, outcome) = await factory.RunToProposalAsync();
@@ -53,44 +54,60 @@ public class QuotationsEndpointsTests
         var response = await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/calculate", null);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = (await response.Content.ReadFromJsonAsync<RecalculationDto>(TestJson.Options))!;
-        result.Quotation.TotalLkr.Should().Be(TestProposals.GoldenTotalLkr, "the seeded rates did not change");
-        result.Changed.Should().BeFalse();
-        result.Quotation.Lines.Should().Contain(l => l.LineType == "guide" && l.Description.StartsWith("Guide Nimal Perera"));
-        result.Quotation.Lines.Should().Contain(l => l.LineType == "room" && l.Description.Contains("Kandy Hills"));
-        (await factory.QueryDbAsync(db => db.AuditLogs.AnyAsync(a => a.Action == "QuotationRecalculated"))).Should().BeTrue();
+        var result = (await response.Content.ReadFromJsonAsync<RepriceResponse>(TestJson.Options))!;
+        result.Version.Should().Be(2);
+        result.TotalLkr.Should().Be(TestProposals.GoldenTotalLkr, "the seeded rates did not change");
+        result.PreviousTotalLkr.Should().Be(TestProposals.GoldenTotalLkr);
+        result.Validation.IsValid.Should().BeTrue();
+        var v1 = await manager.GetFromJsonAsync<QuotationDto>($"/api/quotations/{outcome.QuotationId}", TestJson.Options);
+        var v2 = await manager.GetFromJsonAsync<QuotationDto>($"/api/quotations/{result.QuotationId}", TestJson.Options);
+        v1!.Status.Should().Be("Superseded");
+        v2!.Status.Should().Be("Pending");
+        v2.Lines.Should().Contain(l => l.LineType == "guide" && l.Description.StartsWith("Guide Nimal Perera"));
+        v2.Lines.Should().Contain(l => l.LineType == "room" && l.Description.Contains("Kandy Hills"));
+        v1.ProposalSnapshot.Should().NotBeNull("the review page compares the versions side by side");
+        v2.ProposalSnapshot!.Value.GetProperty("days").GetArrayLength().Should().Be(5);
+        (await factory.QueryDbAsync(db => db.AuditLogs.AnyAsync(a => a.Action == "QuotationRepriced"))).Should().BeTrue();
+        // Only the newest version can be decided.
+        (await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/approve", null)).StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await manager.PostAsync($"/api/quotations/{result.QuotationId}/approve", null)).StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
-    public async Task After_approval_the_tourist_accepts_once_and_calculate_is_refused()
+    public async Task Accept_is_only_possible_after_the_quotation_was_sent_and_only_once()
     {
         await using var factory = new RealComponentsFactory();
-        var (_, outcome) = await factory.RunToProposalAsync();
+        var (trip, outcome) = await factory.RunToProposalAsync();
         var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
         var owner = await factory.CreateClientAsAsync(Tourist);
 
         (await owner.PostAsync($"/api/quotations/{outcome.QuotationId}/accept", null)).StatusCode
-            .Should().Be(HttpStatusCode.Conflict, "the manager has not approved it yet");
+            .Should().Be(HttpStatusCode.Conflict, "the manager has not sent it yet");
         (await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/approve", null)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         var accepted = await owner.PostAsync($"/api/quotations/{outcome.QuotationId}/accept", null);
         accepted.StatusCode.Should().Be(HttpStatusCode.OK);
-        (await accepted.Content.ReadFromJsonAsync<QuotationDto>(TestJson.Options))!.AcceptedAt.Should().NotBeNull();
+        (await accepted.Content.ReadFromJsonAsync<QuotationDecisionResponse>(TestJson.Options))!.TripStatus.Should().Be("ClientAccepted");
         (await owner.PostAsync($"/api/quotations/{outcome.QuotationId}/accept", null)).StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/calculate", null)).StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/calculate", null)).StatusCode
+            .Should().Be(HttpStatusCode.Conflict, "an accepted trip is no longer in review");
 
         var detail = await manager.GetFromJsonAsync<QuotationDto>($"/api/quotations/{outcome.QuotationId}", TestJson.Options);
         detail!.Status.Should().Be(nameof(QuotationStatus.Approved));
-        detail.Decisions.Should().ContainSingle(d => d.Decision == "Approved");
+        detail.AcceptedAt.Should().NotBeNull();
+        detail.Decisions.Select(d => d.Decision).Should().Equal("Approved", "Accepted");
+
+        // Confirm with the real Resource Management: holds in resource_holds, vouchers issued.
+        (await manager.PostAsync($"/api/trip-requests/{trip.Id}/confirm", null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await factory.QueryDbAsync(db => db.ResourceHolds.CountAsync(h => h.TripRequestId == trip.Id))).Should().Be(6);
     }
 
     [Fact]
     public async Task Reports_show_revenue_utilisation_and_trips_by_status()
     {
         await using var factory = new RealComponentsFactory();
-        var (trip, outcome) = await factory.RunToProposalAsync();
+        var (trip, _) = await factory.RunToConfirmedAsync();
         var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
-        (await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/approve", null)).EnsureSuccessStatusCode();
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var range = $"from={today.AddDays(-1):yyyy-MM-dd}&to={trip.EndDate:yyyy-MM-dd}";
 

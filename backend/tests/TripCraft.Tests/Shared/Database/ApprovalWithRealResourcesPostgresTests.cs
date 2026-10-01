@@ -19,24 +19,24 @@ public class RealResourcesPostgresFactory(string connectionString) : PostgresWeb
 
 /// <summary>
 /// Spec checklist "conflicting hold on approve → 409 and no partial rows", with B's real hold service:
-/// two trips for the same dates are both waiting for approval; the first approval holds the guide,
+/// two trips for the same dates were both accepted by the client; the first Confirm holds the guide,
 /// the second is refused and leaves nothing behind.
 /// </summary>
 [Collection(PostgresCollection.Name)]
 public class ApprovalWithRealResourcesPostgresTests(PostgresFixture postgres)
 {
     [Fact]
-    public async Task First_approval_writes_resource_holds_second_for_the_same_guide_is_409_with_no_partial_rows()
+    public async Task First_confirm_writes_resource_holds_second_for_the_same_guide_is_409_with_no_partial_rows()
     {
         await using var factory = new RealResourcesPostgresFactory(await postgres.CreateMigratedDatabaseAsync());
-        var (tripA, outcomeA) = await factory.RunToProposalAsync();
-        var (tripB, outcomeB) = await factory.RunToProposalAsync();
+        var (tripA, outcomeA) = await factory.RunToClientAcceptedAsync();
+        var (tripB, outcomeB) = await factory.RunToClientAcceptedAsync();
         outcomeA.Status.Should().Be("PendingApproval");
         outcomeB.Status.Should().Be("PendingApproval");
         var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
 
-        (await manager.PostAsync($"/api/quotations/{outcomeA.QuotationId}/approve", null)).StatusCode.Should().Be(HttpStatusCode.OK);
-        var second = await manager.PostAsync($"/api/quotations/{outcomeB.QuotationId}/approve", null);
+        (await manager.PostAsync($"/api/trip-requests/{tripA.Id}/confirm", null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        var second = await manager.PostAsync($"/api/trip-requests/{tripB.Id}/confirm", null);
 
         second.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await second.Content.ReadAsStringAsync()).Should().Contain("Guide is already held");
@@ -48,17 +48,17 @@ public class ApprovalWithRealResourcesPostgresTests(PostgresFixture postgres)
         holdsA.Should().Be(6, "guide + van + 4 room-nights");
         holdsB.Should().Be(0);
         itinerariesB.Should().Be(0);
-        statusB.Should().Be(TripRequestStatus.PendingApproval);
+        statusB.Should().Be(TripRequestStatus.ClientAccepted);
 
-        // Component C's rows: A approved with its decision; B still Pending with no decision.
+        // Component C's rows: A sent, accepted and confirmed; B sent and accepted but not confirmed.
         var (statusA, decisionsA, quotationB, decisionsB) = await factory.QueryDbAsync(async db => (
             (await db.Quotations.SingleAsync(q => q.Id == outcomeA.QuotationId)).Status,
             await db.ApprovalDecisions.CountAsync(d => d.QuotationId == outcomeA.QuotationId),
             (await db.Quotations.SingleAsync(q => q.Id == outcomeB.QuotationId)).Status,
             await db.ApprovalDecisions.CountAsync(d => d.QuotationId == outcomeB.QuotationId)));
         statusA.Should().Be(Application.Quotations.QuotationStatus.Approved);
-        decisionsA.Should().Be(1);
-        quotationB.Should().Be(Application.Quotations.QuotationStatus.Pending);
-        decisionsB.Should().Be(0);
+        decisionsA.Should().Be(3);
+        quotationB.Should().Be(Application.Quotations.QuotationStatus.Approved);
+        decisionsB.Should().Be(2);
     }
 }

@@ -12,6 +12,7 @@ import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../data/guide_models.dart';
 import '../data/resources_repository.dart';
+import 'request_replacement_button.dart';
 import 'trip_day_screen.dart';
 
 /// The guide's schedule (Component B): only trips they are held for, with search and a status filter.
@@ -138,6 +139,12 @@ class _TripCard extends StatelessWidget {
                   Routes.tripDay,
                   extra: TripDayArgs(trip: trip, day: day),
                 ),
+              ),
+            // A guide can only ask to be replaced before the trip starts (API: trip Confirmed).
+            if (trip.status == 'Confirmed')
+              Align(
+                alignment: Alignment.centerRight,
+                child: RequestReplacementButton(tripId: trip.tripRequestId),
               ),
           ],
         ),

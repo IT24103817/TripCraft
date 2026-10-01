@@ -1,19 +1,20 @@
-/** Trip request status workflow (PLAN.md section 3, TripRequestStatus in C#). */
+/** Trip request lifecycle v1.1 (TripRequestStatus in C#, docs/API-V11.md). Main path first, then side states. */
 export const TRIP_STATUSES = [
   'Submitted',
   'Planning',
-  'PendingApproval',
-  'Approved',
-  'Rejected',
-  'RevisionRequested',
+  'PendingReview',
+  'QuotationSent',
+  'ClientAccepted',
   'Confirmed',
   'InProgress',
   'Completed',
   'Cancelled',
+  'RevisionRequested',
+  'FailedSafely',
 ] as const;
 export type TripRequestStatus = (typeof TRIP_STATUSES)[number];
 
-/** AgentWorkflowStatus in C#. */
+/** AgentWorkflowStatus in C# (unchanged in v1.1). */
 export const WORKFLOW_STATUSES = [
   'Planning',
   'PendingApproval',
@@ -28,17 +29,26 @@ export type WorkflowStatus = (typeof WORKFLOW_STATUSES)[number];
 type Tone = 'grey' | 'blue' | 'amber' | 'green' | 'red' | 'purple';
 
 const TONE_BY_STATUS: Record<string, Tone> = {
+  // Trip statuses
   Submitted: 'grey',
   Planning: 'blue',
-  PendingApproval: 'amber',
-  RevisionRequested: 'purple',
-  Approved: 'green',
+  PendingReview: 'amber',
+  QuotationSent: 'blue',
+  ClientAccepted: 'purple',
   Confirmed: 'green',
   InProgress: 'blue',
   Completed: 'green',
-  Rejected: 'red',
   Cancelled: 'grey',
+  RevisionRequested: 'purple',
   FailedSafely: 'red',
+  // Workflow and quotation statuses
+  PendingApproval: 'amber',
+  Approved: 'green',
+  Rejected: 'red',
+  Pending: 'amber',
+  Declined: 'red',
+  Superseded: 'grey',
+  // Agent steps and resources
   Succeeded: 'green',
   Failed: 'red',
   Active: 'green',
@@ -58,7 +68,7 @@ export function toneFor(status: string): Tone {
   return TONE_BY_STATUS[status] ?? 'grey';
 }
 
-/** "PendingApproval" -> "Pending approval". */
+/** "PendingReview" -> "Pending review", "QuotationSent" -> "Quotation sent", "FailedSafely" -> "Failed safely". */
 export function statusLabel(status: string): string {
   const spaced = status.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);

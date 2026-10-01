@@ -597,7 +597,7 @@ as double,
 /// @nodoc
 mixin _$QuotationView {
 
- String get workflowStatus; Quotation? get quotation; String? get quotationId; String? get quotationStatus; String? get acceptedAt;
+ String get tripStatus; String get workflowStatus; Quotation? get quotation; String? get quotationId; String? get quotationStatus; String? get acceptedAt;
 /// Create a copy of QuotationView
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -609,20 +609,20 @@ $QuotationViewCopyWith<QuotationView> get copyWith => _$QuotationViewCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as QuotationView;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuotationView&&(identical(other.workflowStatus, _this.workflowStatus) || other.workflowStatus == _this.workflowStatus)&&(identical(other.quotation, _this.quotation) || other.quotation == _this.quotation)&&(identical(other.quotationId, _this.quotationId) || other.quotationId == _this.quotationId)&&(identical(other.quotationStatus, _this.quotationStatus) || other.quotationStatus == _this.quotationStatus)&&(identical(other.acceptedAt, _this.acceptedAt) || other.acceptedAt == _this.acceptedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuotationView&&(identical(other.tripStatus, _this.tripStatus) || other.tripStatus == _this.tripStatus)&&(identical(other.workflowStatus, _this.workflowStatus) || other.workflowStatus == _this.workflowStatus)&&(identical(other.quotation, _this.quotation) || other.quotation == _this.quotation)&&(identical(other.quotationId, _this.quotationId) || other.quotationId == _this.quotationId)&&(identical(other.quotationStatus, _this.quotationStatus) || other.quotationStatus == _this.quotationStatus)&&(identical(other.acceptedAt, _this.acceptedAt) || other.acceptedAt == _this.acceptedAt));
 }
 
 
 @override
 int get hashCode {
   final _this = this as QuotationView;
-  return Object.hash(runtimeType,_this.workflowStatus,_this.quotation,_this.quotationId,_this.quotationStatus,_this.acceptedAt);
+  return Object.hash(runtimeType,_this.tripStatus,_this.workflowStatus,_this.quotation,_this.quotationId,_this.quotationStatus,_this.acceptedAt);
 }
 
 @override
 String toString() {
   final _this = this as QuotationView;
-  return 'QuotationView(workflowStatus: ${_this.workflowStatus}, quotation: ${_this.quotation}, quotationId: ${_this.quotationId}, quotationStatus: ${_this.quotationStatus}, acceptedAt: ${_this.acceptedAt})';
+  return 'QuotationView(tripStatus: ${_this.tripStatus}, workflowStatus: ${_this.workflowStatus}, quotation: ${_this.quotation}, quotationId: ${_this.quotationId}, quotationStatus: ${_this.quotationStatus}, acceptedAt: ${_this.acceptedAt})';
 }
 
 
@@ -633,7 +633,7 @@ abstract mixin class $QuotationViewCopyWith<$Res>  {
   factory $QuotationViewCopyWith(QuotationView value, $Res Function(QuotationView) _then) = _$QuotationViewCopyWithImpl;
 @useResult
 $Res call({
- String workflowStatus, Quotation? quotation, String? quotationId, String? quotationStatus, String? acceptedAt
+ String tripStatus, String workflowStatus, Quotation? quotation, String? quotationId, String? quotationStatus, String? acceptedAt
 });
 
 
@@ -650,9 +650,10 @@ class _$QuotationViewCopyWithImpl<$Res>
 
 /// Create a copy of QuotationView
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? workflowStatus = null,Object? quotation = freezed,Object? quotationId = freezed,Object? quotationStatus = freezed,Object? acceptedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? tripStatus = null,Object? workflowStatus = null,Object? quotation = freezed,Object? quotationId = freezed,Object? quotationStatus = freezed,Object? acceptedAt = freezed,}) {
   return _then(QuotationView(
-workflowStatus: null == workflowStatus ? _self.workflowStatus : workflowStatus // ignore: cast_nullable_to_non_nullable
+tripStatus: null == tripStatus ? _self.tripStatus : tripStatus // ignore: cast_nullable_to_non_nullable
+as String,workflowStatus: null == workflowStatus ? _self.workflowStatus : workflowStatus // ignore: cast_nullable_to_non_nullable
 as String,quotation: freezed == quotation ? _self.quotation : quotation // ignore: cast_nullable_to_non_nullable
 as Quotation?,quotationId: freezed == quotationId ? _self.quotationId : quotationId // ignore: cast_nullable_to_non_nullable
 as String?,quotationStatus: freezed == quotationStatus ? _self.quotationStatus : quotationStatus // ignore: cast_nullable_to_non_nullable
@@ -754,10 +755,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String workflowStatus,  Quotation? quotation,  String? quotationId,  String? quotationStatus,  String? acceptedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String tripStatus,  String workflowStatus,  Quotation? quotation,  String? quotationId,  String? quotationStatus,  String? acceptedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _QuotationView() when $default != null:
-return $default(_that.workflowStatus,_that.quotation,_that.quotationId,_that.quotationStatus,_that.acceptedAt);case _:
+return $default(_that.tripStatus,_that.workflowStatus,_that.quotation,_that.quotationId,_that.quotationStatus,_that.acceptedAt);case _:
   return orElse();
 
 }
@@ -775,10 +776,10 @@ return $default(_that.workflowStatus,_that.quotation,_that.quotationId,_that.quo
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String workflowStatus,  Quotation? quotation,  String? quotationId,  String? quotationStatus,  String? acceptedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String tripStatus,  String workflowStatus,  Quotation? quotation,  String? quotationId,  String? quotationStatus,  String? acceptedAt)  $default,) {final _that = this;
 switch (_that) {
 case _QuotationView():
-return $default(_that.workflowStatus,_that.quotation,_that.quotationId,_that.quotationStatus,_that.acceptedAt);case _:
+return $default(_that.tripStatus,_that.workflowStatus,_that.quotation,_that.quotationId,_that.quotationStatus,_that.acceptedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -795,10 +796,10 @@ return $default(_that.workflowStatus,_that.quotation,_that.quotationId,_that.quo
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String workflowStatus,  Quotation? quotation,  String? quotationId,  String? quotationStatus,  String? acceptedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String tripStatus,  String workflowStatus,  Quotation? quotation,  String? quotationId,  String? quotationStatus,  String? acceptedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _QuotationView() when $default != null:
-return $default(_that.workflowStatus,_that.quotation,_that.quotationId,_that.quotationStatus,_that.acceptedAt);case _:
+return $default(_that.tripStatus,_that.workflowStatus,_that.quotation,_that.quotationId,_that.quotationStatus,_that.acceptedAt);case _:
   return null;
 
 }
@@ -810,9 +811,10 @@ return $default(_that.workflowStatus,_that.quotation,_that.quotationId,_that.quo
 
 
 class _QuotationView implements QuotationView {
-  const _QuotationView({required this.workflowStatus, this.quotation, this.quotationId, this.quotationStatus, this.acceptedAt});
+  const _QuotationView({required this.tripStatus, required this.workflowStatus, this.quotation, this.quotationId, this.quotationStatus, this.acceptedAt});
   
 
+@override final  String tripStatus;
 @override final  String workflowStatus;
 @override final  Quotation? quotation;
 @override final  String? quotationId;
@@ -829,18 +831,18 @@ _$QuotationViewCopyWith<_QuotationView> get copyWith => __$QuotationViewCopyWith
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuotationView&&(identical(other.workflowStatus, workflowStatus) || other.workflowStatus == workflowStatus)&&(identical(other.quotation, quotation) || other.quotation == quotation)&&(identical(other.quotationId, quotationId) || other.quotationId == quotationId)&&(identical(other.quotationStatus, quotationStatus) || other.quotationStatus == quotationStatus)&&(identical(other.acceptedAt, acceptedAt) || other.acceptedAt == acceptedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuotationView&&(identical(other.tripStatus, tripStatus) || other.tripStatus == tripStatus)&&(identical(other.workflowStatus, workflowStatus) || other.workflowStatus == workflowStatus)&&(identical(other.quotation, quotation) || other.quotation == quotation)&&(identical(other.quotationId, quotationId) || other.quotationId == quotationId)&&(identical(other.quotationStatus, quotationStatus) || other.quotationStatus == quotationStatus)&&(identical(other.acceptedAt, acceptedAt) || other.acceptedAt == acceptedAt));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,workflowStatus,quotation,quotationId,quotationStatus,acceptedAt);
+    return Object.hash(runtimeType,tripStatus,workflowStatus,quotation,quotationId,quotationStatus,acceptedAt);
 }
 
 @override
 String toString() {
-    return 'QuotationView(workflowStatus: $workflowStatus, quotation: $quotation, quotationId: $quotationId, quotationStatus: $quotationStatus, acceptedAt: $acceptedAt)';
+    return 'QuotationView(tripStatus: $tripStatus, workflowStatus: $workflowStatus, quotation: $quotation, quotationId: $quotationId, quotationStatus: $quotationStatus, acceptedAt: $acceptedAt)';
 }
 
 
@@ -851,7 +853,7 @@ abstract mixin class _$QuotationViewCopyWith<$Res> implements $QuotationViewCopy
   factory _$QuotationViewCopyWith(_QuotationView value, $Res Function(_QuotationView) _then) = __$QuotationViewCopyWithImpl;
 @override @useResult
 $Res call({
- String workflowStatus, Quotation? quotation, String? quotationId, String? quotationStatus, String? acceptedAt
+ String tripStatus, String workflowStatus, Quotation? quotation, String? quotationId, String? quotationStatus, String? acceptedAt
 });
 
 
@@ -868,9 +870,10 @@ class __$QuotationViewCopyWithImpl<$Res>
 
 /// Create a copy of QuotationView
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? workflowStatus = null,Object? quotation = freezed,Object? quotationId = freezed,Object? quotationStatus = freezed,Object? acceptedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? tripStatus = null,Object? workflowStatus = null,Object? quotation = freezed,Object? quotationId = freezed,Object? quotationStatus = freezed,Object? acceptedAt = freezed,}) {
   return _then(_QuotationView(
-workflowStatus: null == workflowStatus ? _self.workflowStatus : workflowStatus // ignore: cast_nullable_to_non_nullable
+tripStatus: null == tripStatus ? _self.tripStatus : tripStatus // ignore: cast_nullable_to_non_nullable
+as String,workflowStatus: null == workflowStatus ? _self.workflowStatus : workflowStatus // ignore: cast_nullable_to_non_nullable
 as String,quotation: freezed == quotation ? _self.quotation : quotation // ignore: cast_nullable_to_non_nullable
 as Quotation?,quotationId: freezed == quotationId ? _self.quotationId : quotationId // ignore: cast_nullable_to_non_nullable
 as String?,quotationStatus: freezed == quotationStatus ? _self.quotationStatus : quotationStatus // ignore: cast_nullable_to_non_nullable
@@ -896,47 +899,47 @@ $QuotationCopyWith<$Res>? get quotation {
 
 
 /// @nodoc
-mixin _$TripStatusItem {
+mixin _$QuotationDecision {
 
- String get id; String get objective; String get status;
-/// Create a copy of TripStatusItem
+ String get quotationId; String get tripRequestId; String get decision; String get tripStatus;
+/// Create a copy of QuotationDecision
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$TripStatusItemCopyWith<TripStatusItem> get copyWith => _$TripStatusItemCopyWithImpl<TripStatusItem>(this as TripStatusItem, _$identity);
+$QuotationDecisionCopyWith<QuotationDecision> get copyWith => _$QuotationDecisionCopyWithImpl<QuotationDecision>(this as QuotationDecision, _$identity);
 
-  /// Serializes this TripStatusItem to a JSON map.
+  /// Serializes this QuotationDecision to a JSON map.
   Map<String, dynamic> toJson();
 
 
 @override
 bool operator ==(Object other) {
-  final _this = this as TripStatusItem;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripStatusItem&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.objective, _this.objective) || other.objective == _this.objective)&&(identical(other.status, _this.status) || other.status == _this.status));
+  final _this = this as QuotationDecision;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuotationDecision&&(identical(other.quotationId, _this.quotationId) || other.quotationId == _this.quotationId)&&(identical(other.tripRequestId, _this.tripRequestId) || other.tripRequestId == _this.tripRequestId)&&(identical(other.decision, _this.decision) || other.decision == _this.decision)&&(identical(other.tripStatus, _this.tripStatus) || other.tripStatus == _this.tripStatus));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-  final _this = this as TripStatusItem;
-  return Object.hash(runtimeType,_this.id,_this.objective,_this.status);
+  final _this = this as QuotationDecision;
+  return Object.hash(runtimeType,_this.quotationId,_this.tripRequestId,_this.decision,_this.tripStatus);
 }
 
 @override
 String toString() {
-  final _this = this as TripStatusItem;
-  return 'TripStatusItem(id: ${_this.id}, objective: ${_this.objective}, status: ${_this.status})';
+  final _this = this as QuotationDecision;
+  return 'QuotationDecision(quotationId: ${_this.quotationId}, tripRequestId: ${_this.tripRequestId}, decision: ${_this.decision}, tripStatus: ${_this.tripStatus})';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $TripStatusItemCopyWith<$Res>  {
-  factory $TripStatusItemCopyWith(TripStatusItem value, $Res Function(TripStatusItem) _then) = _$TripStatusItemCopyWithImpl;
+abstract mixin class $QuotationDecisionCopyWith<$Res>  {
+  factory $QuotationDecisionCopyWith(QuotationDecision value, $Res Function(QuotationDecision) _then) = _$QuotationDecisionCopyWithImpl;
 @useResult
 $Res call({
- String id, String objective, String status
+ String quotationId, String tripRequestId, String decision, String tripStatus
 });
 
 
@@ -944,20 +947,21 @@ $Res call({
 
 }
 /// @nodoc
-class _$TripStatusItemCopyWithImpl<$Res>
-    implements $TripStatusItemCopyWith<$Res> {
-  _$TripStatusItemCopyWithImpl(this._self, this._then);
+class _$QuotationDecisionCopyWithImpl<$Res>
+    implements $QuotationDecisionCopyWith<$Res> {
+  _$QuotationDecisionCopyWithImpl(this._self, this._then);
 
-  final TripStatusItem _self;
-  final $Res Function(TripStatusItem) _then;
+  final QuotationDecision _self;
+  final $Res Function(QuotationDecision) _then;
 
-/// Create a copy of TripStatusItem
+/// Create a copy of QuotationDecision
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? objective = null,Object? status = null,}) {
-  return _then(TripStatusItem(
-id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,objective: null == objective ? _self.objective : objective // ignore: cast_nullable_to_non_nullable
-as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+@pragma('vm:prefer-inline') @override $Res call({Object? quotationId = null,Object? tripRequestId = null,Object? decision = null,Object? tripStatus = null,}) {
+  return _then(QuotationDecision(
+quotationId: null == quotationId ? _self.quotationId : quotationId // ignore: cast_nullable_to_non_nullable
+as String,tripRequestId: null == tripRequestId ? _self.tripRequestId : tripRequestId // ignore: cast_nullable_to_non_nullable
+as String,decision: null == decision ? _self.decision : decision // ignore: cast_nullable_to_non_nullable
+as String,tripStatus: null == tripStatus ? _self.tripStatus : tripStatus // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -965,8 +969,8 @@ as String,
 }
 
 
-/// Adds pattern-matching-related methods to [TripStatusItem].
-extension TripStatusItemPatterns on TripStatusItem {
+/// Adds pattern-matching-related methods to [QuotationDecision].
+extension QuotationDecisionPatterns on QuotationDecision {
 /// A variant of `map` that fallback to returning `orElse`.
 ///
 /// It is equivalent to doing:
@@ -979,10 +983,10 @@ extension TripStatusItemPatterns on TripStatusItem {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _TripStatusItem value)?  $default,{required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _QuotationDecision value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _TripStatusItem() when $default != null:
+case _QuotationDecision() when $default != null:
 return $default(_that);case _:
   return orElse();
 
@@ -1001,10 +1005,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _TripStatusItem value)  $default,){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _QuotationDecision value)  $default,){
 final _that = this;
 switch (_that) {
-case _TripStatusItem():
+case _QuotationDecision():
 return $default(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -1022,10 +1026,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _TripStatusItem value)?  $default,){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _QuotationDecision value)?  $default,){
 final _that = this;
 switch (_that) {
-case _TripStatusItem() when $default != null:
+case _QuotationDecision() when $default != null:
 return $default(_that);case _:
   return null;
 
@@ -1043,10 +1047,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String objective,  String status)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String quotationId,  String tripRequestId,  String decision,  String tripStatus)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _TripStatusItem() when $default != null:
-return $default(_that.id,_that.objective,_that.status);case _:
+case _QuotationDecision() when $default != null:
+return $default(_that.quotationId,_that.tripRequestId,_that.decision,_that.tripStatus);case _:
   return orElse();
 
 }
@@ -1064,10 +1068,10 @@ return $default(_that.id,_that.objective,_that.status);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String objective,  String status)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String quotationId,  String tripRequestId,  String decision,  String tripStatus)  $default,) {final _that = this;
 switch (_that) {
-case _TripStatusItem():
-return $default(_that.id,_that.objective,_that.status);case _:
+case _QuotationDecision():
+return $default(_that.quotationId,_that.tripRequestId,_that.decision,_that.tripStatus);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1084,10 +1088,10 @@ return $default(_that.id,_that.objective,_that.status);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String objective,  String status)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String quotationId,  String tripRequestId,  String decision,  String tripStatus)?  $default,) {final _that = this;
 switch (_that) {
-case _TripStatusItem() when $default != null:
-return $default(_that.id,_that.objective,_that.status);case _:
+case _QuotationDecision() when $default != null:
+return $default(_that.quotationId,_that.tripRequestId,_that.decision,_that.tripStatus);case _:
   return null;
 
 }
@@ -1098,50 +1102,51 @@ return $default(_that.id,_that.objective,_that.status);case _:
 /// @nodoc
 @JsonSerializable()
 
-class _TripStatusItem implements TripStatusItem {
-  const _TripStatusItem({required this.id, required this.objective, required this.status});
-  factory _TripStatusItem.fromJson(Map<String, dynamic> json) => _$TripStatusItemFromJson(json);
+class _QuotationDecision implements QuotationDecision {
+  const _QuotationDecision({required this.quotationId, required this.tripRequestId, required this.decision, required this.tripStatus});
+  factory _QuotationDecision.fromJson(Map<String, dynamic> json) => _$QuotationDecisionFromJson(json);
 
-@override final  String id;
-@override final  String objective;
-@override final  String status;
+@override final  String quotationId;
+@override final  String tripRequestId;
+@override final  String decision;
+@override final  String tripStatus;
 
-/// Create a copy of TripStatusItem
+/// Create a copy of QuotationDecision
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-_$TripStatusItemCopyWith<_TripStatusItem> get copyWith => __$TripStatusItemCopyWithImpl<_TripStatusItem>(this, _$identity);
+_$QuotationDecisionCopyWith<_QuotationDecision> get copyWith => __$QuotationDecisionCopyWithImpl<_QuotationDecision>(this, _$identity);
 
 @override
 Map<String, dynamic> toJson() {
-  return _$TripStatusItemToJson(this, );
+  return _$QuotationDecisionToJson(this, );
 }
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripStatusItem&&(identical(other.id, id) || other.id == id)&&(identical(other.objective, objective) || other.objective == objective)&&(identical(other.status, status) || other.status == status));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuotationDecision&&(identical(other.quotationId, quotationId) || other.quotationId == quotationId)&&(identical(other.tripRequestId, tripRequestId) || other.tripRequestId == tripRequestId)&&(identical(other.decision, decision) || other.decision == decision)&&(identical(other.tripStatus, tripStatus) || other.tripStatus == tripStatus));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,objective,status);
+    return Object.hash(runtimeType,quotationId,tripRequestId,decision,tripStatus);
 }
 
 @override
 String toString() {
-    return 'TripStatusItem(id: $id, objective: $objective, status: $status)';
+    return 'QuotationDecision(quotationId: $quotationId, tripRequestId: $tripRequestId, decision: $decision, tripStatus: $tripStatus)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class _$TripStatusItemCopyWith<$Res> implements $TripStatusItemCopyWith<$Res> {
-  factory _$TripStatusItemCopyWith(_TripStatusItem value, $Res Function(_TripStatusItem) _then) = __$TripStatusItemCopyWithImpl;
+abstract mixin class _$QuotationDecisionCopyWith<$Res> implements $QuotationDecisionCopyWith<$Res> {
+  factory _$QuotationDecisionCopyWith(_QuotationDecision value, $Res Function(_QuotationDecision) _then) = __$QuotationDecisionCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String objective, String status
+ String quotationId, String tripRequestId, String decision, String tripStatus
 });
 
 
@@ -1149,297 +1154,22 @@ $Res call({
 
 }
 /// @nodoc
-class __$TripStatusItemCopyWithImpl<$Res>
-    implements _$TripStatusItemCopyWith<$Res> {
-  __$TripStatusItemCopyWithImpl(this._self, this._then);
+class __$QuotationDecisionCopyWithImpl<$Res>
+    implements _$QuotationDecisionCopyWith<$Res> {
+  __$QuotationDecisionCopyWithImpl(this._self, this._then);
 
-  final _TripStatusItem _self;
-  final $Res Function(_TripStatusItem) _then;
+  final _QuotationDecision _self;
+  final $Res Function(_QuotationDecision) _then;
 
-/// Create a copy of TripStatusItem
+/// Create a copy of QuotationDecision
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? objective = null,Object? status = null,}) {
-  return _then(_TripStatusItem(
-id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,objective: null == objective ? _self.objective : objective // ignore: cast_nullable_to_non_nullable
-as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+@override @pragma('vm:prefer-inline') $Res call({Object? quotationId = null,Object? tripRequestId = null,Object? decision = null,Object? tripStatus = null,}) {
+  return _then(_QuotationDecision(
+quotationId: null == quotationId ? _self.quotationId : quotationId // ignore: cast_nullable_to_non_nullable
+as String,tripRequestId: null == tripRequestId ? _self.tripRequestId : tripRequestId // ignore: cast_nullable_to_non_nullable
+as String,decision: null == decision ? _self.decision : decision // ignore: cast_nullable_to_non_nullable
+as String,tripStatus: null == tripStatus ? _self.tripStatus : tripStatus // ignore: cast_nullable_to_non_nullable
 as String,
-  ));
-}
-
-
-}
-
-/// @nodoc
-mixin _$StatusChange {
-
- String get tripId; String get objective; String get from; String get to; DateTime get at;
-/// Create a copy of StatusChange
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$StatusChangeCopyWith<StatusChange> get copyWith => _$StatusChangeCopyWithImpl<StatusChange>(this as StatusChange, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  final _this = this as StatusChange;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is StatusChange&&(identical(other.tripId, _this.tripId) || other.tripId == _this.tripId)&&(identical(other.objective, _this.objective) || other.objective == _this.objective)&&(identical(other.from, _this.from) || other.from == _this.from)&&(identical(other.to, _this.to) || other.to == _this.to)&&(identical(other.at, _this.at) || other.at == _this.at));
-}
-
-
-@override
-int get hashCode {
-  final _this = this as StatusChange;
-  return Object.hash(runtimeType,_this.tripId,_this.objective,_this.from,_this.to,_this.at);
-}
-
-@override
-String toString() {
-  final _this = this as StatusChange;
-  return 'StatusChange(tripId: ${_this.tripId}, objective: ${_this.objective}, from: ${_this.from}, to: ${_this.to}, at: ${_this.at})';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class $StatusChangeCopyWith<$Res>  {
-  factory $StatusChangeCopyWith(StatusChange value, $Res Function(StatusChange) _then) = _$StatusChangeCopyWithImpl;
-@useResult
-$Res call({
- String tripId, String objective, String from, String to, DateTime at
-});
-
-
-
-
-}
-/// @nodoc
-class _$StatusChangeCopyWithImpl<$Res>
-    implements $StatusChangeCopyWith<$Res> {
-  _$StatusChangeCopyWithImpl(this._self, this._then);
-
-  final StatusChange _self;
-  final $Res Function(StatusChange) _then;
-
-/// Create a copy of StatusChange
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? tripId = null,Object? objective = null,Object? from = null,Object? to = null,Object? at = null,}) {
-  return _then(StatusChange(
-tripId: null == tripId ? _self.tripId : tripId // ignore: cast_nullable_to_non_nullable
-as String,objective: null == objective ? _self.objective : objective // ignore: cast_nullable_to_non_nullable
-as String,from: null == from ? _self.from : from // ignore: cast_nullable_to_non_nullable
-as String,to: null == to ? _self.to : to // ignore: cast_nullable_to_non_nullable
-as String,at: null == at ? _self.at : at // ignore: cast_nullable_to_non_nullable
-as DateTime,
-  ));
-}
-
-}
-
-
-/// Adds pattern-matching-related methods to [StatusChange].
-extension StatusChangePatterns on StatusChange {
-/// A variant of `map` that fallback to returning `orElse`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _StatusChange value)?  $default,{required TResult orElse(),}){
-final _that = this;
-switch (_that) {
-case _StatusChange() when $default != null:
-return $default(_that);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// Callbacks receives the raw object, upcasted.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case final Subclass2 value:
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _StatusChange value)  $default,){
-final _that = this;
-switch (_that) {
-case _StatusChange():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
-
-}
-}
-/// A variant of `map` that fallback to returning `null`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _StatusChange value)?  $default,){
-final _that = this;
-switch (_that) {
-case _StatusChange() when $default != null:
-return $default(_that);case _:
-  return null;
-
-}
-}
-/// A variant of `when` that fallback to an `orElse` callback.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
-
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String tripId,  String objective,  String from,  String to,  DateTime at)?  $default,{required TResult orElse(),}) {final _that = this;
-switch (_that) {
-case _StatusChange() when $default != null:
-return $default(_that.tripId,_that.objective,_that.from,_that.to,_that.at);case _:
-  return orElse();
-
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// As opposed to `map`, this offers destructuring.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case Subclass2(:final field2):
-///     return ...;
-/// }
-/// ```
-
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String tripId,  String objective,  String from,  String to,  DateTime at)  $default,) {final _that = this;
-switch (_that) {
-case _StatusChange():
-return $default(_that.tripId,_that.objective,_that.from,_that.to,_that.at);case _:
-  throw StateError('Unexpected subclass');
-
-}
-}
-/// A variant of `when` that fallback to returning `null`
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
-
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String tripId,  String objective,  String from,  String to,  DateTime at)?  $default,) {final _that = this;
-switch (_that) {
-case _StatusChange() when $default != null:
-return $default(_that.tripId,_that.objective,_that.from,_that.to,_that.at);case _:
-  return null;
-
-}
-}
-
-}
-
-/// @nodoc
-
-
-class _StatusChange implements StatusChange {
-  const _StatusChange({required this.tripId, required this.objective, required this.from, required this.to, required this.at});
-  
-
-@override final  String tripId;
-@override final  String objective;
-@override final  String from;
-@override final  String to;
-@override final  DateTime at;
-
-/// Create a copy of StatusChange
-/// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$StatusChangeCopyWith<_StatusChange> get copyWith => __$StatusChangeCopyWithImpl<_StatusChange>(this, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _StatusChange&&(identical(other.tripId, tripId) || other.tripId == tripId)&&(identical(other.objective, objective) || other.objective == objective)&&(identical(other.from, from) || other.from == from)&&(identical(other.to, to) || other.to == to)&&(identical(other.at, at) || other.at == at));
-}
-
-
-@override
-int get hashCode {
-    return Object.hash(runtimeType,tripId,objective,from,to,at);
-}
-
-@override
-String toString() {
-    return 'StatusChange(tripId: $tripId, objective: $objective, from: $from, to: $to, at: $at)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$StatusChangeCopyWith<$Res> implements $StatusChangeCopyWith<$Res> {
-  factory _$StatusChangeCopyWith(_StatusChange value, $Res Function(_StatusChange) _then) = __$StatusChangeCopyWithImpl;
-@override @useResult
-$Res call({
- String tripId, String objective, String from, String to, DateTime at
-});
-
-
-
-
-}
-/// @nodoc
-class __$StatusChangeCopyWithImpl<$Res>
-    implements _$StatusChangeCopyWith<$Res> {
-  __$StatusChangeCopyWithImpl(this._self, this._then);
-
-  final _StatusChange _self;
-  final $Res Function(_StatusChange) _then;
-
-/// Create a copy of StatusChange
-/// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? tripId = null,Object? objective = null,Object? from = null,Object? to = null,Object? at = null,}) {
-  return _then(_StatusChange(
-tripId: null == tripId ? _self.tripId : tripId // ignore: cast_nullable_to_non_nullable
-as String,objective: null == objective ? _self.objective : objective // ignore: cast_nullable_to_non_nullable
-as String,from: null == from ? _self.from : from // ignore: cast_nullable_to_non_nullable
-as String,to: null == to ? _self.to : to // ignore: cast_nullable_to_non_nullable
-as String,at: null == at ? _self.at : at // ignore: cast_nullable_to_non_nullable
-as DateTime,
   ));
 }
 

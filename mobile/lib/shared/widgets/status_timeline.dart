@@ -25,7 +25,7 @@ class StatusTimeline extends StatelessWidget {
       children: [
         for (var i = 0; i < shown.length; i++)
           _StepRow(
-            // Key like 'step-PendingApproval-current', so tests and tools can find a step's state.
+            // Key like 'step-PendingReview-current', so tests and tools can find a step's state.
             key: ValueKey('step-${shown[i]}-${_stateOf(i, currentAt).name}'),
             label: statusLabel(shown[i]),
             state: _stateOf(i, currentAt),

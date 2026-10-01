@@ -2,11 +2,13 @@ import type { TripRequestStatus } from '@/shared/statuses';
 import { statusLabel } from '@/shared/statuses';
 import { cn } from '@/shared/utils/cn';
 
-/** Main path of the status workflow in PLAN.md section 3. */
+/** Main path of the v1.1 trip lifecycle (docs/API-V11.md). */
 const MAIN_PATH: TripRequestStatus[] = [
   'Submitted',
   'Planning',
-  'PendingApproval',
+  'PendingReview',
+  'QuotationSent',
+  'ClientAccepted',
   'Confirmed',
   'InProgress',
   'Completed',
@@ -14,9 +16,8 @@ const MAIN_PATH: TripRequestStatus[] = [
 
 /** Side statuses and the main-path step they follow. */
 const SIDE_STEP: Partial<Record<TripRequestStatus, TripRequestStatus>> = {
-  Approved: 'PendingApproval',
-  RevisionRequested: 'PendingApproval',
-  Rejected: 'PendingApproval',
+  FailedSafely: 'Planning',
+  RevisionRequested: 'PendingReview',
   Cancelled: 'Submitted',
 };
 

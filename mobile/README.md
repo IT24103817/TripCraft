@@ -58,18 +58,22 @@ lib/
   core/
     config.dart             API_URL from --dart-define
     api/                    ApiClient (dio): JWT header, 401 -> logout, UserFacingException mapping
-    auth/                   AuthRepository, authNotifierProvider, login/register screens, profile sheet
+    auth/                   AuthRepository, authNotifierProvider, login/register (tourists only) screens,
+                            forced Change password screen (mustChangePassword), profile sheet
     router/                 routes, pure authRedirect rule, role shell (bottom nav), GoRouter
     storage/                SessionStorage over flutter_secure_storage
   shared/
     theme/  utils/          palette, status colours/labels, intl money/date formatting, validators
     widgets/                AppTextField, PrimaryButton, StatusChip, AsyncView, EmptyState, SectionCard,
-                            StatusTimeline, MoneyText, PendingApiNotice
+                            StatusTimeline, MoneyText, reason dialog
   features/
-    trips/        (Tourist) new trip form (dates, pax, budget, chips, passport photo), my trips, trip detail
-                  with timeline, itinerary, OpenStreetMap markers, 10 s workflow polling
-    quotations/   (Tourist) quotation in LKR/USD, 30 s status watcher + local notifications, alerts history
-    resources/    (Guide) schedule, GPS check-in (500 m rule), QR voucher scanner
+    trips/        (Tourist) new trip form (dates, cities multi-select, pax, budget, chips, passport photo),
+                  my trips, trip detail with the v1.1 status timeline + "what happens next", itinerary,
+                  OpenStreetMap markers, 10 s workflow polling, vouchers as QR codes, cancellation
+    quotations/   (Tourist) quotation in LKR/USD with Accept / Decline; (both roles) 30 s notifications
+                  poller + local notifications, Alerts list with mark read / mark all read
+    resources/    (Guide) schedule, request a replacement, GPS check-in (500 m rule), trip-voucher scan
+                  check-in (legacy hotel QR lookup kept)
 test/
   core/ shared/ trips/ quotations/ resources/   mocked ApiClient (mocktail); layouts at 360x640 and 412x915
 ```
@@ -82,11 +86,13 @@ composition root) knows every feature's screens; features navigate by path (`cor
 
 | Screen | Endpoint |
 |--------|----------|
-| Register / login | `POST /api/auth/register`, `POST /api/auth/login` |
-| My trips, notifications | `GET /api/trip-requests` (a Tourist only ever gets their own trips) |
-| New trip | `POST /api/trip-requests`, `POST /api/trip-requests/{id}/passport-photo` (multipart `file`), `POST /api/trip-requests/{id}/start-planning` |
-| Trip detail | `GET /api/trip-requests/{id}`, `GET /api/trip-requests/{id}/workflow` (polled every 10 s while Planning), `GET /api/trip-requests/{id}/itinerary`, `GET /api/attractions/{id}` (map markers) |
-| Quotation | the quotation inside the workflow's proposal (`finalOutcome.proposal.quotation`) |
+| Register / login | `POST /api/auth/register` (always a Tourist), `POST /api/auth/login`, `POST /api/auth/change-password` |
+| My trips | `GET /api/trip-requests` (a Tourist only ever gets their own trips) |
+| New trip | `GET /api/attractions/cities`, `POST /api/trip-requests` (with `cities`), `POST /api/trip-requests/{id}/passport-photo` (multipart `file`), `POST /api/trip-requests/{id}/start-planning` |
+| Trip detail | `GET /api/trip-requests/{id}`, `GET /api/trip-requests/{id}/workflow` (polled every 10 s while Planning), `GET /api/trip-requests/{id}/itinerary`, `GET /api/attractions/{id}` (map markers), `GET /api/trips/{id}/vouchers`, `GET /api/trip-requests/{id}/cancellation`, `POST /api/trip-requests/{id}/cancel` |
+| Quotation | `GET /api/quotations/{id}` (id from `finalOutcome.proposal.quotationId`), `POST /api/quotations/{id}/accept`, `POST /api/quotations/{id}/decline` |
+| Alerts | `GET /api/notifications/mine` (every 30 s in the foreground), `POST /api/notifications/{id}/read`, `POST /api/notifications/read-all` |
+| Guide | `GET /api/guides/me/schedule`, `POST /api/check-ins` (GPS or `voucherCode`), `POST /api/trip-requests/{id}/guide-change-requests`, `GET /api/hotels/{id}` |
 
 Registration takes no nationality in the API, so the nationality entered at registration is kept on the phone
 (secure storage) and pre-fills the trip form, where the API does take it.

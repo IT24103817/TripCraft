@@ -12,11 +12,11 @@ const STEPS = [
   },
   {
     title: 'Our team checks it',
-    text: 'A TripCraft operations manager reviews every plan and price before anything is booked. Nothing is held until they approve.',
+    text: 'A TripCraft operations manager reviews every plan and price, then sends you the quotation. Nothing is booked yet.',
   },
   {
     title: 'You confirm on your phone',
-    text: 'You get a notification when your trip is confirmed, see the final itinerary and accept the price in the app.',
+    text: 'You get the quotation in the app and accept or decline it. Once you accept, we book the guide, vehicle and hotels and send your vouchers.',
   },
 ];
 
@@ -31,7 +31,7 @@ const AUDIENCES = [
   },
   {
     title: 'Operations',
-    text: 'Manage guides, vehicles and hotels, review AI-drafted plans with their checks and timings, approve quotations and follow the reports.',
+    text: 'Manage guides, vehicles and hotels, review AI-drafted plans with their checks and timings, send quotations, confirm bookings and follow the reports.',
   },
 ];
 

@@ -12,6 +12,8 @@ void main() {
   ) async {
     usePhoneSize(tester, phoneSizes.currentValue!);
     final api = MockApiClient();
+    when(() => api.get('/api/attractions/cities'))
+        .thenAnswer((_) async => demoCities);
     await pumpScreen(
       tester,
       NewTripScreen(today: DateTime(2026, 9, 26)),
@@ -48,6 +50,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Choose your travel dates.'), findsOneWidget);
+    expect(find.text('Choose at least one city.'), findsOneWidget);
     expect(find.text('At least 1 traveller.'), findsOneWidget);
     verifyNever(() => api.post(any(), body: any(named: 'body')));
   }, variant: phoneSizes);
@@ -78,6 +81,30 @@ void main() {
         today,
       ),
       isNull,
+    );
+  });
+
+  test('city rules: at least one, at most 10, at most one per trip day', () {
+    final fiveDays = DateTimeRange(
+      start: DateTime(2026, 10, 10),
+      end: DateTime(2026, 10, 14),
+    );
+    expect(TripFormRules.cities([], fiveDays), 'Choose at least one city.');
+    expect(TripFormRules.cities(['Kandy', 'Ella'], fiveDays), isNull);
+    expect(TripFormRules.cities(['Kandy', 'Ella'], null), isNull);
+    expect(
+      TripFormRules.cities(
+        ['Kandy', 'Ella', 'Galle'],
+        DateTimeRange(
+          start: DateTime(2026, 10, 10),
+          end: DateTime(2026, 10, 11),
+        ),
+      ),
+      'At most one city per day: your trip has 2 days.',
+    );
+    expect(
+      TripFormRules.cities(List.generate(11, (i) => 'City $i'), null),
+      'Choose at most 10 cities.',
     );
   });
 

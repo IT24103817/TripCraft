@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/quotations/application/status_watcher.dart';
+import '../../features/quotations/application/notifications_poller.dart';
 import '../auth/auth_notifier.dart';
 import 'routes.dart';
 
@@ -22,9 +22,11 @@ const _touristTabs = [
 const _guideTabs = [
   _Tab(Routes.schedule, 'Schedule', Icons.event_note_outlined),
   _Tab(Routes.scan, 'Scan voucher', Icons.qr_code_scanner),
+  _Tab(Routes.alerts, 'Alerts', Icons.notifications_outlined),
 ];
 
-/// Bottom navigation for the signed-in role. Tourists also get the background status watcher.
+/// Bottom navigation for the signed-in role. While the app is in the foreground it also polls the
+/// notifications (phone notifications plus the unread badge on Alerts).
 class RoleShell extends ConsumerStatefulWidget {
   const RoleShell({super.key, required this.location, required this.child});
 
@@ -36,17 +38,32 @@ class RoleShell extends ConsumerStatefulWidget {
 }
 
 class _RoleShellState extends ConsumerState<RoleShell> {
+  late final AppLifecycleListener _lifecycle;
+
   @override
   void initState() {
     super.initState();
-    if (ref.read(authNotifierProvider).value?.role == 'Tourist') {
-      ref.read(statusWatcherProvider.notifier).start();
-    }
+    final poller = ref.read(notificationsPollerProvider.notifier);
+    poller.start();
+    // Poll only while the app is on screen; check straight away when it comes back.
+    _lifecycle = AppLifecycleListener(
+      onShow: poller.start,
+      onHide: poller.stop,
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final role = ref.watch(authNotifierProvider).value?.role;
+    final unread = ref.watch(
+      notificationsPollerProvider.select((list) => list.unreadCount),
+    );
     final tabs = role == 'Guide' ? _guideTabs : _touristTabs;
     // The most specific tab whose path starts the location ("/trips/new" beats "/trips").
     final sorted = [...tabs]
@@ -63,7 +80,12 @@ class _RoleShellState extends ConsumerState<RoleShell> {
         onDestinationSelected: (i) => context.go(tabs[i].path),
         destinations: [
           for (final t in tabs)
-            NavigationDestination(icon: Icon(t.icon), label: t.label),
+            NavigationDestination(
+              icon: t.path == Routes.alerts && unread > 0
+                  ? Badge.count(count: unread, child: Icon(t.icon))
+                  : Icon(t.icon),
+              label: t.label,
+            ),
         ],
       ),
     );

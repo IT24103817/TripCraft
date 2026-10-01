@@ -42,16 +42,16 @@ export default function ReportsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <ReportCard
           title="Revenue by month"
-          caption="Approved quotations per month, in USD"
+          caption="Quotations sent to clients per month, in USD"
           query={revenue}
           data={revenueData}
           format={formatUsd}
-          empty="No quotations were approved in this period"
+          empty="No quotations were sent to clients in this period"
           footer={
             revenue.data && revenue.data.length > 0 ? (
               <p className="text-sm text-slate-600">
                 Total {formatLkr(revenue.data.reduce((n, m) => n + m.totalLkr, 0))} from{' '}
-                {revenue.data.reduce((n, m) => n + m.quotations, 0)} approved quotations.
+                {revenue.data.reduce((n, m) => n + m.quotations, 0)} quotations sent to clients.
               </p>
             ) : null
           }

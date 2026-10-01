@@ -83,15 +83,27 @@ public class FakeResourceHoldService : IResourceHoldService
 {
     private readonly FakeResourcesState _state;
     private readonly List<ResourceHoldRequest> _pending = [];
+    private readonly List<ResourceHoldRequest> _releases = [];
 
     public FakeResourceHoldService(FakeResourcesState state, AppDbContext db)
     {
         _state = state;
         db.SavedChanges += (_, _) =>
         {
+            foreach (var released in _releases)
+                _state.Holds.Remove(released);
             _state.Holds.AddRange(_pending);
             _pending.Clear();
+            _releases.Clear();
         };
+    }
+
+    public Task<int> ReleaseTripHoldsAsync(Guid tripRequestId, ResourceType? onlyType, CancellationToken ct)
+    {
+        var released = _state.Holds.Where(h => h.TripRequestId == tripRequestId && (onlyType is null || h.Type == onlyType))
+            .ToList();
+        _releases.AddRange(released);
+        return Task.FromResult(released.Count);
     }
 
     public Task CreateHoldAsync(ResourceHoldRequest hold, CancellationToken ct)

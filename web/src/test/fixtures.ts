@@ -17,6 +17,7 @@ export function trip(overrides: Record<string, unknown> = {}) {
     status: 'Submitted',
     createdAt: '2026-09-26T08:00:00Z',
     updatedAt: '2026-09-26T08:00:00Z',
+    cities: ['Kandy', 'Ella'],
     ...overrides,
   };
 }

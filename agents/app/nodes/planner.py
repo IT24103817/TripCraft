@@ -21,7 +21,8 @@ RULES
 - Delegate only to agents listed in DATA.available_agents: "itinerary", "resources", "validation".
 - Every one of the three agents must appear. Steps are numbered 1, 2, 3...; depends_on lists only earlier steps.
 - The last step must be "validation".
-- constraints.cities: the destination cities named in the objective, in travel order, at most one per trip day.
+- constraints.cities: DATA.requested_cities when given; otherwise the destination cities named in the objective,
+  in travel order, at most one per trip day.
 - constraints.guide_language: two-letter code of the guide language the tourist wants (default "en").
 - constraints.transport_preference: "train" if the tourist prefers the train, "road" if they prefer driving, else "any".
 - constraints.hotel_tier: "standard" unless revision_context asks for cheaper options, then "budget".
@@ -46,7 +47,9 @@ def _revision_context(state: WorkflowState) -> dict[str, Any] | None:
     return {"violations": state.get("violations") or [], "manager_comment": state.get("manager_comment")}
 
 
-def _check(output: PlannerOutput, trip_days: int) -> list[str]:
+def _check(output: PlannerOutput, trip_days: int, requested_cities: list[str]) -> list[str]:
+    if requested_cities:
+        return []  # the requested cities replace the model's guess below
     if len(output.constraints.cities) > trip_days:
         return [f"constraints.cities has {len(output.constraints.cities)} cities but the trip is {trip_days} days"]
     return []
@@ -70,10 +73,16 @@ async def planner_node(state: WorkflowState) -> dict[str, Any]:
             "trip_dates": dates.model_dump(mode="json"),
             "available_agents": [a.model_dump() for a in agents],
             "revision_context": revision,
+            "requested_cities": request.cities or None,
         })
-        output, retries = await call_json(SYSTEM_PROMPT, user, PlannerOutput, check=lambda o: _check(o, dates.days))
+        output, retries = await call_json(SYSTEM_PROMPT, user, PlannerOutput,
+                                          check=lambda o: _check(o, dates.days, request.cities))
     except (ToolError, AgentOutputError) as ex:
         return failed_update(AGENT, str(ex), calls, started, failure_retries(ex), input_summary)
+
+    # Enforced in code (v1.1): the tourist chose the cities from a list; the model cannot change them.
+    if request.cities:
+        output.constraints.cities = list(request.cities)
 
     # Enforced in code: a budget re-plan always moves to the cheaper hotel tier (PLAN.md section 6).
     budget_replan = revision is not None and any(v.get("code") in BUDGET_CODES for v in revision["violations"])

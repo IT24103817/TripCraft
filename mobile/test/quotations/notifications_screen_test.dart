@@ -1,54 +1,108 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tripcraft_mobile/features/quotations/application/status_watcher.dart';
-import 'package:tripcraft_mobile/features/quotations/data/quotation_models.dart';
+import 'package:tripcraft_mobile/features/quotations/application/notifications_poller.dart';
+import 'package:tripcraft_mobile/features/quotations/data/notification_models.dart';
 import 'package:tripcraft_mobile/features/quotations/presentation/notifications_screen.dart';
 
 import '../helpers.dart';
 
-/// A watcher whose history is fixed, so the screen can be checked without polling.
-class FakeStatusWatcher extends StatusWatcher {
-  FakeStatusWatcher(this.history);
+/// A poller whose list is fixed and that only records mark-read calls (no timer, no API).
+class FakePoller extends NotificationsPoller {
+  FakePoller(this.initial);
 
-  final List<StatusChange> history;
+  final NotificationList initial;
+  final markedRead = <String>[];
+  var markedAllRead = false;
 
   @override
-  List<StatusChange> build() => history;
+  NotificationList build() => initial;
+
+  @override
+  Future<void> checkNow() async {}
+
+  @override
+  Future<void> markRead(String id) async => markedRead.add(id);
+
+  @override
+  Future<void> markAllRead() async {
+    markedAllRead = true;
+    state = NotificationList(
+      unreadCount: 0,
+      items: [for (final n in state.items) n.copyWith(isRead: true)],
+    );
+  }
 }
 
-Future<void> pumpAlerts(WidgetTester tester, List<StatusChange> history) async {
+AppNotification notification(String id, {bool isRead = false}) =>
+    AppNotification(
+      id: id,
+      type: 'TripConfirmed',
+      title: 'Trip confirmed $id',
+      body: 'Your vouchers are ready.',
+      isRead: isRead,
+      createdAt: '2026-10-01T09:30:00Z',
+    );
+
+Future<FakePoller> pumpAlerts(
+  WidgetTester tester,
+  List<AppNotification> items,
+) async {
+  final poller = FakePoller(
+    NotificationList(
+      unreadCount: items.where((n) => !n.isRead).length,
+      items: items,
+    ),
+  );
   await pumpScreen(
     tester,
     const NotificationsScreen(),
     api: MockApiClient(),
-    overrides: [
-      statusWatcherProvider.overrideWith(() => FakeStatusWatcher(history)),
-    ],
+    overrides: [notificationsPollerProvider.overrideWith(() => poller)],
   );
   await tester.pumpAndSettle();
+  return poller;
 }
 
 void main() {
-  testWidgets('no status changes shows the empty state', (tester) async {
+  testWidgets('no notifications shows the empty state', (tester) async {
     await pumpAlerts(tester, const []);
 
-    expect(find.text('No updates yet'), findsOneWidget);
+    expect(find.text('No notifications yet'), findsOneWidget);
+    expect(find.text('Mark all read'), findsNothing);
   });
 
-  testWidgets('a status change is listed with its old and new status', (
-    tester,
-  ) async {
+  testWidgets('lists notifications and marks the unread ones', (tester) async {
     await pumpAlerts(tester, [
-      StatusChange(
-        tripId: 't1',
-        objective: 'Kandy and Ella',
-        from: 'Planning',
-        to: 'PendingApproval',
-        at: DateTime(2026, 10, 1, 9, 30),
-      ),
+      notification('n1'),
+      notification('n2', isRead: true),
     ]);
 
-    expect(find.text('No updates yet'), findsNothing);
-    expect(find.text('Kandy and Ella'), findsOneWidget);
-    expect(find.textContaining('Planning → Pending approval'), findsOneWidget);
+    expect(find.text('Trip confirmed n1'), findsOneWidget);
+    expect(find.text('Trip confirmed n2'), findsOneWidget);
+    expect(find.byKey(const ValueKey('unread-n1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('unread-n2')), findsNothing);
+  });
+
+  testWidgets('tapping an unread notification marks it read', (tester) async {
+    final poller = await pumpAlerts(tester, [notification('n1')]);
+
+    await tester.tap(find.text('Trip confirmed n1'));
+    await tester.pumpAndSettle();
+
+    expect(poller.markedRead, ['n1']);
+  });
+
+  testWidgets('Mark all read clears every unread dot', (tester) async {
+    final poller = await pumpAlerts(tester, [
+      notification('n1'),
+      notification('n2'),
+    ]);
+
+    await tester.tap(find.text('Mark all read'));
+    await tester.pumpAndSettle();
+
+    expect(poller.markedAllRead, isTrue);
+    expect(find.byKey(const ValueKey('unread-n1')), findsNothing);
+    expect(find.text('Mark all read'), findsNothing);
   });
 }

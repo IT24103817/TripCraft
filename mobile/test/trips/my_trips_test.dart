@@ -15,7 +15,7 @@ void main() {
             tripJson(
               id: 't1',
               objective: 'Kandy and Ella by train',
-              status: 'PendingApproval',
+              status: 'PendingReview',
             ),
             tripJson(
               id: 't2',
@@ -32,7 +32,7 @@ void main() {
     expect(find.text('Galle beaches weekend'), findsOneWidget);
     expect(
       find.byWidgetPredicate(
-        (w) => w is StatusChip && w.status == 'PendingApproval',
+        (w) => w is StatusChip && w.status == 'PendingReview',
       ),
       findsOneWidget,
     );

@@ -15,7 +15,7 @@ public class ResourceValidatorsTests
     public void A_guide_needs_a_real_phone_two_letter_unique_languages_and_a_positive_rate()
     {
         var validator = new SaveGuideRequestValidator();
-        var good = new SaveGuideRequest("Nimal Perera", "+94 77 123 4567", ["en", "si"], 6000, 10, true, null);
+        var good = new SaveGuideRequest("Nimal Perera", "+94 77 123 4567", ["en", "si"], 6000, 10, true);
 
         validator.TestValidate(good).ShouldNotHaveAnyValidationErrors();
         validator.TestValidate(good with { Phone = "call me" }).ShouldHaveValidationErrorFor(x => x.Phone);

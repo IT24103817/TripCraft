@@ -5,13 +5,13 @@ import type { PagedResult } from '@/shared/api/types';
 import type {
   ProposalQuotation,
   QuotationDto,
-  RecalculationDto,
+  RepriceResponse,
   RevenueMonthDto,
   StatusCountDto,
   UtilisationDto,
 } from './types';
 
-const QUOTATIONS = 'quotations';
+const QUOTATIONS = queryRoots.quotations;
 
 /**
  * GET /api/quotations with status, created from/to and minTotalUsd filters, search (trip objective),
@@ -34,13 +34,36 @@ export function useQuotation(id: string | null | undefined) {
   });
 }
 
-/** POST /api/quotations/{id}/calculate: re-price with today's rate card and exchange rate. */
+/**
+ * Every version of one trip's quotation, oldest first (GET /api/quotations?tripRequestId=&sort=version), for
+ * the side-by-side comparison on the review page.
+ */
+export function useQuotationVersions(tripRequestId: string | undefined) {
+  return useQuery({
+    queryKey: [QUOTATIONS, 'versions', tripRequestId],
+    queryFn: async () =>
+      (
+        await http.get<PagedResult<QuotationDto>>('/api/quotations', {
+          params: { tripRequestId, sort: 'version', pageSize: 100 },
+        })
+      ).data.items,
+    enabled: Boolean(tripRequestId),
+  });
+}
+
+/**
+ * POST /api/quotations/{id}/calculate: re-price with today's rate card and exchange rate. This makes a NEW
+ * version (the old one becomes Superseded) and the workflow then points at it, so workflows are refreshed too.
+ */
 export function useRecalculate() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) =>
-      (await http.post<RecalculationDto>(`/api/quotations/${id}/calculate`)).data,
-    onSuccess: () => client.invalidateQueries({ queryKey: [QUOTATIONS] }),
+      (await http.post<RepriceResponse>(`/api/quotations/${id}/calculate`)).data,
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: [QUOTATIONS] });
+      void client.invalidateQueries({ queryKey: [queryRoots.workflows] });
+    },
   });
 }
 

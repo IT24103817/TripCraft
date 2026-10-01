@@ -55,6 +55,7 @@ Map<String, dynamic> tripJson({
   String id = 'trip-1',
   String status = 'Submitted',
   String objective = '5 days in Kandy and Ella with the train',
+  List<String> cities = const ['Kandy', 'Ella'],
 }) => {
   'id': id,
   'touristId': 'tourist-1',
@@ -67,4 +68,28 @@ Map<String, dynamic> tripJson({
   'status': status,
   'createdAt': '2026-09-26T08:00:00Z',
   'updatedAt': '2026-09-26T08:00:00Z',
+  'cities': cities,
+};
+
+/// The cities GET /api/attractions/cities returns in the demo data.
+const demoCities = [
+  'Colombo',
+  'Ella',
+  'Galle',
+  'Kandy',
+  'Nuwara Eliya',
+  'Sigiriya',
+];
+
+/// A GET /api/trip-requests/{id}/cancellation body.
+Map<String, dynamic> cancellationJson({
+  bool canCancel = true,
+  String? closedReason,
+  String operatorContact = 'operations@tripcraft.test',
+}) => {
+  'canCancel': canCancel,
+  'cancelUntil': '2026-10-07',
+  'cutoffDays': 3,
+  'closedReason': closedReason,
+  'operatorContact': operatorContact,
 };

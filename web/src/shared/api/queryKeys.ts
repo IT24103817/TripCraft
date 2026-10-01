@@ -6,8 +6,10 @@ export const queryRoots = {
   trips: 'trips',
   attractions: 'attractions',
   workflows: 'workflows',
+  quotations: 'quotations',
   reports: 'reports',
   users: 'users',
   auditLogs: 'auditLogs',
   resources: 'resources',
+  notifications: 'notifications',
 } as const;

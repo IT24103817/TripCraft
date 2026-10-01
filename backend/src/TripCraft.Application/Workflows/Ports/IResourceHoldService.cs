@@ -9,6 +9,12 @@ public interface IResourceHoldService
 {
     /// <exception cref="Common.Exceptions.ConflictException">The resource is already held in that range.</exception>
     Task CreateHoldAsync(ResourceHoldRequest hold, CancellationToken ct);
+
+    /// <summary>
+    /// Stages the release of the trip's Held holds (all of them, or only one resource type, e.g. the guide when
+    /// it is swapped). Returns how many were released. Runs inside the caller's transaction.
+    /// </summary>
+    Task<int> ReleaseTripHoldsAsync(Guid tripRequestId, ResourceType? onlyType, CancellationToken ct);
 }
 
 /// <summary>

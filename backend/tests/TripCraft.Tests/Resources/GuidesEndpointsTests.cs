@@ -14,16 +14,19 @@ public class GuidesEndpointsTests(TestWebApplicationFactory factory) : IClassFix
     private const string Manager = "manager1@tripcraft.test";
 
     private static SaveGuideRequest NewGuide(string name = "Sunil Bandara", params string[] languages) =>
-        new(name, "+94 77 000 1111", languages.Length == 0 ? ["en", "it"] : [.. languages], 6200, 8, true, null);
+        new(name, "+94 77 000 1111", languages.Length == 0 ? ["en", "it"] : [.. languages], 6200, 8, true);
+
+    private static CreateGuideRequest NewGuideAccount(string email, string name = "Sunil Bandara") =>
+        new(name, "+94 77 000 1111", ["en", "it"], 6200, 8, true, email);
 
     [Fact]
     public async Task Create_edit_list_and_delete_a_guide()
     {
         var client = await factory.CreateClientAsAsync(Manager);
 
-        var created = await client.PostAsJsonAsync("/api/guides", NewGuide());
+        var created = await client.PostAsJsonAsync("/api/guides", NewGuideAccount("sunil.crud@tripcraft.test"));
         created.StatusCode.Should().Be(HttpStatusCode.Created);
-        var guide = (await created.Content.ReadFromJsonAsync<GuideDto>(TestJson.Options))!;
+        var guide = (await created.Content.ReadFromJsonAsync<GuideAccountDto>(TestJson.Options))!.Guide;
         guide.Languages.Should().Equal("en", "it");
         created.Headers.Location!.AbsolutePath.Should().Be($"/api/guides/{guide.Id}");
 
@@ -60,25 +63,89 @@ public class GuidesEndpointsTests(TestWebApplicationFactory factory) : IClassFix
     {
         var client = await factory.CreateClientAsAsync(Manager);
 
-        var response = await client.PostAsJsonAsync("/api/guides", NewGuide() with { Languages = ["english"], MaxPax = 0 });
+        var response = await client.PostAsJsonAsync("/api/guides",
+            NewGuideAccount("not-an-email") with { Languages = ["english"], MaxPax = 0 });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("two-letter language codes").And.Contain("MaxPax");
+        body.Should().Contain("two-letter language codes").And.Contain("MaxPax").And.Contain("Email");
+    }
+
+    private static async Task<TripCraft.Application.Identity.Dtos.AuthResponse> LoginAsync(HttpClient client, string email, string password)
+    {
+        var response = await AuthHelper.LoginAsync(client, email, password);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<TripCraft.Application.Identity.Dtos.AuthResponse>(TestJson.Options))!;
     }
 
     [Fact]
-    public async Task Linking_a_login_that_is_not_a_guide_or_already_linked_is_409()
+    public async Task Creating_a_guide_creates_their_login_with_a_one_time_password_that_must_be_changed()
+    {
+        var manager = await factory.CreateClientAsAsync(Manager);
+
+        var response = await manager.PostAsJsonAsync("/api/guides", NewGuideAccount("Kamal.New@TripCraft.test", "Kamal Silva"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var account = (await response.Content.ReadFromJsonAsync<GuideAccountDto>(TestJson.Options))!;
+        account.Email.Should().Be("kamal.new@tripcraft.test");
+        account.TemporaryPassword.Should().MatchRegex("^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{12}$");
+        var (login, auditJson) = await factory.QueryDbAsync(async db => (
+            await db.Users.SingleAsync(u => u.Email == "kamal.new@tripcraft.test"),
+            string.Join(" ", await db.AuditLogs.Where(a => a.EntityId == account.Guide.Id).Select(a => a.After).ToListAsync())));
+        login.Role.Should().Be(TripCraft.Application.Identity.UserRole.Guide);
+        login.MustChangePassword.Should().BeTrue();
+        account.Guide.UserId.Should().Be(login.Id);
+        auditJson.Should().NotContain(account.TemporaryPassword, "the password is never written to the audit log");
+
+        // First login: the app is told to force a change; after changing, the flag is cleared.
+        var guide = factory.CreateClient();
+        var auth = await LoginAsync(guide, "kamal.new@tripcraft.test", account.TemporaryPassword);
+        auth.User.MustChangePassword.Should().BeTrue();
+        guide.DefaultRequestHeaders.Authorization = new("Bearer", auth.AccessToken);
+        var changed = await guide.PostAsJsonAsync("/api/auth/change-password",
+            new TripCraft.Application.Identity.Dtos.ChangePasswordRequest(account.TemporaryPassword, "NewPassw0rd!"));
+        changed.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await changed.Content.ReadFromJsonAsync<TripCraft.Application.Identity.Dtos.UserDto>(TestJson.Options))!
+            .MustChangePassword.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Manager_can_reset_a_guide_password_and_the_old_one_stops_working()
+    {
+        var manager = await factory.CreateClientAsAsync(Manager);
+        var account = (await (await manager.PostAsJsonAsync("/api/guides", NewGuideAccount("reset.me@tripcraft.test")))
+            .Content.ReadFromJsonAsync<GuideAccountDto>(TestJson.Options))!;
+
+        var reset = await manager.PostAsync($"/api/guides/{account.Guide.Id}/reset-password", null);
+
+        reset.StatusCode.Should().Be(HttpStatusCode.OK);
+        var fresh = (await reset.Content.ReadFromJsonAsync<GuideAccountDto>(TestJson.Options))!;
+        fresh.TemporaryPassword.Should().NotBe(account.TemporaryPassword);
+        var guide = factory.CreateClient();
+        (await guide.PostAsJsonAsync("/api/auth/login", new { email = "reset.me@tripcraft.test", password = account.TemporaryPassword }))
+            .StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await LoginAsync(guide, "reset.me@tripcraft.test", fresh.TemporaryPassword)).User.MustChangePassword.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task A_guide_email_that_already_has_an_account_is_409()
     {
         var client = await factory.CreateClientAsAsync(Manager);
-        var (touristId, linkedGuideUserId) = await factory.QueryDbAsync(async db => (
-            (await db.Users.SingleAsync(u => u.Email == "tourist1@tripcraft.test")).Id,
-            (await db.Users.SingleAsync(u => u.Email == "guide1@tripcraft.test")).Id));
 
-        (await client.PostAsJsonAsync("/api/guides", NewGuide() with { UserId = touristId }))
+        (await client.PostAsJsonAsync("/api/guides", NewGuideAccount("tourist1@tripcraft.test")))
             .StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await client.PostAsJsonAsync("/api/guides", NewGuide() with { UserId = linkedGuideUserId }))
-            .StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task Change_password_with_a_wrong_current_password_is_400()
+    {
+        var client = await factory.CreateClientAsAsync("tourist2@tripcraft.test");
+
+        var response = await client.PostAsJsonAsync("/api/auth/change-password",
+            new TripCraft.Application.Identity.Dtos.ChangePasswordRequest("WrongPassw0rd", "NewPassw0rd!"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("current password is not correct");
     }
 
     [Theory]

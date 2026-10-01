@@ -53,9 +53,11 @@ describe('Reports, quotations and re-pricing (Component C)', () => {
     );
     renderApp('/reports');
 
-    const revenue = await screen.findByRole('table', { name: 'Approved quotations per month, in USD' });
+    const revenue = await screen.findByRole('table', {
+      name: 'Quotations sent to clients per month, in USD',
+    });
     expect(within(revenue).getByRole('rowheader', { name: '2026-08' })).toBeInTheDocument();
-    expect(screen.getByText(/from 1 approved quotations/)).toBeInTheDocument();
+    expect(screen.getByText(/from 1 quotations sent to clients/)).toBeInTheDocument();
     const utilisation = screen.getByRole('table', {
       name: 'Held days as a percentage of the days in the period',
     });
@@ -130,31 +132,37 @@ describe('Reports, quotations and re-pricing (Component C)', () => {
     expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument();
   });
 
-  it('re-prices the stored quotation from the approval review', async () => {
+  it('re-prices the stored quotation from the review page as a new version', async () => {
     const workflow = pendingWorkflow();
     workflow.finalOutcome!.proposal.quotationId = 'q1';
     let recalculated = false;
     server.use(
       http.get(`${API}/api/workflows/${WORKFLOW_ID}`, () => HttpResponse.json(workflow)),
       http.get(`${API}/api/quotations/q1`, () => HttpResponse.json(QUOTATION)),
-      http.get(`${API}/api/trip-requests/:id`, () => HttpResponse.json(trip())),
+      http.get(`${API}/api/trip-requests/:id`, () => HttpResponse.json(trip({ status: 'PendingReview' }))),
       http.post(`${API}/api/quotations/q1/calculate`, () => {
         recalculated = true;
         return HttpResponse.json({
-          quotation: { ...QUOTATION, fxRate: 310, fxStale: false, totalUsd: 603.94 },
+          quotationId: 'q2',
+          version: 2,
+          totalLkr: 181220,
+          totalUsd: 603.94,
           previousTotalLkr: 187220,
           previousTotalUsd: 624.07,
-          changed: true,
+          workflowStatus: 'PendingApproval',
+          validation: { isValid: true, violations: [], hasHard: false, hasSoft: false },
         });
       }),
     );
     const { user } = renderApp(`/approvals/${WORKFLOW_ID}`);
 
-    expect(await screen.findByRole('heading', { name: 'Quotation v1 (Pending)' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Quotation v1 (Waiting for review)' }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Guide Nimal Perera, 5 days/)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: "Re-price with today's rates" }));
+    await user.click(screen.getByRole('button', { name: 'Re-price' }));
 
-    expect(await screen.findByText(/Re-priced: .*624\.07.* → .*603\.94/)).toBeInTheDocument();
+    expect(await screen.findByText(/Re-priced as version 2: .*624\.07.* → .*603\.94/)).toBeInTheDocument();
     expect(recalculated).toBe(true);
   });
 

@@ -19,5 +19,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         // Stored as text ("Tourist", "Admin", ...) so rows are readable in psql.
         builder.Property(u => u.Role).HasConversion<string>().HasMaxLength(32).IsRequired();
+        builder.Property(u => u.MustChangePassword).HasDefaultValue(false);
     }
 }

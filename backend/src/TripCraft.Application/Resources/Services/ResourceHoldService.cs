@@ -36,6 +36,15 @@ public class ResourceHoldService(IResourceRepository resources) : IResourceHoldS
         });
     }
 
+    public async Task<int> ReleaseTripHoldsAsync(Guid tripRequestId, ResourceType? onlyType, CancellationToken ct)
+    {
+        var held = await resources.FindHeldHoldsOfTripAsync(tripRequestId, ct);
+        var released = held.Where(h => onlyType is null || h.ResourceType == onlyType).ToList();
+        foreach (var hold in released)
+            hold.Status = HoldStatus.Released;
+        return released.Count;
+    }
+
     private async Task CheckSingleAsync(ResourceHoldRequest hold, CancellationToken ct)
     {
         var exists = hold.Type == ResourceType.Guide

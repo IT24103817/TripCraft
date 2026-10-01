@@ -20,6 +20,13 @@ public class AttractionsController(IAttractionService attractions) : ControllerB
         return Ok(await attractions.ListAsync(query, ct));
     }
 
+    /// <summary>Supported destinations for the trip-request city multi-select (v1.1). Free-text cities are rejected.</summary>
+    [HttpGet("cities")]
+    public async Task<ActionResult<IReadOnlyList<string>>> Cities(CancellationToken ct)
+    {
+        return Ok(await attractions.ListCitiesAsync(ct));
+    }
+
     /// <summary>Not in PLAN.md's list, but needed so POST can return a Location header.</summary>
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<AttractionDto>> GetById(Guid id, CancellationToken ct)

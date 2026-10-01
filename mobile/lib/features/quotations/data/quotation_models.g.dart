@@ -53,16 +53,18 @@ Map<String, dynamic> _$QuotationLineToJson(_QuotationLine instance) =>
       'amount_lkr': instance.amountLkr,
     };
 
-_TripStatusItem _$TripStatusItemFromJson(Map<String, dynamic> json) =>
-    _TripStatusItem(
-      id: json['id'] as String,
-      objective: json['objective'] as String,
-      status: json['status'] as String,
+_QuotationDecision _$QuotationDecisionFromJson(Map<String, dynamic> json) =>
+    _QuotationDecision(
+      quotationId: json['quotationId'] as String,
+      tripRequestId: json['tripRequestId'] as String,
+      decision: json['decision'] as String,
+      tripStatus: json['tripStatus'] as String,
     );
 
-Map<String, dynamic> _$TripStatusItemToJson(_TripStatusItem instance) =>
+Map<String, dynamic> _$QuotationDecisionToJson(_QuotationDecision instance) =>
     <String, dynamic>{
-      'id': instance.id,
-      'objective': instance.objective,
-      'status': instance.status,
+      'quotationId': instance.quotationId,
+      'tripRequestId': instance.tripRequestId,
+      'decision': instance.decision,
+      'tripStatus': instance.tripStatus,
     };

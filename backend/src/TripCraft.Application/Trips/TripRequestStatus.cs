@@ -1,16 +1,22 @@
 namespace TripCraft.Application.Trips;
 
-/// <summary>Status workflow from PLAN.md section 3 (Component A). Stored as text.</summary>
+/// <summary>
+/// Trip lifecycle v1.1 (stored as text). Main path:
+/// Submitted → Planning → PendingReview → QuotationSent → ClientAccepted → Confirmed → InProgress → Completed.
+/// Side states: RevisionRequested (manager asked the agents to re-plan), FailedSafely (planning could not finish),
+/// Cancelled (by the tourist before the cut-off, or by the operator). Allowed moves: <see cref="TripStatusMachine"/>.
+/// </summary>
 public enum TripRequestStatus
 {
     Submitted,
     Planning,
-    PendingApproval,
-    Approved,
-    Rejected,
-    RevisionRequested,
+    PendingReview,
+    QuotationSent,
+    ClientAccepted,
     Confirmed,
     InProgress,
     Completed,
-    Cancelled
+    Cancelled,
+    RevisionRequested,
+    FailedSafely
 }

@@ -82,14 +82,16 @@ abstract class ScheduleStop with _$ScheduleStop {
       _$ScheduleStopFromJson(json);
 }
 
-/// 200 body of POST /api/check-ins.
+/// 200 body of POST /api/check-ins. [method] is "Gps" or "Voucher"; [distanceMeters] is only set for GPS.
 @freezed
 abstract class CheckInResult with _$CheckInResult {
   const factory CheckInResult({
     required String stopId,
-    required int distanceMeters,
+    int? distanceMeters,
     required String checkedInAt,
     required String tripStatus,
+    @Default('Gps') String method,
+    @Default('') String stopName,
   }) = _CheckInResult;
 
   factory CheckInResult.fromJson(Map<String, dynamic> json) =>

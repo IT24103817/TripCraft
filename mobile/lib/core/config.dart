@@ -12,6 +12,6 @@ class AppConfig {
   /// Trip detail refreshes the workflow this often while the agents are planning.
   static const Duration workflowPollInterval = Duration(seconds: 10);
 
-  /// Notifications screen checks for trip status changes this often.
-  static const Duration statusPollInterval = Duration(seconds: 30);
+  /// While the app is open, GET /api/notifications/mine is polled this often.
+  static const Duration notificationPollInterval = Duration(seconds: 30);
 }

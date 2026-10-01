@@ -3,21 +3,26 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TripCraft.Application.Common;
 using TripCraft.Application.Common.Auditing;
+using TripCraft.Application.Common.Notifications;
+using TripCraft.Application.Common.Settings;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Quotations;
 using TripCraft.Application.Quotations.Reports;
 using TripCraft.Application.Resources;
 using TripCraft.Application.Trips;
+using TripCraft.Application.Vouchers;
 using TripCraft.Application.Workflows;
 using TripCraft.Infrastructure.External;
 using TripCraft.Infrastructure.Identity;
 using TripCraft.Infrastructure.Persistence;
 using TripCraft.Infrastructure.Persistence.Auditing;
+using TripCraft.Infrastructure.Persistence.Notifications;
 using TripCraft.Infrastructure.Persistence.Reporting;
 using TripCraft.Infrastructure.Persistence.Seeding;
 using TripCraft.Infrastructure.Quotations;
 using TripCraft.Infrastructure.Resources;
 using TripCraft.Infrastructure.Trips;
+using TripCraft.Infrastructure.Vouchers;
 using TripCraft.Infrastructure.Workflows;
 
 namespace TripCraft.Infrastructure;
@@ -51,6 +56,23 @@ public static class DependencyInjection
         services.AddScoped<IResourceRepository, ResourceRepository>();
         services.AddScoped<IQuotationRepository, QuotationRepository>();
         services.AddScoped<IReportQueries, ReportQueries>();
+
+        // v1.1: notifications, email, vouchers and operator settings
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        if (string.IsNullOrWhiteSpace(configuration["SMTP_HOST"]))
+            services.AddSingleton<IEmailSender, PickupDirectoryEmailSender>();
+        else
+            services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        services.AddScoped<IVoucherRepository, VoucherRepository>();
+        services.AddSingleton<IVoucherPdfRenderer, QuestPdfVoucherRenderer>();
+        // Created on first use, so the API still starts without the key; issuing or scanning a voucher then fails.
+        services.AddSingleton(_ => new VoucherSigner(configuration["VOUCHER_SIGNING_KEY"] ?? string.Empty));
+        services.AddSingleton(new TripSettings(
+            int.TryParse(configuration["CANCELLATION_CUTOFF_DAYS"], out var cutoff) && cutoff >= 0
+                ? cutoff
+                : TripSettings.DefaultCancellationCutoffDays,
+            configuration["OPERATOR_CONTACT"] is { Length: > 0 } contact ? contact : TripSettings.DefaultOperatorContact,
+            configuration["OPERATOR_TIME_ZONE"] is { Length: > 0 } zone ? zone : TripSettings.DefaultTimeZoneId));
 
         services.AddWorkflows(configuration);
         services.AddExternalServices(configuration);

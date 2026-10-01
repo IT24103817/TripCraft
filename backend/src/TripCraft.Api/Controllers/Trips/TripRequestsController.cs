@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TripCraft.Api.Authorization;
 using TripCraft.Application.Common.Paging;
+using TripCraft.Application.Quotations;
 using TripCraft.Application.Trips.Dtos;
 using TripCraft.Application.Trips.Services;
 using TripCraft.Application.Workflows.Dtos;
@@ -44,7 +45,7 @@ public class TripRequestsController(
         return Ok(await tripRequests.GetAsync(User.GetCurrentUser(), id, ct));
     }
 
-    /// <summary>Edit details. 409 unless the request is Submitted or RevisionRequested.</summary>
+    /// <summary>Edit details. 409 unless the request is Submitted or FailedSafely.</summary>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -56,10 +57,9 @@ public class TripRequestsController(
     /// <summary>
     /// Business operation: validates passport/dates, builds the day-by-day skeleton, creates the
     /// agent workflow and hands it to the agent service. 202 because planning continues in the background.
-    /// Tourist owner only (checked in the service); 409 if a workflow is already running.
+    /// Submitted, or FailedSafely ("Try again"). Tourist owner (checked in the service) or a manager; 409 otherwise.
     /// </summary>
     [HttpPost("{id:guid}/start-planning")]
-    [Authorize(Roles = Roles.Tourist)]
     [ProducesResponseType(typeof(StartPlanningResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<StartPlanningResponse>> StartPlanning(Guid id, CancellationToken ct)
@@ -68,13 +68,70 @@ public class TripRequestsController(
         return Accepted($"/api/workflows/{result.WorkflowId}", result);
     }
 
-    /// <summary>Status workflow: Submitted → Cancelled (owner Tourist or a manager). 409 in any other status.</summary>
+    /// <summary>
+    /// Cancel with a reason (owner Tourist until the cut-off, or a manager). Releases holds in one transaction.
+    /// 409 when the status does not allow it or the tourist's cut-off has passed (the message names the contact).
+    /// </summary>
     [HttpPost("{id:guid}/cancel")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<TripRequestDto>> Cancel(Guid id, CancellationToken ct)
+    public async Task<ActionResult<TripRequestDto>> Cancel(Guid id, CancelTripRequest request, CancellationToken ct)
     {
-        return Ok(await tripRequests.CancelAsync(User.GetCurrentUser(), id, ct));
+        return Ok(await tripRequests.CancelAsync(User.GetCurrentUser(), id, request.Reason, ct));
+    }
+
+    /// <summary>Whether the caller can cancel now; if not, why, and whom to contact.</summary>
+    [HttpGet("{id:guid}/cancellation")]
+    public async Task<ActionResult<CancellationInfoDto>> GetCancellation(Guid id, CancellationToken ct)
+    {
+        return Ok(await tripRequests.GetCancellationInfoAsync(User.GetCurrentUser(), id, ct));
+    }
+
+    /// <summary>
+    /// The booking transaction at ClientAccepted: holds, saved itinerary, vouchers, Confirmed, audit, email.
+    /// 409 and nothing saved on any failure (e.g. a resource is no longer free).
+    /// </summary>
+    [HttpPost("{id:guid}/confirm")]
+    [Authorize(Roles = Roles.OperationsManager)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<QuotationDecisionResponse>> Confirm(Guid id,
+        [FromServices] ITripConfirmationService confirmations, CancellationToken ct)
+    {
+        return Ok(await confirmations.ConfirmAsync(User.GetCurrentUser(), id, ct));
+    }
+
+    /// <summary>ClientAccepted → PendingReview with a reason, so the manager can change the trip and send a new version.</summary>
+    [HttpPost("{id:guid}/reopen-review")]
+    [Authorize(Roles = Roles.OperationsManager)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<QuotationDecisionResponse>> ReopenReview(Guid id, CancelTripRequest request,
+        [FromServices] ITripConfirmationService confirmations, CancellationToken ct)
+    {
+        return Ok(await confirmations.ReopenReviewAsync(User.GetCurrentUser(), id, request.Reason, ct));
+    }
+
+    /// <summary>Edit directly (PendingReview): one day of the proposal, 1–3 attractions in that day's city.</summary>
+    [HttpPut("{id:guid}/proposal/days/{dayNumber:int}")]
+    [Authorize(Roles = Roles.OperationsManager)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<EditableProposalDto>> EditProposalDay(Guid id, int dayNumber,
+        EditItineraryDayRequest request, [FromServices] IProposalEditService editor, CancellationToken ct)
+    {
+        return Ok(await editor.EditDayAsync(User.GetCurrentUser(), id, dayNumber, request, ct));
+    }
+
+    /// <summary>Edit directly (PendingReview): swap the guide, vehicle or a city's room type for a free one.</summary>
+    [HttpPut("{id:guid}/proposal/resources")]
+    [Authorize(Roles = Roles.OperationsManager)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<EditableProposalDto>> SwapProposalResources(Guid id, SwapResourcesRequest request,
+        [FromServices] IProposalEditService editor, CancellationToken ct)
+    {
+        return Ok(await editor.SwapResourcesAsync(User.GetCurrentUser(), id, request, ct));
     }
 
     /// <summary>History: every audited change of the trip and its agent workflows, oldest first.</summary>

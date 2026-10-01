@@ -13,6 +13,7 @@ public class QuotationConfiguration : IEntityTypeConfiguration<Quotation>
         builder.ToTable("quotations", t =>
         {
             t.HasCheckConstraint("ck_quotations_version", "version >= 1");
+        builder.Property(q => q.ProposalSnapshot).HasColumnType("jsonb");
             t.HasCheckConstraint("ck_quotations_totals", "subtotal_lkr >= 0 AND total_lkr >= subtotal_lkr AND total_usd >= 0");
             t.HasCheckConstraint("ck_quotations_fx_rate", "fx_rate > 0");
         });

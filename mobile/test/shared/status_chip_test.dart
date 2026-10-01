@@ -5,24 +5,44 @@ import 'package:tripcraft_mobile/shared/utils/statuses.dart';
 import 'package:tripcraft_mobile/shared/widgets/status_chip.dart';
 
 void main() {
-  test('every trip status has the colour from the status workflow', () {
+  test('every v1.1 trip status has the colour from the lifecycle', () {
     expect(statusColor('Submitted'), AppColors.neutral);
     expect(statusColor('Planning'), AppColors.info);
-    expect(statusColor('PendingApproval'), AppColors.warning);
-    expect(statusColor('RevisionRequested'), AppColors.purple);
+    expect(statusColor('PendingReview'), AppColors.warning);
+    expect(statusColor('QuotationSent'), AppColors.accent);
+    expect(statusColor('ClientAccepted'), AppColors.success);
     expect(statusColor('Confirmed'), AppColors.success);
-    expect(statusColor('Approved'), AppColors.success);
-    expect(statusColor('Completed'), AppColors.success);
-    expect(statusColor('Rejected'), AppColors.danger);
-    expect(statusColor('FailedSafely'), AppColors.danger);
     expect(statusColor('InProgress'), AppColors.info);
+    expect(statusColor('Completed'), AppColors.success);
+    expect(statusColor('RevisionRequested'), AppColors.purple);
+    expect(statusColor('FailedSafely'), AppColors.danger);
     expect(statusColor('Cancelled'), AppColors.neutral);
     expect(statusColor('SomethingNew'), AppColors.neutral);
   });
 
+  test('workflow statuses keep their colours', () {
+    expect(statusColor('PendingApproval'), AppColors.warning);
+    expect(statusColor('Approved'), AppColors.success);
+    expect(statusColor('Rejected'), AppColors.danger);
+  });
+
+  test(
+    'the old PendingApproval / Approved / Rejected are not trip statuses',
+    () {
+      expect(tripStatuses, isNot(contains('PendingApproval')));
+      expect(tripStatuses, isNot(contains('Approved')));
+      expect(tripStatuses, isNot(contains('Rejected')));
+      expect(tripStatuses, hasLength(11));
+    },
+  );
+
   test('labels are readable', () {
-    expect(statusLabel('PendingApproval'), 'Pending approval');
+    expect(statusLabel('PendingReview'), 'Pending review');
+    expect(statusLabel('QuotationSent'), 'Quotation sent');
+    expect(statusLabel('ClientAccepted'), 'Accepted');
+    expect(statusLabel('InProgress'), 'In progress');
     expect(statusLabel('RevisionRequested'), 'Revision requested');
+    expect(statusLabel('FailedSafely'), 'Planning failed');
     expect(statusLabel('Confirmed'), 'Confirmed');
   });
 
@@ -31,12 +51,12 @@ void main() {
   ) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(body: StatusChip(status: 'PendingApproval')),
+        home: Scaffold(body: StatusChip(status: 'PendingReview')),
       ),
     );
 
-    final text = tester.widget<Text>(find.text('Pending approval'));
+    final text = tester.widget<Text>(find.text('Pending review'));
     expect(text.style!.color, AppColors.warning);
-    expect(find.bySemanticsLabel('Status: Pending approval'), findsOneWidget);
+    expect(find.bySemanticsLabel('Status: Pending review'), findsOneWidget);
   });
 }

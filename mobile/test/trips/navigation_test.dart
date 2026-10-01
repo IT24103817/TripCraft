@@ -32,6 +32,10 @@ void main() {
       when(() => api.get('/api/trip-requests/trip-1/workflow')).thenThrow(
         const UserFacingException('We could not find that.', statusCode: 404),
       );
+      when(() => api.get('/api/trip-requests/trip-1/cancellation'))
+          .thenAnswer((_) async => cancellationJson());
+      when(() => api.get('/api/trips/trip-1/vouchers'))
+          .thenAnswer((_) async => <Object>[]);
       when(() => api.get('/api/trip-requests/trip-1/itinerary')).thenAnswer(
         (_) async => {
           'days': [

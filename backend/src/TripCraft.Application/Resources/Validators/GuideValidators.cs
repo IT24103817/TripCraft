@@ -5,9 +5,9 @@ using TripCraft.Application.Resources.Services;
 
 namespace TripCraft.Application.Resources.Validators;
 
-public class SaveGuideRequestValidator : AbstractValidator<SaveGuideRequest>
+public class GuideDetailsValidator : AbstractValidator<IGuideDetails>
 {
-    public SaveGuideRequestValidator()
+    public GuideDetailsValidator()
     {
         RuleFor(x => x.Name).NotEmpty().Length(2, 100);
         RuleFor(x => x.Phone).NotEmpty().MaximumLength(30)
@@ -19,6 +19,20 @@ public class SaveGuideRequestValidator : AbstractValidator<SaveGuideRequest>
         RuleForEach(x => x.Languages).Matches("^[a-zA-Z]{2}$").WithMessage("Use two-letter language codes, e.g. en.");
         RuleFor(x => x.DayRateLkr).GreaterThan(0).LessThanOrEqualTo(1_000_000);
         RuleFor(x => x.MaxPax).InclusiveBetween(1, 50);
+    }
+}
+
+public class SaveGuideRequestValidator : AbstractValidator<SaveGuideRequest>
+{
+    public SaveGuideRequestValidator() => Include(new GuideDetailsValidator());
+}
+
+public class CreateGuideRequestValidator : AbstractValidator<CreateGuideRequest>
+{
+    public CreateGuideRequestValidator()
+    {
+        Include(new GuideDetailsValidator());
+        RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(256);
     }
 }
 

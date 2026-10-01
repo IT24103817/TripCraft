@@ -62,4 +62,32 @@ public static class WorkflowFlow
         response.EnsureSuccessStatusCode();
         return (trip, (await response.Content.ReadFromJsonAsync<ProposalOutcomeResponse>(TestJson.Options))!);
     }
+
+    /// <summary>Manager sends the quotation (PendingReview → QuotationSent).</summary>
+    public static async Task SendToClientAsync(this TestWebApplicationFactory factory, Guid quotationId)
+    {
+        var manager = await factory.CreateClientAsAsync(Manager);
+        (await manager.PostAsync($"/api/quotations/{quotationId}/approve", null)).EnsureSuccessStatusCode();
+    }
+
+    /// <summary>Proposal → sent → accepted by the tourist. Returns the trip in ClientAccepted.</summary>
+    public static async Task<(TripRequestDto Trip, ProposalOutcomeResponse Outcome)> RunToClientAcceptedAsync(
+        this TestWebApplicationFactory factory)
+    {
+        var (trip, outcome) = await factory.RunToProposalAsync();
+        await factory.SendToClientAsync(outcome.QuotationId!.Value);
+        var tourist = await factory.CreateClientAsAsync(Tourist);
+        (await tourist.PostAsync($"/api/quotations/{outcome.QuotationId}/accept", null)).EnsureSuccessStatusCode();
+        return (trip, outcome);
+    }
+
+    /// <summary>The whole booking: proposal → sent → accepted → confirmed.</summary>
+    public static async Task<(TripRequestDto Trip, ProposalOutcomeResponse Outcome)> RunToConfirmedAsync(
+        this TestWebApplicationFactory factory)
+    {
+        var (trip, outcome) = await factory.RunToClientAcceptedAsync();
+        var manager = await factory.CreateClientAsAsync(Manager);
+        (await manager.PostAsync($"/api/trip-requests/{trip.Id}/confirm", null)).EnsureSuccessStatusCode();
+        return (trip, outcome);
+    }
 }

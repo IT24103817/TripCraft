@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/api/user_facing_exception.dart';
 import '../../../core/auth/auth_repository.dart';
 import '../../../core/auth/profile_button.dart';
 import '../../../core/router/routes.dart';
@@ -14,10 +15,11 @@ import '../../../shared/widgets/primary_button.dart';
 import '../application/trips_providers.dart';
 import '../data/trip_models.dart';
 import '../data/trips_repository.dart';
+import 'city_picker.dart';
 import 'trip_form_rules.dart';
 
-/// PLAN.md section 6, step 1: the tourist describes the trip, picks dates, travellers, budget and
-/// preferences, adds a passport photo, and submits. Then planning starts straight away.
+/// PLAN.md section 6, step 1: the tourist describes the trip, picks dates, the cities to visit (from the
+/// API's list), travellers, budget and preferences, adds a passport photo, and submits. Then planning starts.
 class NewTripScreen extends ConsumerStatefulWidget {
   const NewTripScreen({super.key, this.imagePicker, this.today});
 
@@ -38,6 +40,12 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
   final _nationality = TextEditingController();
   final _passport = TextEditingController();
   final Set<PreferenceOption> _preferences = {};
+
+  /// Chosen cities in the order they were tapped.
+  List<String> _cities = [];
+
+  /// A 400 from the API about the cities (e.g. "'X' is not a city we cover. Supported cities: ...").
+  String? _citiesServerError;
   DateTimeRange? _dates;
   XFile? _photo;
   bool _photoMissing = false;
@@ -105,6 +113,7 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
           preferences: {for (final p in _preferences) p.key: p.value},
           nationality: _nationality.text.trim(),
           passportNumber: _passport.text.trim(),
+          cities: _cities,
         ),
       );
       await repository.uploadPassportPhoto(trip.id, _photo!.path);
@@ -121,10 +130,23 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
       );
       if (mounted) context.go(Routes.trip(trip.id));
     } catch (error) {
+      if (error is UserFacingException && error.statusCode == 400) {
+        setState(() => _citiesServerError = _citiesError(error));
+      }
       messenger.showSnackBar(SnackBar(content: Text(friendlyMessage(error))));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  /// The API's message about the "cities" field of a 400, if there is one.
+  static String? _citiesError(UserFacingException error) {
+    for (final entry in error.fieldErrors.entries) {
+      if (entry.key.toLowerCase().startsWith('cities')) {
+        return entry.value.firstOrNull;
+      }
+    }
+    return null;
   }
 
   @override
@@ -187,7 +209,23 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+              FormField<List<String>>(
+                key: const ValueKey('cities-field'),
+                validator: (_) => TripFormRules.cities(_cities, _dates),
+                builder: (field) => CityPicker(
+                  selected: _cities,
+                  errorText: field.errorText ?? _citiesServerError,
+                  onChanged: (next) {
+                    setState(() {
+                      _cities = next;
+                      _citiesServerError = null;
+                    });
+                    field.didChange(next);
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

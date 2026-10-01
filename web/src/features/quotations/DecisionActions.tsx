@@ -1,147 +1,142 @@
 import { useState } from 'react';
 import { getErrorMessage } from '@/shared/api/errors';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
+import { ReasonDialog } from '@/shared/components/ReasonDialog';
 import { useToast } from '@/shared/components/Toast';
 import { statusLabel } from '@/shared/statuses';
 import { useQuotationDecision } from './api';
-import { revisionSchema } from './revisionSchema';
-import type { WorkflowDto } from './types';
+import { RepriceButton } from './RepriceButton';
+import { NEXT_STEPS, sendBlockedReason } from './reviewRules';
+import type { QuotationDecisionResponse, QuotationDto, WorkflowDto } from './types';
 
 type Action = 'approve' | 'reject' | 'request-revision';
 
-const COPY: Record<Action, { title: string; confirm: string; message: string; tone: 'primary' | 'danger' }> =
-  {
-    approve: {
-      title: 'Approve quotation',
-      confirm: 'Approve',
-      message: 'This holds the guide, vehicle and rooms and confirms the trip, in one transaction.',
-      tone: 'primary',
-    },
-    reject: {
-      title: 'Reject quotation',
-      confirm: 'Reject',
-      message: 'The trip request will be rejected. Nothing is held.',
-      tone: 'danger',
-    },
-    'request-revision': {
-      title: 'Request a revision',
-      confirm: 'Send to the planner',
-      message: 'The Planner agent re-plans the trip using your comment.',
-      tone: 'primary',
-    },
-  };
+/** The first words of the success toast, per decision returned by the API. */
+const DONE: Record<string, string> = {
+  Approved: 'Sent to the client.',
+  Rejected: 'Rejected.',
+  RevisionRequested: 'Revision requested.',
+};
 
-/** Approve / Reject / Request revision, each behind a confirmation. Only an Operations Manager reaches this page. */
-export function DecisionActions({ workflow }: { workflow: WorkflowDto }) {
+interface Props {
+  workflow: WorkflowDto;
+  /** The newest quotation version (the one the buttons act on), once loaded. */
+  quotation: QuotationDto | undefined;
+}
+
+/**
+ * The review buttons for a trip in PendingReview: Send to client, Request revision (comment required), Reject
+ * and Re-price. "Send to client" is disabled, with the reason, whenever the API would answer 409.
+ */
+export function DecisionActions({ workflow, quotation }: Props) {
   const toast = useToast();
   const decide = useQuotationDecision();
   const [action, setAction] = useState<Action | null>(null);
-  const [comment, setComment] = useState('');
-  const [commentError, setCommentError] = useState<string | null>(null);
 
   const quotationId = workflow.finalOutcome?.proposal.quotationId;
-  const decidable = workflow.status === 'PendingApproval' || workflow.status === 'RevisionRequested';
-  const canApprove = workflow.status === 'PendingApproval' && Boolean(quotationId);
+  const blocked = sendBlockedReason({
+    workflowStatus: workflow.status,
+    editedSinceQuotation: workflow.finalOutcome?.editedSinceQuotation === true,
+    quotationId,
+    quotationStatus: quotation?.status,
+  });
 
-  const close = () => {
-    setAction(null);
-    setComment('');
-    setCommentError(null);
-  };
-
-  const confirm = () => {
-    if (!action || !quotationId) return;
-    let text: string | undefined = comment.trim() || undefined;
-    if (action === 'request-revision') {
-      const parsed = revisionSchema.safeParse({ comment });
-      if (!parsed.success) {
-        setCommentError(parsed.error.issues[0]?.message ?? 'Invalid comment.');
-        return;
-      }
-      text = parsed.data.comment;
-    }
+  const run = (decision: Action, comment?: string) => {
+    if (!quotationId) return;
     decide.mutate(
-      { quotationId, decision: action, comment: text },
+      { quotationId, decision, comment },
       {
-        onSuccess: (result) => {
-          toast.success(
-            `${statusLabel(result.decision)}. Trip is now ${statusLabel(result.tripStatus).toLowerCase()}` +
-              (result.holdsCreated > 0 ? `; ${result.holdsCreated} holds created.` : '.'),
-          );
-          close();
+        onSuccess: (result: QuotationDecisionResponse) => {
+          const done = DONE[result.decision] ?? `${statusLabel(result.decision)}.`;
+          const tripStatus = statusLabel(result.tripStatus).toLowerCase();
+          toast.success(`${done} Trip is now ${tripStatus}.`);
+          setAction(null);
         },
         onError: (error) => {
           toast.error(getErrorMessage(error));
-          close();
+          setAction(null);
         },
       },
     );
   };
 
-  if (!decidable || !quotationId) {
-    return (
-      <p className="text-sm text-slate-600">
-        No decision is possible: the workflow is {statusLabel(workflow.status).toLowerCase()}.
-      </p>
-    );
+  if (!quotationId) {
+    return <p className="text-sm text-slate-600">The agents have not priced a quotation yet.</p>;
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <button
-        type="button"
-        className="btn-primary"
-        disabled={!canApprove}
-        onClick={() => setAction('approve')}
-      >
-        Approve
-      </button>
-      <button type="button" className="btn-danger" onClick={() => setAction('reject')}>
-        Reject
-      </button>
-      <button type="button" className="btn-secondary" onClick={() => setAction('request-revision')}>
-        Request revision
-      </button>
-      {!canApprove && (
-        <p className="w-full text-xs text-slate-500">Approve is only possible when every check passed.</p>
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={blocked !== null}
+          aria-describedby={blocked ? 'send-blocked' : undefined}
+          onClick={() => setAction('approve')}
+        >
+          Send to client
+        </button>
+        <button type="button" className="btn-secondary" onClick={() => setAction('request-revision')}>
+          Request revision
+        </button>
+        <button type="button" className="btn-danger" onClick={() => setAction('reject')}>
+          Reject
+        </button>
+        <RepriceButton quotationId={quotationId} />
+      </div>
+      {blocked && (
+        <p id="send-blocked" className="rounded-md bg-amber-50 p-2 text-sm text-amber-900">
+          {blocked}
+        </p>
       )}
 
-      {action && (
-        <ConfirmDialog
-          open
-          title={COPY[action].title}
-          message={COPY[action].message}
-          confirmLabel={COPY[action].confirm}
-          tone={COPY[action].tone}
+      <div className="text-sm text-slate-600">
+        <h3 className="font-medium text-slate-800">What happens next</h3>
+        <ul className="mt-1 space-y-1">
+          {NEXT_STEPS.map((step) => (
+            <li key={step.action}>
+              <span className="font-medium text-slate-800">{step.action}:</span> {step.text}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <ConfirmDialog
+        open={action === 'approve'}
+        title="Send to client"
+        message="The tourist gets this quotation in the app and can accept or decline it. Nothing is booked yet."
+        confirmLabel="Send to client"
+        isPending={decide.isPending}
+        onCancel={() => setAction(null)}
+        onConfirm={() => run('approve')}
+      />
+      {action === 'request-revision' && (
+        <ReasonDialog
+          title="Request a revision"
+          message="The Planner agent re-plans the trip using your comment. The new version comes back here for review."
+          fieldLabel="Comment"
+          required
+          requiredMessage="A comment is required for a revision."
+          maxLength={1000}
+          confirmLabel="Send to the planner"
           isPending={decide.isPending}
-          onCancel={close}
-          onConfirm={confirm}
-        >
-          {action !== 'approve' && (
-            <div className="flex flex-col gap-1">
-              <label htmlFor="decision-comment" className="font-medium">
-                Comment{action === 'request-revision' ? ' (required)' : ' (optional)'}
-              </label>
-              <textarea
-                id="decision-comment"
-                rows={3}
-                className="input"
-                value={comment}
-                aria-invalid={commentError ? true : undefined}
-                aria-describedby={commentError ? 'decision-comment-error' : undefined}
-                onChange={(e) => {
-                  setComment(e.target.value);
-                  setCommentError(null);
-                }}
-              />
-              {commentError && (
-                <p id="decision-comment-error" role="alert" className="text-xs text-red-700">
-                  {commentError}
-                </p>
-              )}
-            </div>
-          )}
-        </ConfirmDialog>
+          onCancel={() => setAction(null)}
+          onConfirm={(comment) => run('request-revision', comment)}
+        />
+      )}
+      {action === 'reject' && (
+        <ReasonDialog
+          title="Reject trip"
+          message="The trip is cancelled and the tourist is told. Nothing is held."
+          fieldLabel="Comment for the tourist"
+          required={false}
+          maxLength={1000}
+          confirmLabel="Reject"
+          tone="danger"
+          isPending={decide.isPending}
+          onCancel={() => setAction(null)}
+          onConfirm={(comment) => run('reject', comment)}
+        />
       )}
     </div>
   );

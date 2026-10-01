@@ -33,6 +33,28 @@ Stream<TripWorkflow?> tripWorkflow(Ref ref, String tripId) async* {
 }
 
 @riverpod
+Future<CancellationInfo> cancellationInfo(Ref ref, String tripId) =>
+    ref.watch(tripsRepositoryProvider).cancellationInfo(tripId);
+
+/// The trip's vouchers, trip voucher first, then the hotel nights in date order.
+@riverpod
+Future<List<TripVoucher>> tripVouchers(Ref ref, String tripId) async =>
+    sortVouchers(await ref.watch(tripsRepositoryProvider).vouchers(tripId));
+
+/// The cities the trip form offers (GET /api/attractions/cities).
+@riverpod
+Future<List<String>> tripCities(Ref ref) =>
+    ref.watch(tripsRepositoryProvider).cities();
+
+/// Trip voucher first, then hotel-night vouchers by night ("yyyy-MM-dd" strings sort by date).
+List<TripVoucher> sortVouchers(List<TripVoucher> vouchers) {
+  final trip = vouchers.where((v) => v.type == 'Trip');
+  final nights = vouchers.where((v) => v.type != 'Trip').toList()
+    ..sort((a, b) => (a.night ?? '').compareTo(b.night ?? ''));
+  return [...trip, ...nights];
+}
+
+@riverpod
 Future<List<TripHistoryEntry>> tripHistory(Ref ref, String tripId) =>
     ref.watch(tripsRepositoryProvider).history(tripId);
 

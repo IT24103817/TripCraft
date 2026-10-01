@@ -4,9 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using TripCraft.Application.Common;
 using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Exceptions;
+using TripCraft.Application.Common.Settings;
 using TripCraft.Application.Common.Security;
 using TripCraft.Application.Resources.Dtos;
 using TripCraft.Application.Trips;
+using TripCraft.Application.Vouchers;
 using TripCraft.Application.Workflows.Ports;
 
 namespace TripCraft.Application.Resources.Services;
@@ -20,12 +22,16 @@ public interface IGuideScheduleService
 
 /// <summary>
 /// The guide's side of Component B. A guide sees only trips they are held for (resource-based authorisation)
-/// and checks in at each stop within 500 m. Check-in business rule, saved in one SaveChanges (one transaction):
-/// the first check-in moves the trip Confirmed → InProgress; the check-in at the last stop moves it to Completed.
+/// and checks in at each stop by scanning the tourist's signed trip voucher, or by GPS within 500 m.
+/// Check-in business rule, saved in one SaveChanges (one transaction): the first check-in moves the trip
+/// Confirmed → InProgress; the check-in at the last stop moves it to Completed.
 /// </summary>
 public class GuideScheduleService(
     IResourceRepository resources,
     ITripRequestRepository trips,
+    IVoucherRepository vouchers,
+    VoucherSigner signer,
+    TripSettings settings,
     IAuditLogger audit,
     IUnitOfWork unitOfWork) : IGuideScheduleService
 {
@@ -39,46 +45,107 @@ public class GuideScheduleService(
         await BuildAsync(await resources.Guides().FirstOrDefaultAsync(g => g.Id == guideId, ct)
                          ?? throw new NotFoundException("Guide not found."), ct);
 
-    public async Task<CheckInResultDto> CheckInAsync(CurrentUser user, CheckInRequest request, CancellationToken ct)
+    public async Task<CheckInResultDto> CheckInAsync(CurrentUser user, CheckInRequest request, CancellationToken ct) =>
+        string.IsNullOrWhiteSpace(request.VoucherCode)
+            ? await CheckInByGpsAsync(user, request, ct)
+            : await CheckInByVoucherAsync(user, request.VoucherCode, request.TripRequestId, ct);
+
+    /// <summary>GPS check-in at a chosen stop, within 500 m of it.</summary>
+    private async Task<CheckInResultDto> CheckInByGpsAsync(CurrentUser user, CheckInRequest request, CancellationToken ct)
     {
         var guide = await GuideOfAsync(user, ct);
-        var stop = await resources.FindStopAsync(request.ItineraryStopId, ct)
+        var stop = await resources.FindStopAsync(request.ItineraryStopId!.Value, ct)
                    ?? throw new NotFoundException("Stop not found.");
-        if (!await HoldsTripAsync(guide.Id, stop.TripRequestId, ct))
-            throw new ForbiddenException("You are not the guide of this trip.");
-
-        var trip = await trips.GetByIdAsync(stop.TripRequestId, ct) ?? throw new NotFoundException("Trip request not found.");
-        if (trip.Status is not (TripRequestStatus.Confirmed or TripRequestStatus.InProgress))
-            throw new ConflictException($"Check-in is only possible on a Confirmed or InProgress trip (it is {trip.Status}).");
+        var trip = await LoadGuidedTripAsync(guide, stop.TripRequestId, ct);
         if (await resources.CheckIns().AnyAsync(c => c.ItineraryStopId == stop.StopId, ct))
             throw new ConflictException($"You have already checked in at {stop.AttractionName}.");
 
-        var distance = AvailabilityRules.DistanceMeters(request.Latitude, request.Longitude, stop.Latitude, stop.Longitude);
+        var distance = AvailabilityRules.DistanceMeters(request.Latitude!.Value, request.Longitude!.Value, stop.Latitude, stop.Longitude);
         if (distance > AvailabilityRules.MaxCheckInDistanceMeters)
             throw new ValidationException([new ValidationFailure("latitude",
                 $"You are {distance:N0} m from {stop.AttractionName}; move within {AvailabilityRules.MaxCheckInDistanceMeters} m to check in.")]);
 
         var checkIn = new StopCheckIn
         {
-            ItineraryStopId = stop.StopId, GuideId = guide.Id, Latitude = request.Latitude,
+            ItineraryStopId = stop.StopId, GuideId = guide.Id, Method = CheckInMethod.Gps, Latitude = request.Latitude,
             Longitude = request.Longitude, DistanceMeters = distance, CheckedInAt = DateTime.UtcNow
         };
+        return await SaveCheckInAsync(user, trip, checkIn, stop.AttractionName, ct);
+    }
+
+    /// <summary>
+    /// Voucher check-in (v1.1): the guide scans the tourist's trip voucher. Checks, in order: the HMAC signature,
+    /// that it is a trip voucher that exists, the trip (if the guide named one), that this guide holds the trip, its
+    /// status, and that today is a day of the trip. Then the next stop of today not checked in yet is checked in.
+    /// </summary>
+    private async Task<CheckInResultDto> CheckInByVoucherAsync(CurrentUser user, string code, Guid? expectedTripId,
+        CancellationToken ct)
+    {
+        var guide = await GuideOfAsync(user, ct);
+        var claims = signer.Verify(code)
+                     ?? throw Invalid("This voucher is not valid: its signature does not match.");
+        if (claims.Type != VoucherType.Trip)
+            throw Invalid("This is a hotel voucher. Scan the tourist's trip voucher.");
+        if (!await vouchers.Query().AnyAsync(v => v.Id == claims.VoucherId && v.TripRequestId == claims.TripRequestId, ct))
+            throw Invalid("This voucher was not issued by TripCraft.");
+        if (expectedTripId is { } expected && expected != claims.TripRequestId)
+            throw Invalid("This voucher belongs to another trip.");
+
+        var trip = await LoadGuidedTripAsync(guide, claims.TripRequestId, ct);
+        var today = settings.Today();
+        if (today < trip.StartDate || today > trip.EndDate)
+            throw new ConflictException($"This voucher is for {trip.StartDate:dd MMM} – {trip.EndDate:dd MMM yyyy}; today is {today:dd MMM yyyy}.");
+
+        var dayNumber = today.DayNumber - trip.StartDate.DayNumber + 1;
+        var itinerary = await trips.GetItineraryAsync(trip.Id, ct) ?? throw new ConflictException("The trip has no saved itinerary.");
+        var stops = itinerary.Days.FirstOrDefault(d => d.DayNumber == dayNumber)?.Stops.OrderBy(s => s.Sequence).ToList() ?? [];
+        var stopIds = stops.Select(s => s.Id).ToList();
+        var done = await resources.CheckIns().Where(c => stopIds.Contains(c.ItineraryStopId)).Select(c => c.ItineraryStopId).ToListAsync(ct);
+        var next = stops.FirstOrDefault(s => !done.Contains(s.Id))
+                   ?? throw new ConflictException($"Every stop of day {dayNumber} is already checked in.");
+
+        var checkIn = new StopCheckIn
+        {
+            ItineraryStopId = next.Id, GuideId = guide.Id, Method = CheckInMethod.Voucher, VoucherId = claims.VoucherId,
+            CheckedInAt = DateTime.UtcNow
+        };
+        return await SaveCheckInAsync(user, trip, checkIn, next.Attraction?.Name ?? "Stop", ct);
+    }
+
+    /// <summary>The guide must hold the trip (403) and it must be Confirmed or InProgress (409).</summary>
+    private async Task<TripRequest> LoadGuidedTripAsync(Guide guide, Guid tripRequestId, CancellationToken ct)
+    {
+        if (!await HoldsTripAsync(guide.Id, tripRequestId, ct))
+            throw new ForbiddenException("You are not the guide of this trip.");
+        var trip = await trips.GetByIdAsync(tripRequestId, ct) ?? throw new NotFoundException("Trip request not found.");
+        if (trip.Status is not (TripRequestStatus.Confirmed or TripRequestStatus.InProgress))
+            throw new ConflictException($"Check-in is only possible on a confirmed or in-progress trip (it is {TripStatusMachine.Describe(trip.Status)}).");
+        return trip;
+    }
+
+    /// <summary>
+    /// Saves the check-in and moves the trip through TripStatusMachine, in one SaveChanges: the first check-in
+    /// Confirmed → InProgress, the check-in at the last stop InProgress → Completed.
+    /// </summary>
+    private async Task<CheckInResultDto> SaveCheckInAsync(CurrentUser user, TripRequest trip, StopCheckIn checkIn,
+        string stopName, CancellationToken ct)
+    {
         resources.Add(checkIn);
         audit.Record(user.Id, "StopCheckedIn", nameof(StopCheckIn), checkIn.Id, null,
-            new { stop.StopId, stop.AttractionName, DistanceMeters = distance, TripRequestId = trip.Id });
+            new { checkIn.ItineraryStopId, StopName = stopName, Method = checkIn.Method.ToString(), checkIn.DistanceMeters, TripRequestId = trip.Id });
 
-        // Trip status: this check-in plus the saved ones; the last stop completes the trip.
-        var before = trip.Status;
+        if (trip.Status == TripRequestStatus.Confirmed)
+            TripStatusMachine.Move(trip, TripRequestStatus.InProgress, user.Id, $"First check-in at {stopName}.", audit);
         var checkedIn = await resources.CountCheckInsOfTripAsync(trip.Id, ct) + 1;
-        var totalStops = await resources.CountStopsOfTripAsync(trip.Id, ct);
-        trip.Status = checkedIn >= totalStops ? TripRequestStatus.Completed : TripRequestStatus.InProgress;
-        if (trip.Status != before)
-            audit.Record(user.Id, "TripRequestStatusChanged", nameof(TripRequest), trip.Id,
-                new { Status = before.ToString() }, new { Status = trip.Status.ToString() });
+        if (checkedIn >= await resources.CountStopsOfTripAsync(trip.Id, ct))
+            TripStatusMachine.Move(trip, TripRequestStatus.Completed, user.Id, $"Last stop checked in at {stopName}.", audit);
 
         await unitOfWork.SaveChangesAsync(ct);
-        return new CheckInResultDto(stop.StopId, distance, checkIn.CheckedInAt, trip.Status.ToString());
+        return new CheckInResultDto(checkIn.ItineraryStopId, checkIn.DistanceMeters, checkIn.CheckedInAt, trip.Status.ToString(),
+            checkIn.Method.ToString(), stopName);
     }
+
+    private static ValidationException Invalid(string message) => new([new ValidationFailure("voucherCode", message)]);
 
     private async Task<Guide> GuideOfAsync(CurrentUser user, CancellationToken ct) =>
         await resources.FindGuideByUserAsync(user.Id, ct)

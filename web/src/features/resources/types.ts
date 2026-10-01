@@ -4,7 +4,6 @@ export type ResourceType = 'Guide' | 'Vehicle' | 'Room';
 
 export interface GuideDto {
   id: string;
-  userId: string | null;
   name: string;
   phone: string;
   languages: string[];
@@ -13,6 +12,7 @@ export interface GuideDto {
   isActive: boolean;
 }
 
+/** Body of PUT /api/guides/{id}. */
 export interface SaveGuideRequest {
   name: string;
   phone: string;
@@ -20,7 +20,47 @@ export interface SaveGuideRequest {
   dayRateLkr: number;
   maxPax: number;
   isActive: boolean;
-  userId: string | null;
+}
+
+/** Body of POST /api/guides (v1.1): the guide and their Guide login are made together; email is the login. */
+export interface CreateGuideRequest extends SaveGuideRequest {
+  email: string;
+}
+
+/**
+ * Returned once by create and by reset-password. The temporary password is never stored or shown again; the
+ * guide must change it at the first login.
+ */
+export interface GuideAccountDto {
+  guide: GuideDto;
+  email: string;
+  temporaryPassword: string;
+}
+
+/** A guide who could replace another (free for the whole trip, speaks the language, takes the party). */
+export interface GuideOption {
+  id: string;
+  name: string;
+  languages: string[];
+  maxPax: number;
+}
+
+/** One open request from GET /api/guide-change-requests (a guide asked to be replaced on a confirmed trip). */
+export interface GuideChangeRequestDto {
+  id: string;
+  tripRequestId: string;
+  tripObjective: string;
+  startDate: string;
+  endDate: string;
+  pax: number;
+  language: string;
+  guideId: string;
+  guideName: string;
+  reason: string;
+  status: string;
+  /** Set once resolved (the answer of POST .../resolve). */
+  replacementGuideName?: string | null;
+  candidates: GuideOption[];
 }
 
 export interface VehicleDto {

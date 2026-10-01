@@ -16,6 +16,7 @@ public class FakeQuotation
     public int Version { get; init; }
     public required QuotationDraft Draft { get; init; }
     public string Status { get; set; } = "Pending";
+    public DateTime? AcceptedAt { get; set; }
 }
 
 /// <summary>Every change is staged and applied only when the real DbContext saves (same unit of work).</summary>
@@ -47,20 +48,30 @@ public class FakeQuotationStore : IQuotationStore
         return Task.FromResult(quotation.Id);
     }
 
-    public Task<QuotationSummary?> GetAsync(Guid quotationId, CancellationToken ct)
-    {
-        var q = _state.Quotations.FirstOrDefault(x => x.Id == quotationId);
-        return Task.FromResult(q is null
-            ? null
-            : new QuotationSummary(q.Id, q.Draft.TripRequestId, q.Version, q.Status == "Pending", q.Draft.TotalLkr,
-                q.Draft.TotalUsd));
-    }
+    public Task<QuotationSummary?> GetAsync(Guid quotationId, CancellationToken ct) =>
+        Task.FromResult(Summary(_state.Quotations.FirstOrDefault(x => x.Id == quotationId)));
+
+    public Task<QuotationSummary?> GetLatestForTripAsync(Guid tripRequestId, CancellationToken ct) =>
+        Task.FromResult(Summary(_state.Quotations.Where(q => q.Draft.TripRequestId == tripRequestId)
+            .MaxBy(q => q.Version)));
 
     public Task SetStatusAsync(Guid quotationId, QuotationDecision status, CancellationToken ct)
     {
-        _pending.Add(() => _state.Quotations.Single(q => q.Id == quotationId).Status = status.ToString());
+        _pending.Add(() =>
+        {
+            var quotation = _state.Quotations.Single(q => q.Id == quotationId);
+            if (status == QuotationDecision.Accepted)
+                quotation.AcceptedAt = DateTime.UtcNow;
+            else if (status != QuotationDecision.Confirmed)
+                quotation.Status = status.ToString();
+        });
         return Task.CompletedTask;
     }
+
+    private static QuotationSummary? Summary(FakeQuotation? q) => q is null
+        ? null
+        : new QuotationSummary(q.Id, q.Draft.TripRequestId, q.Version, q.Status, q.Draft.TotalLkr, q.Draft.TotalUsd,
+            q.AcceptedAt);
 
     public void RecordDecision(Guid quotationId, Guid decidedBy, QuotationDecision decision, string? comment) =>
         _pending.Add(() => _state.Decisions.Add((quotationId, decidedBy, decision, comment)));

@@ -17,8 +17,8 @@ class LocalStatusNotifier implements StatusNotifier {
   static const _details = NotificationDetails(
     android: AndroidNotificationDetails(
       'trip_status',
-      'Trip status updates',
-      channelDescription: 'Tells you when your trip request changes status',
+      'Trip updates',
+      channelDescription: 'Quotations, confirmations and other trip updates',
       importance: Importance.high,
       priority: Priority.high,
     ),

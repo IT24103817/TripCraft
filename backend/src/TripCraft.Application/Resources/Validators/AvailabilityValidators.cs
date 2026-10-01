@@ -51,8 +51,14 @@ public class CheckInRequestValidator : AbstractValidator<CheckInRequest>
 {
     public CheckInRequestValidator()
     {
-        RuleFor(x => x.ItineraryStopId).NotEmpty();
-        RuleFor(x => x.Latitude).InclusiveBetween(-90, 90);
-        RuleFor(x => x.Longitude).InclusiveBetween(-180, 180);
+        // Voucher scan: only the code. GPS: stop and position.
+        RuleFor(x => x.VoucherCode).MaximumLength(300);
+        When(x => string.IsNullOrWhiteSpace(x.VoucherCode), () =>
+        {
+            RuleFor(x => x.ItineraryStopId).Must(id => id is { } stopId && stopId != Guid.Empty)
+                .WithMessage("Scan a voucher, or send the stop and your position.");
+            RuleFor(x => x.Latitude).NotNull().InclusiveBetween(-90, 90);
+            RuleFor(x => x.Longitude).NotNull().InclusiveBetween(-180, 180);
+        });
     }
 }

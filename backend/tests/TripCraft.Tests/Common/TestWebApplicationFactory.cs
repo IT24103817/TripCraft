@@ -20,11 +20,15 @@ namespace TripCraft.Tests.Common;
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     public const string InternalKey = "test-internal-key";
+    public const string VoucherSigningKey = "test-voucher-signing-key-at-least-32-bytes";
 
     private readonly string _databaseName = $"tripcraft-tests-{Guid.NewGuid()}";
 
     /// <summary>Private folder for uploaded passport photos, one per factory.</summary>
     public string UploadsDir { get; } = Path.Combine(Path.GetTempPath(), "tripcraft-tests-uploads", Guid.NewGuid().ToString("N"));
+
+    /// <summary>Outbox emails are written here as .eml files (no SMTP in tests).</summary>
+    public string MailDir { get; } = Path.Combine(Path.GetTempPath(), "tripcraft-tests-mail", Guid.NewGuid().ToString("N"));
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -34,6 +38,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("DATABASE_URL", "Host=unused");
         builder.UseSetting("INTERNAL_AGENT_KEY", InternalKey);
         builder.UseSetting("UPLOADS_DIR", UploadsDir);
+        builder.UseSetting("VOUCHER_SIGNING_KEY", VoucherSigningKey);
+        builder.UseSetting("EMAIL_PICKUP_DIR", MailDir);
 
         builder.ConfigureServices(services =>
         {

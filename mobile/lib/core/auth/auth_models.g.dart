@@ -12,6 +12,7 @@ _AppUser _$AppUserFromJson(Map<String, dynamic> json) => _AppUser(
   fullName: json['fullName'] as String,
   role: json['role'] as String,
   isActive: json['isActive'] as bool,
+  mustChangePassword: json['mustChangePassword'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$AppUserToJson(_AppUser instance) => <String, dynamic>{
@@ -20,6 +21,7 @@ Map<String, dynamic> _$AppUserToJson(_AppUser instance) => <String, dynamic>{
   'fullName': instance.fullName,
   'role': instance.role,
   'isActive': instance.isActive,
+  'mustChangePassword': instance.mustChangePassword,
 };
 
 _AuthResponse _$AuthResponseFromJson(Map<String, dynamic> json) =>

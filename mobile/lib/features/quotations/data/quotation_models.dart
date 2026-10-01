@@ -36,11 +36,12 @@ abstract class QuotationLine with _$QuotationLine {
       _$QuotationLineFromJson(json);
 }
 
-/// What the tourist sees: the quotation plus the workflow status it belongs to, and (once the quotation is
-/// stored by the API) its id, status and when the tourist accepted it.
+/// What the tourist sees: the quotation plus the trip and workflow status it belongs to, and (once the quotation
+/// is stored by the API) its id, status (Pending, Approved = sent, Declined, ...) and when the tourist accepted it.
 @freezed
 abstract class QuotationView with _$QuotationView {
   const factory QuotationView({
+    required String tripStatus,
     required String workflowStatus,
     Quotation? quotation,
     String? quotationId,
@@ -49,27 +50,16 @@ abstract class QuotationView with _$QuotationView {
   }) = _QuotationView;
 }
 
-/// One trip in the status history (from GET /api/trip-requests).
+/// Response of POST /api/quotations/{id}/accept and /decline (QuotationDecisionResponse).
 @freezed
-abstract class TripStatusItem with _$TripStatusItem {
-  const factory TripStatusItem({
-    required String id,
-    required String objective,
-    required String status,
-  }) = _TripStatusItem;
+abstract class QuotationDecision with _$QuotationDecision {
+  const factory QuotationDecision({
+    required String quotationId,
+    required String tripRequestId,
+    required String decision,
+    required String tripStatus,
+  }) = _QuotationDecision;
 
-  factory TripStatusItem.fromJson(Map<String, dynamic> json) =>
-      _$TripStatusItemFromJson(json);
-}
-
-/// A detected status change, shown in the notifications history.
-@freezed
-abstract class StatusChange with _$StatusChange {
-  const factory StatusChange({
-    required String tripId,
-    required String objective,
-    required String from,
-    required String to,
-    required DateTime at,
-  }) = _StatusChange;
+  factory QuotationDecision.fromJson(Map<String, dynamic> json) =>
+      _$QuotationDecisionFromJson(json);
 }

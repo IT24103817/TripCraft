@@ -4,7 +4,10 @@ import { queryRoots } from '@/shared/api/queryKeys';
 import type { PagedResult } from '@/shared/api/types';
 import type {
   AvailableResourceDto,
+  CreateGuideRequest,
   CreateHoldRequest,
+  GuideAccountDto,
+  GuideChangeRequestDto,
   GuideDto,
   HoldDto,
   HotelDto,
@@ -51,8 +54,57 @@ function useDelete(path: string) {
 }
 
 export const useGuides = (query: ListQuery) => useList<GuideDto>('/api/guides', query);
-export const useSaveGuide = () => useSave<SaveGuideRequest, GuideDto>('/api/guides');
 export const useDeleteGuide = () => useDelete('/api/guides');
+
+/** POST /api/guides: creates the guide and their login. The answer holds the one-time temporary password. */
+export function useCreateGuide() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: CreateGuideRequest) =>
+      (await http.post<GuideAccountDto>('/api/guides', body)).data,
+    onSuccess: () => client.invalidateQueries({ queryKey: [queryRoots.resources] }),
+  });
+}
+
+/** PUT /api/guides/{id}: the guide's details (the login is not changed here). */
+export function useUpdateGuide() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, body }: { id: string; body: SaveGuideRequest }) =>
+      (await http.put<GuideDto>(`/api/guides/${id}`, body)).data,
+    onSuccess: () => client.invalidateQueries({ queryKey: [queryRoots.resources] }),
+  });
+}
+
+/** POST /api/guides/{id}/reset-password: a new one-time temporary password; the old one stops working. */
+export function useResetGuidePassword() {
+  return useMutation({
+    mutationFn: async (id: string) =>
+      (await http.post<GuideAccountDto>(`/api/guides/${id}/reset-password`)).data,
+  });
+}
+
+/** GET /api/guide-change-requests: the open requests, each with the guides who could take over. */
+export function useGuideChangeRequests() {
+  return useQuery({
+    queryKey: [queryRoots.resources, 'guide-change-requests'],
+    queryFn: async () => (await http.get<GuideChangeRequestDto[]>('/api/guide-change-requests')).data,
+  });
+}
+
+/** POST /api/guide-change-requests/{id}/resolve: swaps the guide's holds to the replacement. */
+export function useResolveGuideChange() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, replacementGuideId }: { id: string; replacementGuideId: string }) =>
+      (
+        await http.post<GuideChangeRequestDto>(`/api/guide-change-requests/${id}/resolve`, {
+          replacementGuideId,
+        })
+      ).data,
+    onSuccess: () => client.invalidateQueries({ queryKey: [queryRoots.resources] }),
+  });
+}
 
 export const useVehicles = (query: ListQuery) => useList<VehicleDto>('/api/vehicles', query);
 export const useSaveVehicle = () => useSave<SaveVehicleRequest, VehicleDto>('/api/vehicles');
@@ -80,7 +132,6 @@ export function useAvailability(query: ListQuery | null) {
   });
 }
 
-/** Holds overlapping [from, to] for the calendar (up to 100). */
 /** The most holds the calendar asks for in one window (the API's largest page size). */
 export const HOLDS_PAGE_SIZE = 100;
 

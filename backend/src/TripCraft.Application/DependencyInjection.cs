@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using TripCraft.Application.Common.Notifications;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Identity.Services;
 using TripCraft.Application.Quotations;
@@ -8,6 +9,7 @@ using TripCraft.Application.Quotations.Reports;
 using TripCraft.Application.Quotations.Services;
 using TripCraft.Application.Resources.Services;
 using TripCraft.Application.Trips.Services;
+using TripCraft.Application.Vouchers;
 using TripCraft.Application.Workflows;
 using TripCraft.Application.Workflows.Services;
 
@@ -23,6 +25,11 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserAdminService, UserAdminService>();
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
+
+        // v1.1: in-app notifications and the email outbox
+        services.AddScoped<INotifier, Notifier>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IEmailDispatcher, EmailDispatcher>();
 
         // Component A — Trip Requests & Itinerary
         services.AddScoped<ITripRequestService, TripRequestService>();
@@ -41,13 +48,19 @@ public static class DependencyInjection
         services.AddScoped<IAvailabilityService, AvailabilityService>();
         services.AddScoped<IResourceHoldAdminService, ResourceHoldAdminService>();
         services.AddScoped<IGuideScheduleService, GuideScheduleService>();
+        services.AddScoped<IGuideChangeService, GuideChangeService>();
 
         // Agent workflow integration and the approval gate
         services.AddSingleton<ProposalValidator>();
+        services.AddScoped<ProposalFactsLoader>();
+        services.AddScoped<IProposalEditService, ProposalEditService>();
         services.AddScoped<IWorkflowStepService, WorkflowStepService>();
         services.AddScoped<IWorkflowProposalService, WorkflowProposalService>();
         services.AddScoped<IWorkflowQueryService, WorkflowQueryService>();
         services.AddScoped<IQuotationApprovalService, QuotationApprovalService>();
+        services.AddScoped<IQuotationClientService, QuotationClientService>();
+        services.AddScoped<ITripConfirmationService, TripConfirmationService>();
+        services.AddScoped<IVoucherService, VoucherService>();
 
         // Component C — Quotation, Approval & Reporting. QuotationStore is also the IQuotationStore workflow port
         // (registered in Infrastructure/Workflows/WorkflowsSetup).

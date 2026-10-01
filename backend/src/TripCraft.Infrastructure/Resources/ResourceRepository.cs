@@ -19,6 +19,10 @@ public class ResourceRepository(AppDbContext db) : IResourceRepository
 
     public IQueryable<ResourceHold> Holds() => db.ResourceHolds.AsNoTracking();
     public IQueryable<StopCheckIn> CheckIns() => db.StopCheckIns.AsNoTracking();
+    public IQueryable<GuideChangeRequest> GuideChangeRequests() => db.GuideChangeRequests.AsNoTracking();
+
+    public Task<GuideChangeRequest?> FindGuideChangeRequestAsync(Guid id, CancellationToken ct) =>
+        db.GuideChangeRequests.FirstOrDefaultAsync(r => r.Id == id, ct);
 
     public Task<Guide?> FindGuideAsync(Guid id, CancellationToken ct) =>
         db.Guides.Include(g => g.Languages).FirstOrDefaultAsync(g => g.Id == id && !g.IsDeleted, ct);
@@ -34,6 +38,9 @@ public class ResourceRepository(AppDbContext db) : IResourceRepository
 
     public Task<ResourceHold?> FindHoldAsync(Guid id, CancellationToken ct) =>
         db.ResourceHolds.FirstOrDefaultAsync(h => h.Id == id, ct);
+
+    public Task<List<ResourceHold>> FindHeldHoldsOfTripAsync(Guid tripRequestId, CancellationToken ct) =>
+        db.ResourceHolds.Where(h => h.TripRequestId == tripRequestId && h.Status == HoldStatus.Held).ToListAsync(ct);
 
     public async Task<int> HeldQuantityAsync(ResourceType type, Guid resourceId, DateOnly from, DateOnly to, CancellationToken ct)
     {

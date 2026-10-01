@@ -11,4 +11,7 @@ public interface ITripDetails
     int Pax { get; }
     decimal BudgetUsd { get; }
     JsonElement? Preferences { get; }
+
+    /// <summary>Destinations from GET /api/attractions/cities, in travel order (v1.1 multi-select).</summary>
+    IReadOnlyList<string>? Cities { get; }
 }

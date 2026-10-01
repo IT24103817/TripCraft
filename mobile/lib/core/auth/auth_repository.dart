@@ -47,6 +47,24 @@ class AuthRepository {
     await _storage.writeNationality(nationality.trim());
   }
 
+  /// POST /api/auth/change-password. The API clears mustChangePassword and returns the user; the JWT stays
+  /// valid, so only the stored user is replaced.
+  Future<AppUser> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final json = await _api.post(
+      '/api/auth/change-password',
+      body: {'currentPassword': currentPassword, 'newPassword': newPassword},
+    );
+    final user = AppUser.fromJson(json as Map<String, dynamic>);
+    final token = await _storage.readToken();
+    if (token != null) {
+      await _storage.writeSession(token: token, user: user.toJson());
+    }
+    return user;
+  }
+
   /// The user saved by the last login, if a token is still stored.
   Future<AppUser?> restore() async {
     final token = await _storage.readToken();

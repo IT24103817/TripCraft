@@ -16,6 +16,10 @@ abstract class SessionStorage {
   /// (the API's register endpoint does not take a nationality).
   Future<String?> readNationality();
   Future<void> writeNationality(String nationality);
+
+  /// Ids of the notifications already shown on the phone, so a restart does not show them again.
+  Future<Set<String>> readShownNotificationIds();
+  Future<void> writeShownNotificationIds(Set<String> ids);
 }
 
 /// Android Keystore / iOS Keychain backed storage (PLAN.md section 6: JWT in flutter_secure_storage).
@@ -27,6 +31,7 @@ class SecureSessionStorage implements SessionStorage {
   static const _tokenKey = 'auth.token';
   static const _userKey = 'auth.user';
   static const _nationalityKey = 'profile.nationality';
+  static const _shownNotificationsKey = 'notifications.shown';
 
   @override
   Future<String?> readToken() => _storage.read(key: _tokenKey);
@@ -58,6 +63,19 @@ class SecureSessionStorage implements SessionStorage {
   @override
   Future<void> writeNationality(String nationality) =>
       _storage.write(key: _nationalityKey, value: nationality);
+
+  @override
+  Future<Set<String>> readShownNotificationIds() async {
+    final raw = await _storage.read(key: _shownNotificationsKey);
+    if (raw == null) return <String>{};
+    return (jsonDecode(raw) as List<dynamic>).map((id) => '$id').toSet();
+  }
+
+  @override
+  Future<void> writeShownNotificationIds(Set<String> ids) => _storage.write(
+    key: _shownNotificationsKey,
+    value: jsonEncode(ids.toList()),
+  );
 }
 
 /// Keeps everything in memory. Used by tests.
@@ -65,6 +83,7 @@ class InMemorySessionStorage implements SessionStorage {
   String? token;
   Map<String, dynamic>? user;
   String? nationality;
+  Set<String> shownNotificationIds = {};
 
   @override
   Future<String?> readToken() async => token;
@@ -93,4 +112,13 @@ class InMemorySessionStorage implements SessionStorage {
   @override
   Future<void> writeNationality(String nationality) async =>
       this.nationality = nationality;
+
+  @override
+  Future<Set<String>> readShownNotificationIds() async => {
+    ...shownNotificationIds,
+  };
+
+  @override
+  Future<void> writeShownNotificationIds(Set<String> ids) async =>
+      shownNotificationIds = {...ids};
 }

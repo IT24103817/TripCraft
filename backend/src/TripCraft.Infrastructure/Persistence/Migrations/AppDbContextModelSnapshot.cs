@@ -75,6 +75,115 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                     b.ToTable("audit_logs", (string)null);
                 });
 
+            modelBuilder.Entity("TripCraft.Application.Common.Notifications.EmailMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)")
+                        .HasColumnName("body");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("error");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("subject");
+
+                    b.Property<string>("To")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("to");
+
+                    b.Property<Guid?>("TripRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trip_request_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_email_outbox");
+
+                    b.HasIndex("SentAt")
+                        .HasDatabaseName("ix_email_outbox_sent_at");
+
+                    b.ToTable("email_outbox", (string)null);
+                });
+
+            modelBuilder.Entity("TripCraft.Application.Common.Notifications.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("body");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("read_at");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<Guid?>("TripRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trip_request_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notifications");
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .HasDatabaseName("ix_notifications_user_id_created_at");
+
+                    b.ToTable("notifications", (string)null);
+                });
+
             modelBuilder.Entity("TripCraft.Application.Identity.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -101,6 +210,12 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
+
+                    b.Property<bool>("MustChangePassword")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("must_change_password");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -209,6 +324,10 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)")
                         .HasColumnName("margin_pct");
+
+                    b.Property<string>("ProposalSnapshot")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("proposal_snapshot");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -391,6 +510,71 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_guides_max_pax", "max_pax > 0");
                         });
+                });
+
+            modelBuilder.Entity("TripCraft.Application.Resources.GuideChangeRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("GuideId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("guide_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid?>("ReplacementGuideId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replacement_guide_id");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("resolved_at");
+
+                    b.Property<Guid?>("ResolvedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("resolved_by");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TripRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trip_request_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_guide_change_requests");
+
+                    b.HasIndex("GuideId")
+                        .HasDatabaseName("ix_guide_change_requests_guide_id");
+
+                    b.HasIndex("ReplacementGuideId")
+                        .HasDatabaseName("ix_guide_change_requests_replacement_guide_id");
+
+                    b.HasIndex("TripRequestId")
+                        .HasDatabaseName("ix_guide_change_requests_trip_request_id");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("ix_guide_change_requests_status_created_at");
+
+                    b.ToTable("guide_change_requests", (string)null);
                 });
 
             modelBuilder.Entity("TripCraft.Application.Resources.GuideLanguage", b =>
@@ -669,7 +853,7 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<int>("DistanceMeters")
+                    b.Property<int?>("DistanceMeters")
                         .HasColumnType("integer")
                         .HasColumnName("distance_meters");
 
@@ -681,17 +865,29 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("itinerary_stop_id");
 
-                    b.Property<double>("Latitude")
+                    b.Property<double?>("Latitude")
                         .HasColumnType("double precision")
                         .HasColumnName("latitude");
 
-                    b.Property<double>("Longitude")
+                    b.Property<double?>("Longitude")
                         .HasColumnType("double precision")
                         .HasColumnName("longitude");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasDefaultValue("Gps")
+                        .HasColumnName("method");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("VoucherId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("voucher_id");
 
                     b.HasKey("Id")
                         .HasName("pk_stop_check_ins");
@@ -1022,6 +1218,14 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("budget_usd");
 
+                    b.Property<string>("Cities")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasDefaultValue("")
+                        .HasColumnName("cities");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -1076,6 +1280,68 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_trip_requests_end_after_start", "end_date >= start_date");
 
                             t.HasCheckConstraint("ck_trip_requests_pax_positive", "pax > 0");
+                        });
+                });
+
+            modelBuilder.Entity("TripCraft.Application.Vouchers.Voucher", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("HotelId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("hotel_id");
+
+                    b.Property<DateOnly?>("Night")
+                        .HasColumnType("date")
+                        .HasColumnName("night");
+
+                    b.Property<int>("Rooms")
+                        .HasColumnType("integer")
+                        .HasColumnName("rooms");
+
+                    b.Property<Guid>("TripRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trip_request_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_vouchers");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_vouchers_code");
+
+                    b.HasIndex("HotelId")
+                        .HasDatabaseName("ix_vouchers_hotel_id");
+
+                    b.HasIndex("TripRequestId")
+                        .HasDatabaseName("ix_vouchers_trip_request_id");
+
+                    b.ToTable("vouchers", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_vouchers_rooms", "rooms >= 0");
                         });
                 });
 
@@ -1273,6 +1539,16 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TripCraft.Application.Common.Notifications.Notification", b =>
+                {
+                    b.HasOne("TripCraft.Application.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_notifications_users_user_id");
+                });
+
             modelBuilder.Entity("TripCraft.Application.Quotations.ApprovalDecision", b =>
                 {
                     b.HasOne("TripCraft.Application.Identity.User", null)
@@ -1323,6 +1599,29 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_guides_users_user_id");
+                });
+
+            modelBuilder.Entity("TripCraft.Application.Resources.GuideChangeRequest", b =>
+                {
+                    b.HasOne("TripCraft.Application.Resources.Guide", null)
+                        .WithMany()
+                        .HasForeignKey("GuideId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_guide_change_requests_guides_guide_id");
+
+                    b.HasOne("TripCraft.Application.Resources.Guide", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacementGuideId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_guide_change_requests_guides_replacement_guide_id");
+
+                    b.HasOne("TripCraft.Application.Trips.TripRequest", null)
+                        .WithMany()
+                        .HasForeignKey("TripRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_guide_change_requests_trip_requests_trip_request_id");
                 });
 
             modelBuilder.Entity("TripCraft.Application.Resources.GuideLanguage", b =>
@@ -1440,6 +1739,22 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_trip_requests_tourists_tourist_id");
 
                     b.Navigation("Tourist");
+                });
+
+            modelBuilder.Entity("TripCraft.Application.Vouchers.Voucher", b =>
+                {
+                    b.HasOne("TripCraft.Application.Resources.Hotel", null)
+                        .WithMany()
+                        .HasForeignKey("HotelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_vouchers_hotels_hotel_id");
+
+                    b.HasOne("TripCraft.Application.Trips.TripRequest", null)
+                        .WithMany()
+                        .HasForeignKey("TripRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_vouchers_trip_requests_trip_request_id");
                 });
 
             modelBuilder.Entity("TripCraft.Application.Workflows.AgentStep", b =>

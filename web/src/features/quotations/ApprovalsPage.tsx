@@ -8,12 +8,17 @@ import { cn } from '@/shared/utils/cn';
 import { useWorkflows } from './api';
 import { workflowColumns } from './workflowColumns';
 
+/**
+ * Tabs by agent workflow status: PendingApproval = ready for review, RevisionRequested = a rule warning or the
+ * Planner is re-planning, Approved = the quotation was sent (the client may have accepted it: confirm it here).
+ */
 const TABS = [
-  { status: 'PendingApproval', label: 'Pending approval' },
+  { status: 'PendingApproval', label: 'Pending review' },
   { status: 'RevisionRequested', label: 'Revision requested' },
+  { status: 'Approved', label: 'Sent to client' },
 ] as const;
 
-/** Approval inbox: workflows waiting for the Operations Manager (PLAN.md section 6, step 9). */
+/** Approval inbox: workflows waiting for the Operations Manager (PLAN.md section 6, step 9; v1.1 lifecycle). */
 export default function ApprovalsPage() {
   const navigate = useNavigate();
   const list = useListParams({ sort: '-startedAt' });
@@ -28,7 +33,10 @@ export default function ApprovalsPage() {
 
   return (
     <section className="space-y-4">
-      <PageHeader title="Approvals" description="AI-drafted trips waiting for a decision." />
+      <PageHeader
+        title="Approvals"
+        description="AI-drafted trips to review, and quotations sent to clients that may need confirming."
+      />
       <SearchFilterBar
         search={{
           value: list.search,

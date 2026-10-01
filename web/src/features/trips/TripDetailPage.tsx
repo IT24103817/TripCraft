@@ -2,17 +2,19 @@ import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuthStore } from '@/auth/authStore';
 import { getErrorMessage } from '@/shared/api/errors';
-import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { PageState } from '@/shared/components/PageState';
+import { ReasonDialog } from '@/shared/components/ReasonDialog';
 import { StatusBadge } from '@/shared/components/StatusBadge';
 import { useToast } from '@/shared/components/Toast';
 import { formatDate, formatDateTime, formatUsd } from '@/shared/utils/format';
-import { useCancelTrip, useItinerary, useTrip } from './api';
+import { useCancelTrip, useItinerary, useTrip, useTripWorkflowId } from './api';
 import { ItineraryDayEditor } from './ItineraryDayEditor';
 import { StatusTimeline } from './StatusTimeline';
 import { TripHistory } from './TripHistory';
+import { CANCELLABLE, HAS_VOUCHERS, IN_REVIEW, STATUS_NOTES } from './tripLifecycle';
 import type { ItineraryDayDto } from './types';
+import { VouchersButton } from './VouchersButton';
 
 export default function TripDetailPage() {
   const { id = '' } = useParams();
@@ -27,6 +29,10 @@ export default function TripDetailPage() {
   const closeEditor = useCallback(() => setEditingDay(null), []);
   // The API only accepts itinerary edits from an Operations Manager on a Confirmed trip.
   const canEditItinerary = isManager && trip.data?.status === 'Confirmed';
+  const status = trip.data?.status;
+  // The review page is keyed by the workflow id, so it is looked up only for trips that are in review.
+  const inReview = status !== undefined && IN_REVIEW.includes(status);
+  const workflowId = useTripWorkflowId(id, inReview);
 
   return (
     <PageState
@@ -45,7 +51,12 @@ export default function TripDetailPage() {
                 <Link to="/trips" className="btn-secondary">
                   Back to trips
                 </Link>
-                {trip.data.status === 'Submitted' && (
+                {inReview && workflowId.data && (
+                  <Link to={`/approvals/${workflowId.data}`} className="btn-primary">
+                    Open review
+                  </Link>
+                )}
+                {CANCELLABLE.includes(trip.data.status) && (
                   <button type="button" className="btn-danger" onClick={() => setConfirmCancel(true)}>
                     Cancel request
                   </button>
@@ -57,11 +68,12 @@ export default function TripDetailPage() {
           <div className="card">
             <h2 className="mb-3 font-semibold text-slate-900">Status</h2>
             <StatusTimeline status={trip.data.status} />
-            {trip.data.status === 'Submitted' && (
-              // Only the tourist may start planning (API rule), from the mobile app.
-              <p className="mt-3 text-sm text-slate-600">
-                Waiting for the tourist to start planning in the mobile app.
-              </p>
+            {/* e.g. Submitted: only the tourist may start planning (API rule), from the mobile app. */}
+            <p className="mt-3 text-sm text-slate-600">{STATUS_NOTES[trip.data.status]}</p>
+            {HAS_VOUCHERS.includes(trip.data.status) && (
+              <div className="mt-3">
+                <VouchersButton tripId={id} />
+              </div>
             )}
           </div>
 
@@ -73,6 +85,7 @@ export default function TripDetailPage() {
                 label="Dates"
                 value={`${formatDate(trip.data.startDate)} – ${formatDate(trip.data.endDate)}`}
               />
+              <Detail label="Cities" value={trip.data.cities.join(', ') || '—'} />
               <Detail label="Travellers" value={trip.data.pax} />
               <Detail label="Budget" value={formatUsd(trip.data.budgetUsd)} />
               <Detail
@@ -145,24 +158,32 @@ export default function TripDetailPage() {
             <TripHistory tripId={id} />
           </div>
 
-          <ConfirmDialog
-            open={confirmCancel}
-            title="Cancel trip request"
-            message="Cancel this trip request? It can no longer be planned."
-            confirmLabel="Cancel request"
-            tone="danger"
-            isPending={cancel.isPending}
-            onCancel={() => setConfirmCancel(false)}
-            onConfirm={() =>
-              cancel.mutate(undefined, {
-                onSuccess: () => {
-                  toast.success('Trip request cancelled.');
-                  setConfirmCancel(false);
-                },
-                onError: (error) => toast.error(getErrorMessage(error)),
-              })
-            }
-          />
+          {confirmCancel && (
+            <ReasonDialog
+              title="Cancel trip request"
+              message="Any held guide, vehicle and rooms are released, and the tourist is told. This cannot be undone."
+              fieldLabel="Reason"
+              required
+              requiredMessage="Give a reason; the tourist sees it."
+              maxLength={500}
+              confirmLabel="Cancel request"
+              tone="danger"
+              isPending={cancel.isPending}
+              onCancel={() => setConfirmCancel(false)}
+              onConfirm={(reason) =>
+                cancel.mutate(
+                  { reason: reason ?? '' },
+                  {
+                    onSuccess: () => {
+                      toast.success('Trip request cancelled.');
+                      setConfirmCancel(false);
+                    },
+                    onError: (error) => toast.error(getErrorMessage(error)),
+                  },
+                )
+              }
+            />
+          )}
         </section>
       )}
     </PageState>

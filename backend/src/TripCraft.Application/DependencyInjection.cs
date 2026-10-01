@@ -9,6 +9,7 @@ using TripCraft.Application.Quotations.Reports;
 using TripCraft.Application.Quotations.Services;
 using TripCraft.Application.Resources.Services;
 using TripCraft.Application.Trips.Services;
+using TripCraft.Application.Trips.Templates;
 using TripCraft.Application.Vouchers;
 using TripCraft.Application.Workflows;
 using TripCraft.Application.Workflows.Services;
@@ -37,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<ITripPlanningService, TripPlanningService>();
         services.AddScoped<IAttractionService, AttractionService>();
         services.AddScoped<IPassportPhotoService, PassportPhotoService>();
+        services.AddScoped<ITripTemplateService, TripTemplateService>();
 
         // Component B — Resource Management. ResourceCatalog and ResourceHoldService are also registered as the
         // workflow ports (IResourceCatalog, IResourceHoldService) in Infrastructure/Workflows/WorkflowsSetup.
@@ -49,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<IResourceHoldAdminService, ResourceHoldAdminService>();
         services.AddScoped<IGuideScheduleService, GuideScheduleService>();
         services.AddScoped<IGuideChangeService, GuideChangeService>();
+        services.AddScoped<ITripAssignmentService, TripAssignmentService>();
 
         // Agent workflow integration and the approval gate
         services.AddSingleton<ProposalValidator>();

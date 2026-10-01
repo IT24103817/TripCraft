@@ -20,6 +20,7 @@ public class ResourceRepository(AppDbContext db) : IResourceRepository
     public IQueryable<ResourceHold> Holds() => db.ResourceHolds.AsNoTracking();
     public IQueryable<StopCheckIn> CheckIns() => db.StopCheckIns.AsNoTracking();
     public IQueryable<GuideChangeRequest> GuideChangeRequests() => db.GuideChangeRequests.AsNoTracking();
+    public IQueryable<GuideRating> GuideRatings() => db.GuideRatings.AsNoTracking();
 
     public Task<GuideChangeRequest?> FindGuideChangeRequestAsync(Guid id, CancellationToken ct) =>
         db.GuideChangeRequests.FirstOrDefaultAsync(r => r.Id == id, ct);

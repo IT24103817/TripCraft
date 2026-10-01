@@ -86,10 +86,15 @@ abstract class TripDay with _$TripDay {
   }) = _TripDay;
 }
 
+/// A stop of a day. The saved itinerary carries the stop's position (for the map); the agents' proposal does not.
 @freezed
 abstract class TripStop with _$TripStop {
-  const factory TripStop({required String attractionId, required String name}) =
-      _TripStop;
+  const factory TripStop({
+    required String attractionId,
+    required String name,
+    double? latitude,
+    double? longitude,
+  }) = _TripStop;
 }
 
 /// The fields of GET /api/trip-requests/{id}/workflow the trip screen needs.
@@ -165,6 +170,9 @@ abstract class ItineraryDay with _$ItineraryDay {
   const factory ItineraryDay({
     required int dayNumber,
     required String city,
+
+    /// e.g. "By train; weather: Light rain, 24°C" (the weather part is optional).
+    String? notes,
     required List<ItineraryStop> stops,
   }) = _ItineraryDay;
 
@@ -177,6 +185,8 @@ abstract class ItineraryStop with _$ItineraryStop {
   const factory ItineraryStop({
     required String attractionId,
     required String attractionName,
+    double? latitude,
+    double? longitude,
   }) = _ItineraryStop;
 
   factory ItineraryStop.fromJson(Map<String, dynamic> json) =>

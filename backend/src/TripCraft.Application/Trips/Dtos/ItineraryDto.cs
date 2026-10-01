@@ -14,8 +14,11 @@ public record ItineraryDayDto(int DayNumber, string City, Guid? HotelId, string?
         d.Stops.OrderBy(s => s.Sequence).Select(ItineraryStopDto.FromEntity).ToList());
 }
 
-public record ItineraryStopDto(int Sequence, TimeOnly? ArrivalTime, Guid AttractionId, string AttractionName, int DurationMinutes)
+/// <summary>Latitude/Longitude (v1.1) let the app draw the route line between the day's stops.</summary>
+public record ItineraryStopDto(int Sequence, TimeOnly? ArrivalTime, Guid AttractionId, string AttractionName, int DurationMinutes,
+    double? Latitude = null, double? Longitude = null)
 {
     public static ItineraryStopDto FromEntity(ItineraryStop s) => new(
-        s.Sequence, s.ArrivalTime, s.AttractionId, s.Attraction?.Name ?? "", s.Attraction?.DurationMinutes ?? 0);
+        s.Sequence, s.ArrivalTime, s.AttractionId, s.Attraction?.Name ?? "", s.Attraction?.DurationMinutes ?? 0,
+        s.Attraction?.Latitude, s.Attraction?.Longitude);
 }

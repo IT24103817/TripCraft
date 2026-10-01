@@ -6,6 +6,7 @@ import '../../../core/api/api_providers.dart';
 import '../../../core/api/paged_result.dart';
 import '../../../core/api/user_facing_exception.dart';
 import 'trip_models.dart';
+import 'weather.dart';
 
 part 'trips_repository.g.dart';
 
@@ -112,6 +113,7 @@ class TripsRepository {
   }
 
   /// The saved itinerary (GET /api/trip-requests/{id}/itinerary). Empty before one exists (404).
+  /// The weather comes from each day's notes ("By train; weather: Light rain, 24°C").
   Future<List<TripDay>> savedItinerary(String tripId) async {
     try {
       final itinerary = Itinerary.fromJson(
@@ -123,9 +125,15 @@ class TripsRepository {
           TripDay(
             day: d.dayNumber,
             city: d.city,
+            weather: weatherFromNotes(d.notes),
             stops: [
               for (final s in d.stops)
-                TripStop(attractionId: s.attractionId, name: s.attractionName),
+                TripStop(
+                  attractionId: s.attractionId,
+                  name: s.attractionName,
+                  latitude: s.latitude,
+                  longitude: s.longitude,
+                ),
             ],
           ),
       ];

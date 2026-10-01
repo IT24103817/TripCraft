@@ -124,7 +124,7 @@ class _CheckInPanelState extends ConsumerState<CheckInPanel> {
           ),
         const SizedBox(height: 8),
         PrimaryButton(
-          label: _saving ? 'Checking in…' : 'Check in',
+          label: _saving ? 'Checking in…' : 'Check in by GPS',
           onPressed: allowed && !_saving ? _checkIn : null,
         ),
       ],

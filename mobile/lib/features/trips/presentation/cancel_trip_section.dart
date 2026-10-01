@@ -70,8 +70,8 @@ class _CancelOpen extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'You can cancel this trip until ${formatDate(info.cancelUntil)} '
-          '(${info.cutoffDays} days before it starts).',
+          'You can cancel until ${formatDate(info.cancelUntil)} '
+          '(${info.cutoffDays} days before the start).',
         ),
         const SizedBox(height: 8),
         OutlinedButton.icon(

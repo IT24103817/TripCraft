@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../data/trip_models.dart';
 
-/// OpenStreetMap tiles (no key) with one marker per stop.
+/// OpenStreetMap tiles (no key) with one marker per stop and a route line joining the stops in visiting order.
 class TripMap extends StatelessWidget {
   const TripMap({super.key, required this.stops});
 
@@ -35,6 +35,16 @@ class TripMap extends StatelessWidget {
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'lk.tripcraft.app',
             ),
+            if (points.length > 1)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: points,
+                    color: AppColors.brand,
+                    strokeWidth: 3,
+                  ),
+                ],
+              ),
             MarkerLayer(
               markers: [
                 for (final stop in stops)

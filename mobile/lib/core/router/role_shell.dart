@@ -14,13 +14,14 @@ class _Tab {
 }
 
 const _touristTabs = [
+  _Tab(Routes.home, 'Home', Icons.home_outlined),
   _Tab(Routes.trips, 'My trips', Icons.luggage_outlined),
   _Tab(Routes.newTrip, 'New trip', Icons.add_circle_outline),
   _Tab(Routes.alerts, 'Alerts', Icons.notifications_outlined),
 ];
 
 const _guideTabs = [
-  _Tab(Routes.schedule, 'Schedule', Icons.event_note_outlined),
+  _Tab(Routes.schedule, 'Home', Icons.home_outlined),
   _Tab(Routes.scan, 'Scan voucher', Icons.qr_code_scanner),
   _Tab(Routes.alerts, 'Alerts', Icons.notifications_outlined),
 ];

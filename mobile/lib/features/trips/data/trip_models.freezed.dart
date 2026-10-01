@@ -1476,7 +1476,7 @@ as List<TripStop>,
 /// @nodoc
 mixin _$TripStop {
 
- String get attractionId; String get name;
+ String get attractionId; String get name; double? get latitude; double? get longitude;
 /// Create a copy of TripStop
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1488,20 +1488,20 @@ $TripStopCopyWith<TripStop> get copyWith => _$TripStopCopyWithImpl<TripStop>(thi
 @override
 bool operator ==(Object other) {
   final _this = this as TripStop;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripStop&&(identical(other.attractionId, _this.attractionId) || other.attractionId == _this.attractionId)&&(identical(other.name, _this.name) || other.name == _this.name));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TripStop&&(identical(other.attractionId, _this.attractionId) || other.attractionId == _this.attractionId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.latitude, _this.latitude) || other.latitude == _this.latitude)&&(identical(other.longitude, _this.longitude) || other.longitude == _this.longitude));
 }
 
 
 @override
 int get hashCode {
   final _this = this as TripStop;
-  return Object.hash(runtimeType,_this.attractionId,_this.name);
+  return Object.hash(runtimeType,_this.attractionId,_this.name,_this.latitude,_this.longitude);
 }
 
 @override
 String toString() {
   final _this = this as TripStop;
-  return 'TripStop(attractionId: ${_this.attractionId}, name: ${_this.name})';
+  return 'TripStop(attractionId: ${_this.attractionId}, name: ${_this.name}, latitude: ${_this.latitude}, longitude: ${_this.longitude})';
 }
 
 
@@ -1512,7 +1512,7 @@ abstract mixin class $TripStopCopyWith<$Res>  {
   factory $TripStopCopyWith(TripStop value, $Res Function(TripStop) _then) = _$TripStopCopyWithImpl;
 @useResult
 $Res call({
- String attractionId, String name
+ String attractionId, String name, double? latitude, double? longitude
 });
 
 
@@ -1529,11 +1529,13 @@ class _$TripStopCopyWithImpl<$Res>
 
 /// Create a copy of TripStop
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? attractionId = null,Object? name = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? attractionId = null,Object? name = null,Object? latitude = freezed,Object? longitude = freezed,}) {
   return _then(TripStop(
 attractionId: null == attractionId ? _self.attractionId : attractionId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,
+as String,latitude: freezed == latitude ? _self.latitude : latitude // ignore: cast_nullable_to_non_nullable
+as double?,longitude: freezed == longitude ? _self.longitude : longitude // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 
@@ -1618,10 +1620,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String attractionId,  String name)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String attractionId,  String name,  double? latitude,  double? longitude)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TripStop() when $default != null:
-return $default(_that.attractionId,_that.name);case _:
+return $default(_that.attractionId,_that.name,_that.latitude,_that.longitude);case _:
   return orElse();
 
 }
@@ -1639,10 +1641,10 @@ return $default(_that.attractionId,_that.name);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String attractionId,  String name)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String attractionId,  String name,  double? latitude,  double? longitude)  $default,) {final _that = this;
 switch (_that) {
 case _TripStop():
-return $default(_that.attractionId,_that.name);case _:
+return $default(_that.attractionId,_that.name,_that.latitude,_that.longitude);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1659,10 +1661,10 @@ return $default(_that.attractionId,_that.name);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String attractionId,  String name)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String attractionId,  String name,  double? latitude,  double? longitude)?  $default,) {final _that = this;
 switch (_that) {
 case _TripStop() when $default != null:
-return $default(_that.attractionId,_that.name);case _:
+return $default(_that.attractionId,_that.name,_that.latitude,_that.longitude);case _:
   return null;
 
 }
@@ -1674,11 +1676,13 @@ return $default(_that.attractionId,_that.name);case _:
 
 
 class _TripStop implements TripStop {
-  const _TripStop({required this.attractionId, required this.name});
+  const _TripStop({required this.attractionId, required this.name, this.latitude, this.longitude});
   
 
 @override final  String attractionId;
 @override final  String name;
+@override final  double? latitude;
+@override final  double? longitude;
 
 /// Create a copy of TripStop
 /// with the given fields replaced by the non-null parameter values.
@@ -1690,18 +1694,18 @@ _$TripStopCopyWith<_TripStop> get copyWith => __$TripStopCopyWithImpl<_TripStop>
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripStop&&(identical(other.attractionId, attractionId) || other.attractionId == attractionId)&&(identical(other.name, name) || other.name == name));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TripStop&&(identical(other.attractionId, attractionId) || other.attractionId == attractionId)&&(identical(other.name, name) || other.name == name)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,attractionId,name);
+    return Object.hash(runtimeType,attractionId,name,latitude,longitude);
 }
 
 @override
 String toString() {
-    return 'TripStop(attractionId: $attractionId, name: $name)';
+    return 'TripStop(attractionId: $attractionId, name: $name, latitude: $latitude, longitude: $longitude)';
 }
 
 
@@ -1712,7 +1716,7 @@ abstract mixin class _$TripStopCopyWith<$Res> implements $TripStopCopyWith<$Res>
   factory _$TripStopCopyWith(_TripStop value, $Res Function(_TripStop) _then) = __$TripStopCopyWithImpl;
 @override @useResult
 $Res call({
- String attractionId, String name
+ String attractionId, String name, double? latitude, double? longitude
 });
 
 
@@ -1729,11 +1733,13 @@ class __$TripStopCopyWithImpl<$Res>
 
 /// Create a copy of TripStop
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? attractionId = null,Object? name = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? attractionId = null,Object? name = null,Object? latitude = freezed,Object? longitude = freezed,}) {
   return _then(_TripStop(
 attractionId: null == attractionId ? _self.attractionId : attractionId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,
+as String,latitude: freezed == latitude ? _self.latitude : latitude // ignore: cast_nullable_to_non_nullable
+as double?,longitude: freezed == longitude ? _self.longitude : longitude // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 
@@ -3458,7 +3464,8 @@ as List<ItineraryDay>,
 /// @nodoc
 mixin _$ItineraryDay {
 
- int get dayNumber; String get city; List<ItineraryStop> get stops;
+ int get dayNumber; String get city;/// e.g. "By train; weather: Light rain, 24°C" (the weather part is optional).
+ String? get notes; List<ItineraryStop> get stops;
 /// Create a copy of ItineraryDay
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -3472,20 +3479,20 @@ $ItineraryDayCopyWith<ItineraryDay> get copyWith => _$ItineraryDayCopyWithImpl<I
 @override
 bool operator ==(Object other) {
   final _this = this as ItineraryDay;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ItineraryDay&&(identical(other.dayNumber, _this.dayNumber) || other.dayNumber == _this.dayNumber)&&(identical(other.city, _this.city) || other.city == _this.city)&&const DeepCollectionEquality().equals(other.stops, _this.stops));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ItineraryDay&&(identical(other.dayNumber, _this.dayNumber) || other.dayNumber == _this.dayNumber)&&(identical(other.city, _this.city) || other.city == _this.city)&&(identical(other.notes, _this.notes) || other.notes == _this.notes)&&const DeepCollectionEquality().equals(other.stops, _this.stops));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as ItineraryDay;
-  return Object.hash(runtimeType,_this.dayNumber,_this.city,const DeepCollectionEquality().hash(_this.stops));
+  return Object.hash(runtimeType,_this.dayNumber,_this.city,_this.notes,const DeepCollectionEquality().hash(_this.stops));
 }
 
 @override
 String toString() {
   final _this = this as ItineraryDay;
-  return 'ItineraryDay(dayNumber: ${_this.dayNumber}, city: ${_this.city}, stops: ${_this.stops})';
+  return 'ItineraryDay(dayNumber: ${_this.dayNumber}, city: ${_this.city}, notes: ${_this.notes}, stops: ${_this.stops})';
 }
 
 
@@ -3496,7 +3503,7 @@ abstract mixin class $ItineraryDayCopyWith<$Res>  {
   factory $ItineraryDayCopyWith(ItineraryDay value, $Res Function(ItineraryDay) _then) = _$ItineraryDayCopyWithImpl;
 @useResult
 $Res call({
- int dayNumber, String city, List<ItineraryStop> stops
+ int dayNumber, String city, String? notes, List<ItineraryStop> stops
 });
 
 
@@ -3513,11 +3520,12 @@ class _$ItineraryDayCopyWithImpl<$Res>
 
 /// Create a copy of ItineraryDay
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? dayNumber = null,Object? city = null,Object? stops = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? dayNumber = null,Object? city = null,Object? notes = freezed,Object? stops = null,}) {
   return _then(ItineraryDay(
 dayNumber: null == dayNumber ? _self.dayNumber : dayNumber // ignore: cast_nullable_to_non_nullable
 as int,city: null == city ? _self.city : city // ignore: cast_nullable_to_non_nullable
-as String,stops: null == stops ? _self.stops : stops // ignore: cast_nullable_to_non_nullable
+as String,notes: freezed == notes ? _self.notes : notes // ignore: cast_nullable_to_non_nullable
+as String?,stops: null == stops ? _self.stops : stops // ignore: cast_nullable_to_non_nullable
 as List<ItineraryStop>,
   ));
 }
@@ -3603,10 +3611,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int dayNumber,  String city,  List<ItineraryStop> stops)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int dayNumber,  String city,  String? notes,  List<ItineraryStop> stops)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ItineraryDay() when $default != null:
-return $default(_that.dayNumber,_that.city,_that.stops);case _:
+return $default(_that.dayNumber,_that.city,_that.notes,_that.stops);case _:
   return orElse();
 
 }
@@ -3624,10 +3632,10 @@ return $default(_that.dayNumber,_that.city,_that.stops);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int dayNumber,  String city,  List<ItineraryStop> stops)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int dayNumber,  String city,  String? notes,  List<ItineraryStop> stops)  $default,) {final _that = this;
 switch (_that) {
 case _ItineraryDay():
-return $default(_that.dayNumber,_that.city,_that.stops);case _:
+return $default(_that.dayNumber,_that.city,_that.notes,_that.stops);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -3644,10 +3652,10 @@ return $default(_that.dayNumber,_that.city,_that.stops);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int dayNumber,  String city,  List<ItineraryStop> stops)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int dayNumber,  String city,  String? notes,  List<ItineraryStop> stops)?  $default,) {final _that = this;
 switch (_that) {
 case _ItineraryDay() when $default != null:
-return $default(_that.dayNumber,_that.city,_that.stops);case _:
+return $default(_that.dayNumber,_that.city,_that.notes,_that.stops);case _:
   return null;
 
 }
@@ -3659,11 +3667,13 @@ return $default(_that.dayNumber,_that.city,_that.stops);case _:
 @JsonSerializable()
 
 class _ItineraryDay implements ItineraryDay {
-  const _ItineraryDay({required this.dayNumber, required this.city, required  List<ItineraryStop> stops}): _stops = stops;
+  const _ItineraryDay({required this.dayNumber, required this.city, this.notes, required  List<ItineraryStop> stops}): _stops = stops;
   factory _ItineraryDay.fromJson(Map<String, dynamic> json) => _$ItineraryDayFromJson(json);
 
 @override final  int dayNumber;
 @override final  String city;
+/// e.g. "By train; weather: Light rain, 24°C" (the weather part is optional).
+@override final  String? notes;
  final  List<ItineraryStop> _stops;
 @override List<ItineraryStop> get stops {
   if (_stops is EqualUnmodifiableListView) return _stops;
@@ -3685,18 +3695,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ItineraryDay&&(identical(other.dayNumber, dayNumber) || other.dayNumber == dayNumber)&&(identical(other.city, city) || other.city == city)&&const DeepCollectionEquality().equals(other.stops, _stops));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ItineraryDay&&(identical(other.dayNumber, dayNumber) || other.dayNumber == dayNumber)&&(identical(other.city, city) || other.city == city)&&(identical(other.notes, notes) || other.notes == notes)&&const DeepCollectionEquality().equals(other.stops, _stops));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,dayNumber,city,const DeepCollectionEquality().hash(_stops));
+    return Object.hash(runtimeType,dayNumber,city,notes,const DeepCollectionEquality().hash(_stops));
 }
 
 @override
 String toString() {
-    return 'ItineraryDay(dayNumber: $dayNumber, city: $city, stops: $stops)';
+    return 'ItineraryDay(dayNumber: $dayNumber, city: $city, notes: $notes, stops: $stops)';
 }
 
 
@@ -3707,7 +3717,7 @@ abstract mixin class _$ItineraryDayCopyWith<$Res> implements $ItineraryDayCopyWi
   factory _$ItineraryDayCopyWith(_ItineraryDay value, $Res Function(_ItineraryDay) _then) = __$ItineraryDayCopyWithImpl;
 @override @useResult
 $Res call({
- int dayNumber, String city, List<ItineraryStop> stops
+ int dayNumber, String city, String? notes, List<ItineraryStop> stops
 });
 
 
@@ -3724,11 +3734,12 @@ class __$ItineraryDayCopyWithImpl<$Res>
 
 /// Create a copy of ItineraryDay
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? dayNumber = null,Object? city = null,Object? stops = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? dayNumber = null,Object? city = null,Object? notes = freezed,Object? stops = null,}) {
   return _then(_ItineraryDay(
 dayNumber: null == dayNumber ? _self.dayNumber : dayNumber // ignore: cast_nullable_to_non_nullable
 as int,city: null == city ? _self.city : city // ignore: cast_nullable_to_non_nullable
-as String,stops: null == stops ? _self._stops : stops // ignore: cast_nullable_to_non_nullable
+as String,notes: freezed == notes ? _self.notes : notes // ignore: cast_nullable_to_non_nullable
+as String?,stops: null == stops ? _self._stops : stops // ignore: cast_nullable_to_non_nullable
 as List<ItineraryStop>,
   ));
 }
@@ -3740,7 +3751,7 @@ as List<ItineraryStop>,
 /// @nodoc
 mixin _$ItineraryStop {
 
- String get attractionId; String get attractionName;
+ String get attractionId; String get attractionName; double? get latitude; double? get longitude;
 /// Create a copy of ItineraryStop
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -3754,20 +3765,20 @@ $ItineraryStopCopyWith<ItineraryStop> get copyWith => _$ItineraryStopCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as ItineraryStop;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ItineraryStop&&(identical(other.attractionId, _this.attractionId) || other.attractionId == _this.attractionId)&&(identical(other.attractionName, _this.attractionName) || other.attractionName == _this.attractionName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ItineraryStop&&(identical(other.attractionId, _this.attractionId) || other.attractionId == _this.attractionId)&&(identical(other.attractionName, _this.attractionName) || other.attractionName == _this.attractionName)&&(identical(other.latitude, _this.latitude) || other.latitude == _this.latitude)&&(identical(other.longitude, _this.longitude) || other.longitude == _this.longitude));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as ItineraryStop;
-  return Object.hash(runtimeType,_this.attractionId,_this.attractionName);
+  return Object.hash(runtimeType,_this.attractionId,_this.attractionName,_this.latitude,_this.longitude);
 }
 
 @override
 String toString() {
   final _this = this as ItineraryStop;
-  return 'ItineraryStop(attractionId: ${_this.attractionId}, attractionName: ${_this.attractionName})';
+  return 'ItineraryStop(attractionId: ${_this.attractionId}, attractionName: ${_this.attractionName}, latitude: ${_this.latitude}, longitude: ${_this.longitude})';
 }
 
 
@@ -3778,7 +3789,7 @@ abstract mixin class $ItineraryStopCopyWith<$Res>  {
   factory $ItineraryStopCopyWith(ItineraryStop value, $Res Function(ItineraryStop) _then) = _$ItineraryStopCopyWithImpl;
 @useResult
 $Res call({
- String attractionId, String attractionName
+ String attractionId, String attractionName, double? latitude, double? longitude
 });
 
 
@@ -3795,11 +3806,13 @@ class _$ItineraryStopCopyWithImpl<$Res>
 
 /// Create a copy of ItineraryStop
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? attractionId = null,Object? attractionName = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? attractionId = null,Object? attractionName = null,Object? latitude = freezed,Object? longitude = freezed,}) {
   return _then(ItineraryStop(
 attractionId: null == attractionId ? _self.attractionId : attractionId // ignore: cast_nullable_to_non_nullable
 as String,attractionName: null == attractionName ? _self.attractionName : attractionName // ignore: cast_nullable_to_non_nullable
-as String,
+as String,latitude: freezed == latitude ? _self.latitude : latitude // ignore: cast_nullable_to_non_nullable
+as double?,longitude: freezed == longitude ? _self.longitude : longitude // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 
@@ -3884,10 +3897,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String attractionId,  String attractionName)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String attractionId,  String attractionName,  double? latitude,  double? longitude)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ItineraryStop() when $default != null:
-return $default(_that.attractionId,_that.attractionName);case _:
+return $default(_that.attractionId,_that.attractionName,_that.latitude,_that.longitude);case _:
   return orElse();
 
 }
@@ -3905,10 +3918,10 @@ return $default(_that.attractionId,_that.attractionName);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String attractionId,  String attractionName)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String attractionId,  String attractionName,  double? latitude,  double? longitude)  $default,) {final _that = this;
 switch (_that) {
 case _ItineraryStop():
-return $default(_that.attractionId,_that.attractionName);case _:
+return $default(_that.attractionId,_that.attractionName,_that.latitude,_that.longitude);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -3925,10 +3938,10 @@ return $default(_that.attractionId,_that.attractionName);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String attractionId,  String attractionName)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String attractionId,  String attractionName,  double? latitude,  double? longitude)?  $default,) {final _that = this;
 switch (_that) {
 case _ItineraryStop() when $default != null:
-return $default(_that.attractionId,_that.attractionName);case _:
+return $default(_that.attractionId,_that.attractionName,_that.latitude,_that.longitude);case _:
   return null;
 
 }
@@ -3940,11 +3953,13 @@ return $default(_that.attractionId,_that.attractionName);case _:
 @JsonSerializable()
 
 class _ItineraryStop implements ItineraryStop {
-  const _ItineraryStop({required this.attractionId, required this.attractionName});
+  const _ItineraryStop({required this.attractionId, required this.attractionName, this.latitude, this.longitude});
   factory _ItineraryStop.fromJson(Map<String, dynamic> json) => _$ItineraryStopFromJson(json);
 
 @override final  String attractionId;
 @override final  String attractionName;
+@override final  double? latitude;
+@override final  double? longitude;
 
 /// Create a copy of ItineraryStop
 /// with the given fields replaced by the non-null parameter values.
@@ -3959,18 +3974,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ItineraryStop&&(identical(other.attractionId, attractionId) || other.attractionId == attractionId)&&(identical(other.attractionName, attractionName) || other.attractionName == attractionName));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ItineraryStop&&(identical(other.attractionId, attractionId) || other.attractionId == attractionId)&&(identical(other.attractionName, attractionName) || other.attractionName == attractionName)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,attractionId,attractionName);
+    return Object.hash(runtimeType,attractionId,attractionName,latitude,longitude);
 }
 
 @override
 String toString() {
-    return 'ItineraryStop(attractionId: $attractionId, attractionName: $attractionName)';
+    return 'ItineraryStop(attractionId: $attractionId, attractionName: $attractionName, latitude: $latitude, longitude: $longitude)';
 }
 
 
@@ -3981,7 +3996,7 @@ abstract mixin class _$ItineraryStopCopyWith<$Res> implements $ItineraryStopCopy
   factory _$ItineraryStopCopyWith(_ItineraryStop value, $Res Function(_ItineraryStop) _then) = __$ItineraryStopCopyWithImpl;
 @override @useResult
 $Res call({
- String attractionId, String attractionName
+ String attractionId, String attractionName, double? latitude, double? longitude
 });
 
 
@@ -3998,11 +4013,13 @@ class __$ItineraryStopCopyWithImpl<$Res>
 
 /// Create a copy of ItineraryStop
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? attractionId = null,Object? attractionName = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? attractionId = null,Object? attractionName = null,Object? latitude = freezed,Object? longitude = freezed,}) {
   return _then(_ItineraryStop(
 attractionId: null == attractionId ? _self.attractionId : attractionId // ignore: cast_nullable_to_non_nullable
 as String,attractionName: null == attractionName ? _self.attractionName : attractionName // ignore: cast_nullable_to_non_nullable
-as String,
+as String,latitude: freezed == latitude ? _self.latitude : latitude // ignore: cast_nullable_to_non_nullable
+as double?,longitude: freezed == longitude ? _self.longitude : longitude // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 

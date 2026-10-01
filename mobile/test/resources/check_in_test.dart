@@ -54,7 +54,7 @@ Future<void> locateAt(
 
 FilledButton checkInButton(WidgetTester tester) => tester.widget<FilledButton>(
   find.descendant(
-    of: find.bySemanticsLabel('Check in'),
+    of: find.bySemanticsLabel('Check in by GPS'),
     matching: find.byType(FilledButton),
   ),
 );
@@ -97,7 +97,7 @@ void main() {
           );
       await locateAt(tester, 120, api: api);
 
-      await tester.tap(find.text('Check in'));
+      await tester.tap(find.text('Check in by GPS'));
       await tester.pumpAndSettle();
 
       final body =

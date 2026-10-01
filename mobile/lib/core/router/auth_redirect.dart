@@ -30,7 +30,10 @@ String? authRedirect(AsyncValue<AppUser?> auth, String location) {
     return home;
   }
 
-  final touristArea = location.startsWith(Routes.trips);
+  final touristArea =
+      location.startsWith(Routes.home) ||
+      location.startsWith(Routes.packages) ||
+      location.startsWith(Routes.trips);
   final guideArea =
       location.startsWith(Routes.schedule) || location.startsWith(Routes.scan);
   if (user.role == 'Tourist' && guideArea) return home;

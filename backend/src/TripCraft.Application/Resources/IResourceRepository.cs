@@ -12,6 +12,7 @@ public interface IResourceRepository
     IQueryable<ResourceHold> Holds();    // every status
     IQueryable<StopCheckIn> CheckIns();
     IQueryable<GuideChangeRequest> GuideChangeRequests();
+    IQueryable<GuideRating> GuideRatings();
     Task<GuideChangeRequest?> FindGuideChangeRequestAsync(Guid id, CancellationToken ct); // tracked
 
     Task<Guide?> FindGuideAsync(Guid id, CancellationToken ct);       // tracked

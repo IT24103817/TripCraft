@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tripcraft_mobile/core/api/api_client.dart';
 import 'package:tripcraft_mobile/core/api/api_providers.dart';
 import 'package:tripcraft_mobile/core/storage/session_storage.dart';
 import 'package:tripcraft_mobile/shared/theme/app_theme.dart';
+import 'package:tripcraft_mobile/shared/utils/clock.dart';
 
 class MockApiClient extends Mock implements ApiClient {}
 
@@ -43,6 +45,16 @@ Future<void> pumpScreen(
     ),
   );
 }
+
+/// Fixes "now" for screens that depend on the date or time (greeting, "today's trip", "day N of M").
+Override fixedClock(DateTime now) => clockProvider.overrideWithValue(() => now);
+
+/// The first vertical list on screen (a tab view's pages scroll sideways, so `Scrollable.first` is not enough).
+Finder verticalScrollable() => find
+    .byWidgetPredicate(
+      (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+    )
+    .first;
 
 Map<String, dynamic> pagedJson(List<Map<String, dynamic>> items) => {
   'items': items,

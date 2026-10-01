@@ -51,7 +51,7 @@ final class NotificationsPollerProvider
 }
 
 String _$notificationsPollerHash() =>
-    r'13a26d28602d2dcc574f2c462c9e68c1cc9ffcc0';
+    r'b0bef588b316437fbb57b776370af70c4c25e70d';
 
 /// Polls GET /api/notifications/mine every 30 s while the app is in the foreground (the shell starts and stops it)
 /// and shows a phone notification for every new unread item, once: the ids already shown are kept in storage.

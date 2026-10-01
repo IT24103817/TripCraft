@@ -10,6 +10,7 @@ import 'package:tripcraft_mobile/features/trips/presentation/my_trips_screen.dar
 import 'package:tripcraft_mobile/features/trips/presentation/trip_detail_screen.dart';
 
 import '../helpers.dart';
+import 'trip_fakes.dart';
 
 /// PLAN.md section 11, Flutter: "navigation to itinerary" — tapping a trip opens its itinerary.
 void main() {
@@ -35,6 +36,11 @@ void main() {
       when(() => api.get('/api/trip-requests/trip-1/cancellation'))
           .thenAnswer((_) async => cancellationJson());
       when(() => api.get('/api/trips/trip-1/vouchers'))
+          .thenAnswer((_) async => <Object>[]);
+      when(() => api.get('/api/trip-requests/trip-1/assignment')).thenAnswer(
+        (_) async => {'tripRequestId': 'trip-1', 'guideName': 'Nimal Perera'},
+      );
+      when(() => api.get('/api/trip-requests/trip-1/history'))
           .thenAnswer((_) async => <Object>[]);
       when(() => api.get('/api/trip-requests/trip-1/itinerary')).thenAnswer(
         (_) async => {
@@ -81,11 +87,8 @@ void main() {
 
       expect(router.state.matchedLocation, '/trips/trip-1');
       expect(find.text('Trip request'), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.text('Day 1 — Kandy'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
+      await openTab(tester, 'Itinerary');
+      expect(find.text('Day 1 — Kandy'), findsOneWidget);
       expect(find.text('• Temple of the Sacred Tooth Relic'), findsOneWidget);
     },
   );

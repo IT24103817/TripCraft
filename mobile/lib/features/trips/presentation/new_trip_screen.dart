@@ -16,14 +16,20 @@ import '../application/trips_providers.dart';
 import '../data/trip_models.dart';
 import '../data/trips_repository.dart';
 import 'city_picker.dart';
+import 'travellers_field.dart';
 import 'trip_form_rules.dart';
+import 'trip_prefill.dart';
 
 /// PLAN.md section 6, step 1: the tourist describes the trip, picks dates, the cities to visit (from the
 /// API's list), travellers, budget and preferences, adds a passport photo, and submits. Then planning starts.
+/// Opened from a package ("Customize with the planner") the form starts filled in with [prefill].
 class NewTripScreen extends ConsumerStatefulWidget {
-  const NewTripScreen({super.key, this.imagePicker, this.today});
+  const NewTripScreen({super.key, this.imagePicker, this.today, this.prefill});
 
   final ImagePicker? imagePicker;
+
+  /// The package the tourist is customising, if any.
+  final TripPrefill? prefill;
 
   /// Injected by tests so "in the past" is stable.
   final DateTime? today;
@@ -56,6 +62,15 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
   @override
   void initState() {
     super.initState();
+    final prefill = widget.prefill;
+    if (prefill != null) {
+      _objective.text = prefill.objective;
+      _cities = [...prefill.cities];
+      _preferences.addAll(prefill.preferences);
+      if (prefill.budgetUsd != null) {
+        _budget.text = prefill.budgetUsd!.toStringAsFixed(0);
+      }
+    }
     // Pre-fill the nationality given at registration.
     ref.read(authRepositoryProvider).savedNationality().then((n) {
       if (mounted && n != null && _nationality.text.isEmpty) {
@@ -72,12 +87,30 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
     super.dispose();
   }
 
-  void _changePax(int delta) {
-    final next = ((int.tryParse(_pax.text) ?? 0) + delta).clamp(
-      0,
-      TripFormRules.maxPax,
+  /// From a package, the first tap picks only the start date and the end date follows from the package length.
+  /// Without a package (or to change the dates later) the tourist picks the whole range.
+  Future<DateTimeRange?> _pickDates() async {
+    final days = widget.prefill?.days;
+    if (days != null && _dates == null) {
+      final start = await showDatePicker(
+        context: context,
+        helpText: 'Start date ($days-day package)',
+        firstDate: _today,
+        lastDate: _today.add(const Duration(days: 365)),
+        initialDate: _today,
+      );
+      if (start == null) return null;
+      return DateTimeRange(
+        start: start,
+        end: start.add(Duration(days: days - 1)),
+      );
+    }
+    return showDateRangePicker(
+      context: context,
+      firstDate: _today,
+      lastDate: _today.add(const Duration(days: 365)),
+      initialDateRange: _dates,
     );
-    setState(() => _pax.text = '$next');
   }
 
   Future<void> _pickPhoto(ImageSource source) async {
@@ -153,7 +186,9 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New trip request'),
+        title: Text(
+          widget.prefill == null ? 'New trip request' : 'Customize your trip',
+        ),
         actions: const [ProfileButton()],
       ),
       body: Form(
@@ -182,12 +217,7 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
                   ),
                   child: InkWell(
                     onTap: () async {
-                      final picked = await showDateRangePicker(
-                        context: context,
-                        firstDate: _today,
-                        lastDate: _today.add(const Duration(days: 365)),
-                        initialDateRange: _dates,
-                      );
+                      final picked = await _pickDates();
                       if (picked != null) {
                         setState(() => _dates = picked);
                         field.didChange(picked);
@@ -200,7 +230,9 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
                         Expanded(
                           child: Text(
                             _dates == null
-                                ? 'Choose dates'
+                                ? (widget.prefill == null
+                                      ? 'Choose dates'
+                                      : 'Choose a start date')
                                 : '${formatDate(_dates!.start.toIso8601String())} – ${formatDate(_dates!.end.toIso8601String())}',
                           ),
                         ),
@@ -226,32 +258,7 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  IconButton.outlined(
-                    tooltip: 'One traveller fewer',
-                    onPressed: () => _changePax(-1),
-                    icon: const Icon(Icons.remove),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: AppTextField(
-                      label: 'Travellers',
-                      controller: _pax,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      validator: TripFormRules.pax,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.outlined(
-                    tooltip: 'One traveller more',
-                    onPressed: () => _changePax(1),
-                    icon: const Icon(Icons.add),
-                  ),
-                ],
-              ),
+              TravellersField(controller: _pax),
               const SizedBox(height: 12),
               AppTextField(
                 label: 'Budget (USD)',

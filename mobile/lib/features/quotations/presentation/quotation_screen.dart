@@ -6,16 +6,14 @@ import '../../../shared/utils/formatters.dart';
 import '../../../shared/widgets/async_view.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/money_text.dart';
-import '../../../shared/widgets/reason_dialog.dart';
 import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_chip.dart';
-import '../../../shared/utils/friendly_error.dart';
 import '../application/quotation_providers.dart';
-import '../data/quotations_repository.dart';
 import '../data/quotation_models.dart';
+import 'quotation_actions.dart';
 
 /// The quotation for a trip: lines, subtotal, margin and total in LKR and USD, with the FX rate.
-/// While the trip is QuotationSent the tourist can accept it, or decline it with a reason.
+/// While the trip is QuotationSent the tourist can accept it, or decline it with a reason (asked in a bottom sheet).
 class QuotationScreen extends ConsumerWidget {
   const QuotationScreen({super.key, required this.tripId});
 
@@ -25,39 +23,10 @@ class QuotationScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(quotationViewProvider(tripId));
 
-    /// Runs accept or decline, shows [success] (or the API's message), and reloads the quotation.
-    Future<void> decide(
-      Future<QuotationDecision> Function() call,
-      String success,
-    ) async {
-      final messenger = ScaffoldMessenger.of(context);
-      try {
-        await call();
-        messenger.showSnackBar(SnackBar(content: Text(success)));
-      } catch (error) {
-        messenger.showSnackBar(SnackBar(content: Text(friendlyMessage(error))));
-      }
+    /// Runs accept or decline (they show their own snackbar), then reloads the quotation.
+    Future<void> decide(Future<bool> Function() call) async {
+      await call();
       if (context.mounted) ref.invalidate(quotationViewProvider(tripId));
-    }
-
-    Future<void> accept(String quotationId) => decide(
-      () => ref.read(quotationsRepositoryProvider).accept(quotationId),
-      'Quotation accepted. The operator will now confirm your trip.',
-    );
-
-    Future<void> decline(String quotationId) async {
-      final reason = await showReasonDialog(
-        context,
-        title: 'Decline this quotation?',
-        message: 'Tell the operator what you would like changed. They will send you a new version.',
-        confirmLabel: 'Decline',
-      );
-      if (reason == null) return;
-      await decide(
-        () =>
-            ref.read(quotationsRepositoryProvider).decline(quotationId, reason),
-        'Quotation declined. The operator will prepare a new version.',
-      );
     }
 
     return Scaffold(
@@ -81,8 +50,12 @@ class QuotationScreen extends ConsumerWidget {
               tripStatus: v.tripStatus,
               quotationStatus: v.quotationStatus,
               acceptedAt: v.acceptedAt,
-              onAccept: canDecide ? () => accept(id) : null,
-              onDecline: canDecide ? () => decline(id) : null,
+              onAccept: canDecide
+                  ? () => decide(() => acceptQuotation(context, ref, id))
+                  : null,
+              onDecline: canDecide
+                  ? () => decide(() => declineQuotation(context, ref, id))
+                  : null,
             );
           },
         ),

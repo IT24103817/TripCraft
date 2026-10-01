@@ -38,7 +38,7 @@ void main() {
     });
 
     test('each role lands on its own home', () {
-      expect(authRedirect(signedIn('Tourist'), '/login'), '/trips');
+      expect(authRedirect(signedIn('Tourist'), '/login'), '/home');
       expect(authRedirect(signedIn('Guide'), '/login'), '/schedule');
       expect(
         authRedirect(signedIn('OperationsManager'), '/login'),
@@ -48,9 +48,12 @@ void main() {
     });
 
     test('roles cannot open each other\'s areas', () {
-      expect(authRedirect(signedIn('Tourist'), '/schedule'), '/trips');
+      expect(authRedirect(signedIn('Tourist'), '/schedule'), '/home');
       expect(authRedirect(signedIn('Guide'), '/trips/abc'), '/schedule');
+      expect(authRedirect(signedIn('Guide'), '/home'), '/schedule');
+      expect(authRedirect(signedIn('Guide'), '/packages/p1'), '/schedule');
       expect(authRedirect(signedIn('Tourist'), '/trips/abc'), isNull);
+      expect(authRedirect(signedIn('Tourist'), '/packages/p1'), isNull);
     });
 
     test('both tourists and guides can open their alerts', () {
@@ -71,7 +74,7 @@ void main() {
 
     test('after the change, /change-password goes home', () {
       expect(authRedirect(signedIn('Guide'), '/change-password'), '/schedule');
-      expect(authRedirect(signedIn('Tourist'), '/change-password'), '/trips');
+      expect(authRedirect(signedIn('Tourist'), '/change-password'), '/home');
     });
   });
 

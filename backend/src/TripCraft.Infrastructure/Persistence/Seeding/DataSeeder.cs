@@ -29,6 +29,7 @@ public class DataSeeder(AppDbContext db, IPasswordHasher<User> passwordHasher, I
     {
         await SeedUsersAsync(ct);
         await TripsSeeder.SeedAsync(db, logger, ct);
+        await TripTemplatesSeeder.SeedAsync(db, logger, ct);
         await ResourcesSeeder.SeedAsync(db, logger, ct);
         await QuotationsSeeder.SeedAsync(db, logger, ct);
         await WorkflowsSeeder.SeedAsync(db, logger, ct);

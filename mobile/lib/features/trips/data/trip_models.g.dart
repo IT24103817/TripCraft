@@ -186,6 +186,7 @@ _ItineraryDay _$ItineraryDayFromJson(Map<String, dynamic> json) =>
     _ItineraryDay(
       dayNumber: (json['dayNumber'] as num).toInt(),
       city: json['city'] as String,
+      notes: json['notes'] as String?,
       stops: (json['stops'] as List<dynamic>)
           .map((e) => ItineraryStop.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -195,6 +196,7 @@ Map<String, dynamic> _$ItineraryDayToJson(_ItineraryDay instance) =>
     <String, dynamic>{
       'dayNumber': instance.dayNumber,
       'city': instance.city,
+      'notes': instance.notes,
       'stops': instance.stops,
     };
 
@@ -202,12 +204,16 @@ _ItineraryStop _$ItineraryStopFromJson(Map<String, dynamic> json) =>
     _ItineraryStop(
       attractionId: json['attractionId'] as String,
       attractionName: json['attractionName'] as String,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
     );
 
 Map<String, dynamic> _$ItineraryStopToJson(_ItineraryStop instance) =>
     <String, dynamic>{
       'attractionId': instance.attractionId,
       'attractionName': instance.attractionName,
+      'latitude': instance.latitude,
+      'longitude': instance.longitude,
     };
 
 _TripHistoryEntry _$TripHistoryEntryFromJson(Map<String, dynamic> json) =>

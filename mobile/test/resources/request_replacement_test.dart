@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tripcraft_mobile/core/api/user_facing_exception.dart';
-import 'package:tripcraft_mobile/features/resources/presentation/schedule_screen.dart';
+import 'package:tripcraft_mobile/features/resources/presentation/guide_home_screen.dart';
 
 import '../helpers.dart';
 
@@ -29,12 +29,18 @@ void main() {
     api = MockApiClient();
     when(() => api.get('/api/guides/me/schedule'))
         .thenAnswer((_) async => scheduleWith(status));
-    await pumpScreen(tester, const ScheduleScreen(), api: api);
+    // Before the trip starts: a Confirmed trip is the guide's "Next trip".
+    await pumpScreen(
+      tester,
+      const GuideHomeScreen(),
+      api: api,
+      overrides: [fixedClock(DateTime(2026, 10, 2, 9))],
+    );
     await tester.pumpAndSettle();
   }
 
   Future<void> requestWithReason(WidgetTester tester, String reason) async {
-    await tester.tap(find.text('Request replacement'));
+    await tester.tap(find.text('Request a change'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Reason'),
@@ -56,7 +62,7 @@ void main() {
     ).thenAnswer((_) async => <String, dynamic>{});
 
     // An empty reason is not sent.
-    await tester.tap(find.text('Request replacement'));
+    await tester.tap(find.text('Request a change'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Send request'));
     await tester.pumpAndSettle();
@@ -100,11 +106,9 @@ void main() {
     );
   });
 
-  testWidgets('only a Confirmed trip offers Request replacement', (
-    tester,
-  ) async {
+  testWidgets('only a Confirmed trip offers Request a change', (tester) async {
     await pumpSchedule(tester, 'InProgress');
 
-    expect(find.text('Request replacement'), findsNothing);
+    expect(find.text('Request a change'), findsNothing);
   });
 }

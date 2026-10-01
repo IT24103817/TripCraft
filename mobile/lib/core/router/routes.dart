@@ -14,6 +14,9 @@ class Routes {
   static const alerts = '/alerts';
 
   // Tourist
+  static const home = '/home';
+  static const packages = '/packages';
+  static String package(String templateId) => '/packages/$templateId';
   static const trips = '/trips';
   static const newTrip = '/trips/new';
   static String trip(String id) => '/trips/$id';
@@ -32,7 +35,7 @@ class Routes {
 
 /// Landing page per role (PLAN.md section 2): staff use the React app, not this one.
 String homeForRole(String role) => switch (role) {
-  'Tourist' => Routes.trips,
+  'Tourist' => Routes.home,
   'Guide' => Routes.schedule,
   _ => Routes.notSupported,
 };

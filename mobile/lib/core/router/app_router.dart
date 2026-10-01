@@ -3,13 +3,17 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../features/quotations/presentation/notifications_screen.dart';
+import '../../features/quotations/presentation/quotation_decision_card.dart';
 import '../../features/quotations/presentation/quotation_screen.dart';
+import '../../features/resources/presentation/guide_home_screen.dart';
 import '../../features/resources/presentation/qr_scan_screen.dart';
-import '../../features/resources/presentation/schedule_screen.dart';
 import '../../features/resources/presentation/trip_day_screen.dart';
 import '../../features/trips/presentation/my_trips_screen.dart';
 import '../../features/trips/presentation/new_trip_screen.dart';
+import '../../features/trips/presentation/package_detail_screen.dart';
+import '../../features/trips/presentation/tourist_home_screen.dart';
 import '../../features/trips/presentation/trip_detail_screen.dart';
+import '../../features/trips/presentation/trip_prefill.dart';
 import '../auth/auth_notifier.dart';
 import '../auth/change_password_screen.dart';
 import '../auth/login_screen.dart';
@@ -50,15 +54,29 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state, child) =>
             RoleShell(location: state.matchedLocation, child: child),
         routes: [
-          GoRoute(path: Routes.trips, builder: (_, _) => const MyTripsScreen()),
           GoRoute(
-            path: Routes.newTrip,
-            builder: (_, _) => const NewTripScreen(),
+            path: Routes.home,
+            builder: (_, _) => const TouristHomeScreen(),
           ),
           GoRoute(
-            path: '/trips/:id',
+            path: '/packages/:id',
             builder: (_, s) =>
-                TripDetailScreen(tripId: s.pathParameters['id']!),
+                PackageDetailScreen(templateId: s.pathParameters['id']!),
+          ),
+          GoRoute(path: Routes.trips, builder: (_, _) => const MyTripsScreen()),
+          // "Customize with the planner" passes the package as a TripPrefill in `extra`.
+          GoRoute(
+            path: Routes.newTrip,
+            builder: (_, s) => NewTripScreen(prefill: s.extra as TripPrefill?),
+          ),
+          // The quotations feature's Accept / Decline panel is plugged into the trip screen here.
+          GoRoute(
+            path: '/trips/:id',
+            builder: (_, s) => TripDetailScreen(
+              tripId: s.pathParameters['id']!,
+              decisionPanel: (tripId, onDecided) =>
+                  QuotationDecisionCard(tripId: tripId, onDecided: onDecided),
+            ),
           ),
           GoRoute(
             path: '/trips/:id/quotation',
@@ -70,7 +88,7 @@ GoRouter appRouter(Ref ref) {
           ),
           GoRoute(
             path: Routes.schedule,
-            builder: (_, _) => const ScheduleScreen(),
+            builder: (_, _) => const GuideHomeScreen(),
           ),
           GoRoute(
             path: Routes.tripDay,

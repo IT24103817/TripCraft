@@ -39,6 +39,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Hero photos of the mood packages, one per template slug (assets/packages/{slug}.jpg).
+  assets:
+    - assets/packages/
 
 # Launcher icon: `dart run flutter_launcher_icons` regenerates the Android mipmaps from assets/icon.png.
 flutter_launcher_icons:

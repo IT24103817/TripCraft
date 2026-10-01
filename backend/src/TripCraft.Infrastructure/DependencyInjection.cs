@@ -10,6 +10,7 @@ using TripCraft.Application.Quotations;
 using TripCraft.Application.Quotations.Reports;
 using TripCraft.Application.Resources;
 using TripCraft.Application.Trips;
+using TripCraft.Application.Trips.Templates;
 using TripCraft.Application.Vouchers;
 using TripCraft.Application.Workflows;
 using TripCraft.Infrastructure.External;
@@ -51,6 +52,7 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ITripRequestRepository, TripRequestRepository>();
         services.AddScoped<IAttractionRepository, AttractionRepository>();
+        services.AddScoped<ITripTemplateRepository, TripTemplateRepository>();
         services.AddSingleton<IPassportPhotoStore, LocalPassportPhotoStore>();
         services.AddScoped<IAgentWorkflowRepository, AgentWorkflowRepository>();
         services.AddScoped<IResourceRepository, ResourceRepository>();

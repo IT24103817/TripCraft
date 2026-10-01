@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../utils/validators.dart';
+
 /// Asks for a required reason (cancel a trip, decline a quotation, ask for a replacement guide).
 /// Returns the trimmed reason, or null when the user backs out.
 Future<String?> showReasonDialog(
@@ -49,14 +51,6 @@ class _ReasonDialogState extends State<_ReasonDialog> {
     super.dispose();
   }
 
-  /// The API accepts 1–500 characters (FluentValidation on the request).
-  static String? _validate(String? value) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return 'Please give a reason.';
-    if (text.length > 500) return 'Please keep it under 500 characters.';
-    return null;
-  }
-
   void _confirm() {
     if (!_form.currentState!.validate()) return;
     Navigator.of(context).pop(_reason.text.trim());
@@ -78,7 +72,7 @@ class _ReasonDialogState extends State<_ReasonDialog> {
               controller: _reason,
               maxLines: 3,
               autofocus: true,
-              validator: _validate,
+              validator: Validators.reason,
               decoration: InputDecoration(labelText: widget.fieldLabel),
             ),
           ],

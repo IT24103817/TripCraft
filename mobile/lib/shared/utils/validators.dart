@@ -7,6 +7,14 @@ class Validators {
   static String? required(String? value, String field) =>
       (value == null || value.trim().isEmpty) ? '$field is required.' : null;
 
+  /// A reason for cancelling, declining or asking for a change. The API accepts 1–500 characters.
+  static String? reason(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Please give a reason.';
+    if (text.length > 500) return 'Please keep it under 500 characters.';
+    return null;
+  }
+
   static String? email(String? value) {
     if (value == null || value.trim().isEmpty) return 'Email is required.';
     return _email.hasMatch(value.trim())

@@ -1,5 +1,3 @@
-using TripCraft.Application.Common.Notifications;
-using TripCraft.Application.Vouchers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
@@ -7,10 +5,12 @@ using TripCraft.Application.Common;
 using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Entities;
 using TripCraft.Application.Common.Exceptions;
+using TripCraft.Application.Common.Notifications;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Quotations;
 using TripCraft.Application.Resources;
 using TripCraft.Application.Trips;
+using TripCraft.Application.Vouchers;
 using TripCraft.Application.Workflows;
 using TripCraft.Application.Workflows.External;
 
@@ -56,6 +56,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<EmailMessage> EmailOutbox => Set<EmailMessage>();
     public DbSet<Voucher> Vouchers => Set<Voucher>();
     public DbSet<GuideChangeRequest> GuideChangeRequests => Set<GuideChangeRequest>();
+    public DbSet<TripTemplate> TripTemplates => Set<TripTemplate>();
+    public DbSet<GuideRating> GuideRatings => Set<GuideRating>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

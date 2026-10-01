@@ -6,15 +6,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/profile_button.dart';
 import '../../../core/router/routes.dart';
-import '../../../shared/utils/formatters.dart';
+import '../../../shared/utils/reload.dart';
 import '../../../shared/utils/statuses.dart';
 import '../../../shared/widgets/async_view.dart';
 import '../../../shared/widgets/empty_state.dart';
-import '../../../shared/widgets/status_chip.dart';
 import '../application/trips_providers.dart';
 import '../data/trip_models.dart';
+import 'trip_card.dart';
 
 /// The tourist's trip requests: search, status filter, pull to refresh and the four screen states.
+/// Each card shows the status and what happens next.
 class MyTripsScreen extends ConsumerStatefulWidget {
   const MyTripsScreen({super.key});
 
@@ -83,7 +84,7 @@ class _MyTripsScreenState extends ConsumerState<MyTripsScreen> {
           ),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: () => ref.refresh(provider.future),
+              onRefresh: () => waitForReload(ref.refresh(provider.future)),
               child: AsyncView<List<TripRequest>>(
                 value: trips,
                 onRetry: () => ref.invalidate(provider),
@@ -108,36 +109,12 @@ class _MyTripsScreenState extends ConsumerState<MyTripsScreen> {
                   padding: const EdgeInsets.all(16),
                   itemCount: items.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (_, i) => _TripTile(trip: items[i]),
+                  itemBuilder: (_, i) => TripCard(trip: items[i]),
                 ),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _TripTile extends StatelessWidget {
-  const _TripTile({required this.trip});
-
-  final TripRequest trip;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        title: Text(
-          trip.objective,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text(
-          '${formatDate(trip.startDate)} – ${formatDate(trip.endDate)} · ${trip.pax} travellers',
-        ),
-        trailing: StatusChip(status: trip.status),
-        onTap: () => context.push(Routes.trip(trip.id)),
       ),
     );
   }

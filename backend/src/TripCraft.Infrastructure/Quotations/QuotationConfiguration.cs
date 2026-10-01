@@ -29,5 +29,6 @@ public class QuotationConfiguration : IEntityTypeConfiguration<Quotation>
         builder.HasIndex(q => new { q.TripRequestId, q.Version }).IsUnique();
         // The quotation list filters by status and sorts newest first.
         builder.HasIndex(q => new { q.Status, q.CreatedAt });
+        builder.Property(q => q.DepositPct).HasColumnType("numeric(5,2)").HasDefaultValue(30m);
     }
 }

@@ -56,6 +56,7 @@ public class HotelService(IResourceRepository resources, IAuditLogger audit, IUn
     {
         var hotel = new Hotel();
         Apply(hotel, request);
+        hotel.RoomTypes = request.RoomTypes.Select(row => ToRoomType(hotel.Id, row)).ToList();
         resources.Add(hotel);
         audit.Record(user.Id, "HotelCreated", nameof(Hotel), hotel.Id, null, HotelDto.FromEntity(hotel));
         await unitOfWork.SaveChangesAsync(ct);
@@ -67,6 +68,7 @@ public class HotelService(IResourceRepository resources, IAuditLogger audit, IUn
         var hotel = await LoadAsync(id, ct);
         var before = HotelDto.FromEntity(hotel);
         Apply(hotel, request);
+        await SyncRoomTypesAsync(hotel, request.RoomTypes, ct);
         audit.Record(user.Id, "HotelUpdated", nameof(Hotel), hotel.Id, before, HotelDto.FromEntity(hotel));
         await unitOfWork.SaveChangesAsync(ct);
         return HotelDto.FromEntity(hotel);
@@ -105,15 +107,7 @@ public class HotelService(IResourceRepository resources, IAuditLogger audit, IUn
                        ?? throw new NotFoundException("Room type not found.");
         EnsureUniqueRoomTypeName(hotel, request.Name, roomTypeId);
 
-        // Business rule: never fewer rooms than are already held on any upcoming night.
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var busiestNight = await resources.Holds()
-            .Where(h => h.ResourceType == ResourceType.Room && h.ResourceId == roomTypeId
-                        && h.Status == HoldStatus.Held && h.ToDate >= today)
-            .GroupBy(h => h.FromDate).Select(g => g.Sum(h => h.Quantity))
-            .OrderByDescending(n => n).FirstOrDefaultAsync(ct);
-        if (request.TotalRooms < busiestNight)
-            throw new ConflictException($"{busiestNight} rooms of this type are already held on one night; total cannot go below that.");
+        await EnsureTotalCoversHoldsAsync(roomTypeId, request.TotalRooms, ct);
 
         var before = RoomTypeDto.FromEntity(roomType);
         Apply(roomType, request);
@@ -127,14 +121,66 @@ public class HotelService(IResourceRepository resources, IAuditLogger audit, IUn
         var hotel = await LoadAsync(hotelId, ct);
         var roomType = hotel.RoomTypes.FirstOrDefault(r => r.Id == roomTypeId)
                        ?? throw new NotFoundException("Room type not found.");
-        await EnsureNoUpcomingHoldsAsync(roomTypeId, ct);
-        if (await resources.Holds().AnyAsync(h => h.ResourceType == ResourceType.Room && h.ResourceId == roomTypeId, ct))
-            throw new ConflictException("This room type has booking history; set the hotel inactive instead of deleting it.");
+        await EnsureCanDeleteAsync(roomTypeId, ct);
 
         hotel.RoomTypes.Remove(roomType);
         resources.Remove(roomType);
         audit.Record(user.Id, "RoomTypeDeleted", nameof(RoomType), roomType.Id, RoomTypeDto.FromEntity(roomType), null);
         await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// The hotel form's room-types table (v1.1): rows with an id update, rows without one are added, missing ones are
+    /// deleted — each with the same rules as the single room-type endpoints.
+    /// </summary>
+    private async Task SyncRoomTypesAsync(Hotel hotel, List<HotelRoomTypeRow> rows, CancellationToken ct)
+    {
+        foreach (var removed in hotel.RoomTypes.Where(r => rows.All(row => row.Id != r.Id)).ToList())
+        {
+            await EnsureCanDeleteAsync(removed.Id, ct);
+            hotel.RoomTypes.Remove(removed);
+            resources.Remove(removed);
+        }
+        foreach (var row in rows)
+        {
+            var existing = row.Id is { } id ? hotel.RoomTypes.FirstOrDefault(r => r.Id == id) : null;
+            if (row.Id is not null && existing is null)
+                throw new NotFoundException($"Room type {row.Id} is not part of {hotel.Name}.");
+            if (existing is null)
+            {
+                resources.Add(ToRoomType(hotel.Id, row)); // EF fix-up adds it to hotel.RoomTypes
+                continue;
+            }
+            await EnsureTotalCoversHoldsAsync(existing.Id, row.TotalRooms, ct);
+            Apply(existing, new SaveRoomTypeRequest(row.Name, row.Capacity, row.RatePerNightLkr, row.TotalRooms));
+        }
+    }
+
+    /// <summary>Business rule: never fewer rooms than are already held on any upcoming night.</summary>
+    private async Task EnsureTotalCoversHoldsAsync(Guid roomTypeId, int totalRooms, CancellationToken ct)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var busiestNight = await resources.Holds()
+            .Where(h => h.ResourceType == ResourceType.Room && h.ResourceId == roomTypeId
+                        && h.Status == HoldStatus.Held && h.ToDate >= today)
+            .GroupBy(h => h.FromDate).Select(g => g.Sum(h => h.Quantity))
+            .OrderByDescending(n => n).FirstOrDefaultAsync(ct);
+        if (totalRooms < busiestNight)
+            throw new ConflictException($"{busiestNight} rooms of this type are already held on one night; total cannot go below that.");
+    }
+
+    private async Task EnsureCanDeleteAsync(Guid roomTypeId, CancellationToken ct)
+    {
+        await EnsureNoUpcomingHoldsAsync(roomTypeId, ct);
+        if (await resources.Holds().AnyAsync(h => h.ResourceType == ResourceType.Room && h.ResourceId == roomTypeId, ct))
+            throw new ConflictException("This room type has booking history; set the hotel inactive instead of deleting it.");
+    }
+
+    private static RoomType ToRoomType(Guid hotelId, HotelRoomTypeRow row)
+    {
+        var roomType = new RoomType { HotelId = hotelId };
+        Apply(roomType, new SaveRoomTypeRequest(row.Name, row.Capacity, row.RatePerNightLkr, row.TotalRooms));
+        return roomType;
     }
 
     private async Task<Hotel> LoadAsync(Guid id, CancellationToken ct) =>

@@ -32,25 +32,26 @@ const nav = (page: Page) => page.getByRole('navigation', { name: 'Main' });
 test('Operations Manager sees operations screens, not user admin; admin API is 403', async ({ page }) => {
   await signIn(page, 'manager1@tripcraft.test');
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-  for (const link of ['Dashboard', 'Approvals', 'Trip requests', 'Attractions', 'Guides', 'Vehicles', 'Hotels',
-    'Availability', 'Agent workflows', 'Reports']) {
+  for (const link of ['Dashboard', 'Trips', 'Review queue', 'Guides', 'Vehicles', 'Hotels', 'Availability',
+    'Reports', 'Agent runs']) {
     await expect(nav(page).getByRole('link', { name: link })).toBeVisible();
   }
   await expect(nav(page).getByRole('link', { name: 'Users' })).toHaveCount(0);
   await expect(nav(page).getByRole('link', { name: 'Audit log' })).toHaveCount(0);
+  await expect(nav(page).getByRole('link', { name: 'Settings' })).toHaveCount(0);
   await page.goto('/admin/users');
   await expect(page.getByText('You do not have access to this page')).toBeVisible();
   expect(await status(page, 'GET', '/api/admin/users')).toBe(403);
   expect(await status(page, 'GET', '/api/admin/audit-logs')).toBe(403);
 });
 
-test('Admin sees users, audit log and workflows only; the approval inbox is 403', async ({ page }) => {
+test('Admin sees users, audit log, settings and agent runs only; the review queue is 403', async ({ page }) => {
   await signIn(page, 'admin1@tripcraft.test');
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-  for (const link of ['Dashboard', 'Agent workflows', 'Users', 'Audit log']) {
+  for (const link of ['Dashboard', 'Agent runs', 'Users', 'Audit log', 'Settings']) {
     await expect(nav(page).getByRole('link', { name: link })).toBeVisible();
   }
-  for (const link of ['Approvals', 'Trip requests', 'Attractions', 'Reports']) {
+  for (const link of ['Review queue', 'Trips', 'Availability', 'Reports']) {
     await expect(nav(page).getByRole('link', { name: link })).toHaveCount(0);
   }
   await page.goto('/approvals');

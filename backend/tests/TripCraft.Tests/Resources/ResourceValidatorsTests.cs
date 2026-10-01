@@ -43,7 +43,8 @@ public class ResourceValidatorsTests
     public void A_hotel_is_in_sri_lanka_with_1_to_5_stars_and_room_types_sleep_1_to_8()
     {
         var hotels = new SaveHotelRequestValidator();
-        var hotel = new SaveHotelRequest("Kandy Hills", "Kandy", 4, 7.29, 80.63, true);
+        var hotel = new SaveHotelRequest("Kandy Hills", "Kandy", 4, 7.29, 80.63, true,
+            [new HotelRoomTypeRow(null, "Standard Double", 2, 12000, 5)]);
         var rooms = new SaveRoomTypeRequestValidator();
 
         hotels.TestValidate(hotel).ShouldNotHaveAnyValidationErrors();
@@ -52,6 +53,21 @@ public class ResourceValidatorsTests
         hotels.TestValidate(hotel with { StarRating = 6 }).ShouldHaveValidationErrorFor(x => x.StarRating);
         rooms.TestValidate(new SaveRoomTypeRequest("Family Room", 4, 20000, 3)).ShouldNotHaveAnyValidationErrors();
         rooms.TestValidate(new SaveRoomTypeRequest("Dorm", 9, 5000, 1)).ShouldHaveValidationErrorFor(x => x.Capacity);
+    }
+
+    [Fact]
+    public void A_hotel_form_needs_at_least_one_room_type_with_unique_names_and_valid_rows()
+    {
+        var hotels = new SaveHotelRequestValidator();
+        var hotel = new SaveHotelRequest("Kandy Hills", "Kandy", 4, 7.29, 80.63, true,
+            [new HotelRoomTypeRow(null, "Standard Double", 2, 12000, 5)]);
+
+        hotels.TestValidate(hotel with { RoomTypes = [] }).ShouldHaveValidationErrorFor(x => x.RoomTypes)
+            .WithErrorMessage("Add at least one room type.");
+        hotels.TestValidate(hotel with { RoomTypes = [.. hotel.RoomTypes, new HotelRoomTypeRow(null, "standard double ", 2, 9000, 2)] })
+            .ShouldHaveValidationErrorFor(x => x.RoomTypes).WithErrorMessage("Room type names must be unique within the hotel.");
+        hotels.TestValidate(hotel with { RoomTypes = [new HotelRoomTypeRow(null, "Dorm", 9, 0, 0)] })
+            .ShouldHaveValidationErrorFor("RoomTypes[0].Capacity");
     }
 
     [Fact]

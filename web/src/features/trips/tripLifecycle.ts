@@ -39,3 +39,12 @@ export const IN_REVIEW: TripRequestStatus[] = [
 
 /** Vouchers exist once the trip is confirmed. */
 export const HAS_VOUCHERS: TripRequestStatus[] = ['Confirmed', 'InProgress', 'Completed'];
+
+/** A quotation has been sent to the client, so the itinerary PDF exists (the API answers 409 before that). */
+export const QUOTATION_SENT_OR_LATER: TripRequestStatus[] = [
+  'QuotationSent',
+  'ClientAccepted',
+  'Confirmed',
+  'InProgress',
+  'Completed',
+];

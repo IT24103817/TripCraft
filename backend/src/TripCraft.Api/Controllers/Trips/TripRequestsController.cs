@@ -112,6 +112,15 @@ public class TripRequestsController(
         return Ok(await confirmations.ReopenReviewAsync(User.GetCurrentUser(), id, request.Reason, ct));
     }
 
+    /// <summary>"Why this plan" for the review page: plain sentences about guide, vehicle, hotels, driving and budget.</summary>
+    [HttpGet("{id:guid}/plan-explanation")]
+    [Authorize(Roles = Roles.OperationsManager)]
+    public async Task<ActionResult<PlanExplanationDto>> PlanExplanation(Guid id,
+        [FromServices] IPlanExplanationService explanations, CancellationToken ct)
+    {
+        return Ok(await explanations.ExplainAsync(id, ct));
+    }
+
     /// <summary>Edit directly (PendingReview): one day of the proposal, 1–3 attractions in that day's city.</summary>
     [HttpPut("{id:guid}/proposal/days/{dayNumber:int}")]
     [Authorize(Roles = Roles.OperationsManager)]

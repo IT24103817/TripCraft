@@ -32,6 +32,12 @@ public class Quotation : BaseEntity
     /// </summary>
     public string? ProposalSnapshot { get; set; }
 
+    /// <summary>The deposit asked of the client, as a % of the total (the Settings value when this version was made).</summary>
+    public decimal DepositPct { get; set; } = 30m;
+
+    /// <summary>Set by the manager once the client paid the deposit (after accepting); null = unpaid.</summary>
+    public DateTime? DepositPaidAt { get; set; }
+
     public List<QuotationLine> Lines { get; set; } = [];
 }
 

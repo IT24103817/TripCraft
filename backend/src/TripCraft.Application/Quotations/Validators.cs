@@ -28,3 +28,8 @@ public class ReportRangeQueryValidator : AbstractValidator<ReportRangeQuery>
             .WithMessage("Reports cover at most one year.").WithName("to");
     }
 }
+
+public class SetPaymentRequestValidator : AbstractValidator<SetPaymentRequest>
+{
+    public SetPaymentRequestValidator() => RuleFor(x => x.Paid).NotNull();
+}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Dialog } from '@/shared/components/Dialog';
+import { guideShareMessage } from './guideMessage';
 import type { GuideAccountDto } from './types';
 
 interface Props {
@@ -9,17 +10,29 @@ interface Props {
   onClose: () => void;
 }
 
+/** What was copied last, so the status line says the right thing. */
+type CopyState = 'idle' | 'password' | 'message' | 'failed';
+
+const COPY_STATUS: Record<CopyState, string> = {
+  idle: '',
+  password: 'Copied to the clipboard.',
+  message: 'Message copied to the clipboard.',
+  failed: 'Copying failed: select the text and copy it by hand.',
+};
+
 /**
  * Shows a guide's one-time temporary password after "Add guide" or "Reset password". The API never shows it
- * again, so the manager copies it now and gives it to the guide, who must change it at the first login.
+ * again, so the manager copies it now — on its own, or inside a ready-made message — and gives it to the guide,
+ * who must change it at the first login.
  */
 export function TemporaryPasswordDialog({ account, title, onClose }: Props) {
-  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [copyState, setCopyState] = useState<CopyState>('idle');
+  const message = guideShareMessage(account.email, account.temporaryPassword);
 
-  const copy = async () => {
+  const copy = async (text: string, what: 'password' | 'message') => {
     try {
-      await navigator.clipboard.writeText(account.temporaryPassword);
-      setCopyState('copied');
+      await navigator.clipboard.writeText(text);
+      setCopyState(what);
     } catch {
       setCopyState('failed');
     }
@@ -46,12 +59,26 @@ export function TemporaryPasswordDialog({ account, title, onClose }: Props) {
             </dd>
           </div>
         </dl>
+        <section aria-labelledby="share-with-guide" className="space-y-2">
+          <h3 id="share-with-guide" className="font-semibold text-slate-900">
+            Share with guide
+          </h3>
+          <p className="select-all rounded-md border border-slate-200 bg-slate-50 p-3 text-slate-900">
+            {message}
+          </p>
+          <button type="button" className="btn-secondary" onClick={() => void copy(message, 'message')}>
+            Copy message
+          </button>
+        </section>
         <p role="status" className="text-xs text-slate-600">
-          {copyState === 'copied' && 'Copied to the clipboard.'}
-          {copyState === 'failed' && 'Copying failed: select the password and copy it by hand.'}
+          {COPY_STATUS[copyState]}
         </p>
         <div className="flex justify-end gap-2">
-          <button type="button" className="btn-secondary" onClick={() => void copy()}>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => void copy(account.temporaryPassword, 'password')}
+          >
             Copy password
           </button>
           <button type="button" className="btn-primary" onClick={onClose}>

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TripCraft.Api.Authorization;
+using TripCraft.Application.Quotations.Documents;
 using TripCraft.Application.Vouchers;
 
 namespace TripCraft.Api.Controllers.Vouchers;
@@ -22,6 +23,16 @@ public class VouchersController(IVoucherService vouchers) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Pdf(Guid id, CancellationToken ct) =>
         File(await vouchers.RenderPdfAsync(User.GetCurrentUser(), id, ct), "application/pdf", $"tripcraft-vouchers-{id:N}.pdf");
+
+    /// <summary>
+    /// Printable itinerary + quotation (with deposit) for the owner tourist or a manager. 409 until a quotation was sent.
+    /// </summary>
+    [HttpGet("api/trips/{id:guid}/itinerary.pdf")]
+    [Authorize(Roles = Roles.TouristOrOperationsManager)]
+    [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK, "application/pdf")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ItineraryPdf(Guid id, [FromServices] ITripDocumentService documents, CancellationToken ct) =>
+        File(await documents.RenderItineraryAsync(User.GetCurrentUser(), id, ct), "application/pdf", $"tripcraft-itinerary-{id:N}.pdf");
 
     /// <summary>Checks a scanned code's signature and that it was issued (guide's scanner, hotel desk).</summary>
     [HttpPost("api/vouchers/verify")]

@@ -10,6 +10,7 @@ public class AuditLogListQueryValidator : AbstractValidator<AuditLogListQuery>
     public AuditLogListQueryValidator()
     {
         PagedQueryRules.AddPagingRules(this, AuditLogQueryService.SortableFields.Keys);
+        RuleFor(x => x.Actor).MaximumLength(256);
         RuleFor(x => x.Entity).MaximumLength(100);
         RuleFor(x => x.Action).MaximumLength(100);
         RuleFor(x => x.To).GreaterThanOrEqualTo(x => x.From)

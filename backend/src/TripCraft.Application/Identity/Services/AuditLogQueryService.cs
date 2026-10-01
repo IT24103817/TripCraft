@@ -20,6 +20,13 @@ public class AuditLogQueryService(IAuditLogReader auditLogs) : IAuditLogQuerySer
     {
         var q = auditLogs.Query();
 
+        if (string.Equals(query.Actor?.Trim(), "system", StringComparison.OrdinalIgnoreCase))
+            q = q.Where(a => a.ActorEmail == null);
+        else if (!string.IsNullOrWhiteSpace(query.Actor))
+        {
+            var actor = query.Actor.Trim().ToLower();
+            q = q.Where(a => a.ActorEmail != null && a.ActorEmail.ToLower().Contains(actor));
+        }
         if (!string.IsNullOrWhiteSpace(query.Entity))
             q = q.Where(a => a.Entity == query.Entity);
         if (!string.IsNullOrWhiteSpace(query.Action))

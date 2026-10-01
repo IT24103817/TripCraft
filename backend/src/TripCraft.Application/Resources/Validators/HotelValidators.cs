@@ -15,6 +15,17 @@ public class SaveHotelRequestValidator : AbstractValidator<SaveHotelRequest>
         // Sri Lanka's bounding box, so a typo in the coordinates is caught.
         RuleFor(x => x.Latitude).InclusiveBetween(5.5, 10.0).WithMessage("Latitude must be in Sri Lanka (5.5–10.0).");
         RuleFor(x => x.Longitude).InclusiveBetween(79.4, 82.1).WithMessage("Longitude must be in Sri Lanka (79.4–82.1).");
+        RuleFor(x => x.RoomTypes).NotEmpty().WithMessage("Add at least one room type.");
+        RuleFor(x => x.RoomTypes)
+            .Must(rows => rows.Select(r => r.Name.Trim().ToLowerInvariant()).Distinct().Count() == rows.Count)
+            .When(x => x.RoomTypes is { Count: > 0 }).WithMessage("Room type names must be unique within the hotel.");
+        RuleForEach(x => x.RoomTypes).ChildRules(row =>
+        {
+            row.RuleFor(r => r.Name).NotEmpty().Length(2, 60);
+            row.RuleFor(r => r.Capacity).InclusiveBetween(1, 8);
+            row.RuleFor(r => r.RatePerNightLkr).GreaterThan(0).LessThanOrEqualTo(1_000_000);
+            row.RuleFor(r => r.TotalRooms).InclusiveBetween(1, 500);
+        });
     }
 }
 

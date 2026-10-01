@@ -8,19 +8,23 @@ public class FakeAgentState
 {
     public bool Fail { get; set; }
     public List<(string Kind, Guid WorkflowId, string? Comment)> Calls { get; } = [];
+
+    /// <summary>The request body of every call, e.g. to check the cities and LLM provider sent.</summary>
+    public List<StartAgentWorkflowRequest> Requests { get; } = [];
 }
 
 public class FakeAgentServiceClient(FakeAgentState state) : IAgentServiceClient
 {
     public Task<bool> StartAsync(AgentWorkflow workflow, StartAgentWorkflowRequest request, CancellationToken ct) =>
-        Task.FromResult(Record(workflow, "start", null));
+        Task.FromResult(Record(workflow, "start", null, request));
 
     public Task<bool> ReplanAsync(AgentWorkflow workflow, StartAgentWorkflowRequest request, string managerComment,
-        CancellationToken ct) => Task.FromResult(Record(workflow, "replan", managerComment));
+        CancellationToken ct) => Task.FromResult(Record(workflow, "replan", managerComment, request));
 
-    private bool Record(AgentWorkflow workflow, string kind, string? comment)
+    private bool Record(AgentWorkflow workflow, string kind, string? comment, StartAgentWorkflowRequest request)
     {
         state.Calls.Add((kind, workflow.Id, comment));
+        state.Requests.Add(request);
         if (!state.Fail)
             return true;
         workflow.Status = AgentWorkflowStatus.FailedSafely;

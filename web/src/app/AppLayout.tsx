@@ -4,7 +4,7 @@ import { useAuthStore } from '@/auth/authStore';
 import { LoadingSkeleton } from '@/shared/components/PageState';
 import { Sidebar } from '@/shared/components/Sidebar';
 import { Topbar } from '@/shared/components/Topbar';
-import { NAV_ITEMS } from './navigation';
+import { NAV_GROUPS } from './navigation';
 
 export function AppLayout() {
   const { user, logout } = useAuthStore();
@@ -16,16 +16,16 @@ export function AppLayout() {
     <div className="flex min-h-screen">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:bg-white focus:p-2"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:bg-surface focus:p-2"
       >
         Skip to content
       </a>
-      <Sidebar items={NAV_ITEMS} role={user.role} open={menuOpen} onNavigate={() => setMenuOpen(false)} />
+      <Sidebar groups={NAV_GROUPS} role={user.role} open={menuOpen} onNavigate={() => setMenuOpen(false)} />
       {menuOpen && (
         <button
           type="button"
           aria-label="Close menu"
-          className="fixed inset-0 z-20 bg-slate-900/30 md:hidden"
+          className="fixed inset-0 z-20 bg-ink/30 md:hidden"
           onClick={() => setMenuOpen(false)}
         />
       )}

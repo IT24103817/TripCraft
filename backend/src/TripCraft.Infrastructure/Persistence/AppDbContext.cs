@@ -6,6 +6,7 @@ using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Entities;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Common.Notifications;
+using TripCraft.Application.Common.Settings;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Quotations;
 using TripCraft.Application.Resources;
@@ -58,6 +59,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GuideChangeRequest> GuideChangeRequests => Set<GuideChangeRequest>();
     public DbSet<TripTemplate> TripTemplates => Set<TripTemplate>();
     public DbSet<GuideRating> GuideRatings => Set<GuideRating>();
+    public DbSet<AppSettings> AppSettings => Set<AppSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

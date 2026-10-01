@@ -38,6 +38,14 @@ public class QuotationsController(IQuotationService quotations) : ControllerBase
         CancellationToken ct) =>
         Ok(await editor.RepriceAsync(User.GetCurrentUser(), id, ct));
 
+    /// <summary>Deposit paid / unpaid (manager), on the newest version after the client accepted it. 409 otherwise.</summary>
+    [HttpPost("{id:guid}/payment")]
+    [Authorize(Roles = Roles.OperationsManager)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<QuotationDto>> SetPayment(Guid id, SetPaymentRequest request, CancellationToken ct) =>
+        Ok(await quotations.SetPaymentAsync(User.GetCurrentUser(), id, request.Paid, ct));
+
     /// <summary>The tourist accepts the quotation that was sent: QuotationSent → ClientAccepted, managers notified.</summary>
     [HttpPost("{id:guid}/accept")]
     [Authorize(Roles = Roles.Tourist)]

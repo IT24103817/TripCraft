@@ -3,6 +3,8 @@ using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Common.Notifications;
 using TripCraft.Application.Common.Security;
+using TripCraft.Application.Common.Settings;
+using TripCraft.Application.Identity;
 using TripCraft.Application.Trips;
 using TripCraft.Application.Workflows;
 using TripCraft.Application.Workflows.Ports;
@@ -23,6 +25,9 @@ public class QuotationApprovalService(
     ITripRequestRepository trips,
     IAgentServiceClient agentService,
     INotifier notifier,
+    TripSettings settings,
+    IUserRepository users,
+    IEmailDispatcher emails,
     IAuditLogger audit,
     IUnitOfWork unitOfWork) : IQuotationApprovalService
 {
@@ -54,10 +59,16 @@ public class QuotationApprovalService(
             $"Quotation v{quotation.Version} sent to the client.", audit);
         notifier.NotifyTourist(trip, "QuotationSent", "Your quotation is ready",
             $"Version {quotation.Version}: USD {quotation.TotalUsd:N2}. Open the trip to accept or decline it.");
+        if (trip.Tourist is not null && await users.GetByIdAsync(trip.Tourist.UserId, ct) is { } tourist)
+            notifier.QueueEmail(tourist.Email, "Your TripCraft quotation is ready",
+                $"Dear {tourist.FullName},\n\nYour quotation for {trip.StartDate:dd MMM yyyy} – {trip.EndDate:dd MMM yyyy} is ready: " +
+                $"USD {quotation.TotalUsd:N2} (LKR {quotation.TotalLkr:N2}). Open the TripCraft app to accept or decline it.\n\nTripCraft",
+                trip.Id);
         audit.Record(user.Id, "QuotationApproved", "Quotation", quotation.Id, null,
             new { TripStatus = trip.Status.ToString(), WorkflowStatus = workflow.Status.ToString(), Comment = comment });
 
         await unitOfWork.SaveChangesAsync(ct); // one SaveChanges = one transaction
+        await SendEmailsAsync(ct);
         return Response(quotation.Id, trip, workflow, "Approved", 0);
     }
 
@@ -102,7 +113,7 @@ public class QuotationApprovalService(
         // After the commit: never hold a DB transaction open during an HTTP call.
         // The rejected proposal's violations go with the replan, so e.g. OVER_BUDGET makes the Planner pick budget hotels.
         var request = StartAgentWorkflowRequest.ForReplan(workflow, trip,
-            PreviousViolation.FromValidationJson(workflow.ValidationResult));
+            PreviousViolation.FromValidationJson(workflow.ValidationResult), settings.LlmProvider);
         if (!await agentService.ReplanAsync(workflow, request, comment, ct))
         {
             // The client already set the workflow FailedSafely with a summary; the trip follows so it can be retried.
@@ -115,6 +126,19 @@ public class QuotationApprovalService(
         }
 
         return Response(quotation.Id, trip, workflow, "RevisionRequested", 0);
+    }
+
+    /// <summary>After the commit; the email stays in the outbox (with its error) if sending fails.</summary>
+    private async Task SendEmailsAsync(CancellationToken ct)
+    {
+        try
+        {
+            await emails.DispatchPendingAsync(ct);
+        }
+        catch (Exception)
+        {
+            // Never undo a sent quotation because of email; the outbox row keeps the failure.
+        }
     }
 
     /// <summary>

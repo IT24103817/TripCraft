@@ -6,6 +6,7 @@ using TripCraft.Application.Common;
 using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Common.Security;
+using TripCraft.Application.Common.Settings;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Trips;
 using TripCraft.Application.Trips.Services;
@@ -39,7 +40,7 @@ public class TripPlanningServiceTests
 
     private TripPlanningService CreateService() => new(
         _trips.Object, _attractions.Object, _workflows.Object, _agent.Object,
-        _audit.Object, _unitOfWork.Object, NullLogger<TripPlanningService>.Instance);
+        TripSettings.Default with { LlmProvider = "groq" }, _audit.Object, _unitOfWork.Object, NullLogger<TripPlanningService>.Instance);
 
     private TripRequest GivenTrip(string objective, DateOnly start, DateOnly end,
         TripRequestStatus status = TripRequestStatus.Submitted)
@@ -51,6 +52,21 @@ public class TripPlanningServiceTests
         };
         _trips.Setup(t => t.GetByIdAsync(trip.Id, It.IsAny<CancellationToken>())).ReturnsAsync(trip);
         return trip;
+    }
+
+    [Fact]
+    public async Task The_chosen_cities_and_the_LLM_provider_from_settings_go_to_the_agents()
+    {
+        var trip = GivenTrip("A quiet week, no city named", Start, Start.AddDays(2));
+        trip.Cities = TripRequest.JoinCities(["Galle", "Colombo"]);
+        StartAgentWorkflowRequest? sent = null;
+        _agent.Setup(a => a.StartAsync(It.IsAny<AgentWorkflow>(), It.IsAny<StartAgentWorkflowRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<AgentWorkflow, StartAgentWorkflowRequest, CancellationToken>((_, r, _) => sent = r).ReturnsAsync(true);
+
+        await CreateService().StartPlanningAsync(Manager, trip.Id, CancellationToken.None);
+
+        sent!.Cities.Should().Equal("Galle", "Colombo");
+        sent.LlmProvider.Should().Be("groq");
     }
 
     [Fact]

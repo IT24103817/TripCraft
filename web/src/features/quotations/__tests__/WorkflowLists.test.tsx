@@ -18,14 +18,14 @@ function recordWorkflowRequests(rows = [workflowSummary()]) {
   return requests;
 }
 
-describe('Workflow monitor and approval inbox lists', () => {
+describe('Agent runs and the review queue lists', () => {
   beforeEach(() => signInAs('OperationsManager'));
 
   it('shows the trip objective and sends the default sort, search and status to the API', async () => {
     const requests = recordWorkflowRequests();
-    const { user } = renderApp('/workflows');
+    const { user } = renderApp('/agent-runs');
 
-    const table = await screen.findByRole('table', { name: 'Agent workflows' });
+    const table = await screen.findByRole('table', { name: 'Agent runs' });
     expect(within(table).getByText(workflowSummary().objective)).toBeInTheDocument();
     expect(requests[0]?.get('sort')).toBe('-startedAt');
 
@@ -39,9 +39,9 @@ describe('Workflow monitor and approval inbox lists', () => {
 
   it('sorts by Started, Finished and Status when a header is clicked', async () => {
     const requests = recordWorkflowRequests();
-    const { user } = renderApp('/workflows');
+    const { user } = renderApp('/agent-runs');
 
-    await screen.findByRole('table', { name: 'Agent workflows' });
+    await screen.findByRole('table', { name: 'Agent runs' });
     // Default "-startedAt": clicking Started switches to ascending.
     await user.click(screen.getByRole('button', { name: 'Sort by Started' }));
     await waitFor(() => expect(requests.at(-1)?.get('sort')).toBe('startedAt'));
@@ -56,9 +56,23 @@ describe('Workflow monitor and approval inbox lists', () => {
 
   it('says when no workflow matches the search', async () => {
     recordWorkflowRequests();
-    renderApp('/workflows?search=nothing');
+    renderApp('/agent-runs?search=nothing');
 
-    expect(await screen.findByText('No workflows match these filters')).toBeInTheDocument();
+    expect(await screen.findByText('No agent runs match these filters')).toBeInTheDocument();
+  });
+
+  it('redirects the old /workflows links to Agent runs, keeping the filters', async () => {
+    recordWorkflowRequests();
+    const list = renderApp('/workflows?status=Completed');
+    await waitFor(() => expect(list.location()).toBe('/agent-runs?status=Completed'));
+    expect(await screen.findByRole('heading', { name: 'Agent runs' })).toBeInTheDocument();
+    list.unmount();
+
+    server.use(
+      http.get(`${API}/api/workflows/abc`, () => HttpResponse.json({ title: 'Not found' }, { status: 404 })),
+    );
+    const detail = renderApp('/workflows/abc');
+    await waitFor(() => expect(detail.location()).toBe('/agent-runs/abc'));
   });
 
   it('searches the approval inbox and keeps the tab status and the search together', async () => {

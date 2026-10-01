@@ -29,13 +29,14 @@ public record StartAgentWorkflowRequest(
     string PreferencesJson,
     IReadOnlyList<SkeletonDay> Skeleton,
     IReadOnlyList<PreviousViolation>? PreviousViolations = null,
-    IReadOnlyList<string>? Cities = null)
+    IReadOnlyList<string>? Cities = null,
+    string? LlmProvider = null)
 {
     /// <summary>A re-plan of the trip: same trip details and cities, plus the violations the manager sent back.</summary>
     public static StartAgentWorkflowRequest ForReplan(AgentWorkflow workflow, Trips.TripRequest trip,
-        IReadOnlyList<PreviousViolation> previousViolations) =>
+        IReadOnlyList<PreviousViolation> previousViolations, string? llmProvider = null) =>
         new(workflow.Id, trip.Id, trip.Objective, trip.StartDate, trip.EndDate, trip.Pax, trip.BudgetUsd, trip.Preferences,
-            [], previousViolations, trip.CityList);
+            [], previousViolations, trip.CityList, llmProvider);
 }
 
 /// <summary>A violation of the proposal a manager sent back; the Planner re-plans for it (e.g. OVER_BUDGET).</summary>

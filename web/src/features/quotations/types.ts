@@ -229,6 +229,12 @@ export interface QuotationDto {
   lines: { lineType: string; description: string; qty: number; unitLkr: number; amountLkr: number }[];
   /** RevisionRequested carries the manager's comment, Declined the client's reason. */
   decisions: { decision: string; comment: string | null; decidedAt: string }[];
+  /** Deposit asked for this version (docs/API-V11-WEB.md): the deposit setting when the version was made. */
+  depositPct: number;
+  depositLkr: number;
+  depositUsd: number;
+  depositPaid: boolean;
+  depositPaidAt: string | null;
   createdAt: string;
   proposalSnapshot?: ProposalSnapshot | null;
 }
@@ -299,4 +305,15 @@ export interface UtilisationDto {
 export interface StatusCountDto {
   status: string;
   count: number;
+}
+
+/** One reason in "Why this plan" (GET /api/trip-requests/{id}/plan-explanation). */
+export interface PlanExplanationItem {
+  topic: 'guide' | 'vehicle' | 'hotels' | 'driving' | 'budget';
+  title: string;
+  text: string;
+}
+
+export interface PlanExplanationDto {
+  items: PlanExplanationItem[];
 }

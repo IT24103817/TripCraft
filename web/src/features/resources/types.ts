@@ -83,8 +83,6 @@ export interface RoomTypeDto {
   totalRooms: number;
 }
 
-export type SaveRoomTypeRequest = Omit<RoomTypeDto, 'id' | 'hotelId'>;
-
 export interface HotelDto {
   id: string;
   name: string;
@@ -96,16 +94,20 @@ export interface HotelDto {
   roomTypes: RoomTypeDto[];
 }
 
-export type SaveHotelRequest = Omit<HotelDto, 'id' | 'roomTypes'>;
-
-export interface AvailableResourceDto {
-  type: ResourceType;
-  id: string;
+/**
+ * One room type in the hotel body (docs/API-V11-WEB.md): with an id it updates that room type, without one it adds
+ * a new one; a room type left out is deleted (409 if it has holds).
+ */
+export interface SaveHotelRoomType {
+  id?: string;
   name: string;
-  detail: string;
-  rateLkr: number;
-  freeRooms: number | null;
+  capacity: number;
+  ratePerNightLkr: number;
+  totalRooms: number;
 }
+
+/** Body of POST and PUT /api/hotels: the hotel and all its room types (at least one). */
+export type SaveHotelRequest = Omit<HotelDto, 'id' | 'roomTypes'> & { roomTypes: SaveHotelRoomType[] };
 
 export interface HoldDto {
   id: string;
@@ -131,3 +133,44 @@ export interface CreateHoldRequest {
 
 /** Query-string values; empty strings are dropped before calling the API. */
 export type ListQuery = Record<string, string | number>;
+
+/** Body of PUT /api/resource-holds/{id}: manual blocks only (a trip's hold answers 409). */
+export interface UpdateHoldRequest {
+  fromDate: string;
+  toDate: string;
+  quantity: number;
+  note: string;
+}
+
+/**
+ * One resource on one day in GET /api/availability/grid. Blocked = a manual hold (leave, maintenance);
+ * Confirmed = held for a Confirmed, InProgress or Completed trip; Held = held for a trip in any other status.
+ */
+export type CellState = 'Free' | 'Held' | 'Confirmed' | 'Blocked';
+
+export interface AvailabilityCellDto {
+  date: string;
+  state: CellState;
+  holdId?: string | null;
+  tripRequestId?: string | null;
+  touristName?: string | null;
+  tripStatus?: string | null;
+  note?: string | null;
+  heldQuantity: number;
+  freeQuantity: number;
+}
+
+/** A guide, a vehicle or a hotel room type, with one cell per day. Room types: capacity = total rooms. */
+export interface AvailabilityRowDto {
+  resourceType: ResourceType;
+  resourceId: string;
+  name: string;
+  detail: string;
+  capacity: number;
+  cells: AvailabilityCellDto[];
+}
+
+export interface AvailabilityGridDto {
+  days: string[];
+  rows: AvailabilityRowDto[];
+}

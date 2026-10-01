@@ -45,6 +45,10 @@ services:
         value: "3"
       - key: OPERATOR_CONTACT        # v1.1: shown when cancellation is closed
         sync: false
+      - key: MAILTRAP_API_TOKEN      # v1.1: Mailtrap email sandbox (tourist emails); falls back to a pickup folder
+        sync: false
+      - key: MAILTRAP_INBOX_ID
+        sync: false
       - key: SMTP_HOST               # v1.1: optional; without it confirmation emails go to a pickup folder
         sync: false
       # UPLOADS_DIR is not set here: the image uses /app/uploads. Render's free disk is ephemeral, so passport

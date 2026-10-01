@@ -1,34 +1,36 @@
-import { useCallback, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { useAuthStore } from '@/auth/authStore';
+import { useState, type ReactNode } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { getErrorMessage } from '@/shared/api/errors';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { PageState } from '@/shared/components/PageState';
 import { ReasonDialog } from '@/shared/components/ReasonDialog';
-import { StatusBadge } from '@/shared/components/StatusBadge';
+import { TabList } from '@/shared/components/TabList';
 import { useToast } from '@/shared/components/Toast';
-import { formatDate, formatDateTime, formatUsd } from '@/shared/utils/format';
-import { useCancelTrip, useItinerary, useTrip, useTripWorkflowId } from './api';
-import { ItineraryDayEditor } from './ItineraryDayEditor';
-import { StatusTimeline } from './StatusTimeline';
-import { TripHistory } from './TripHistory';
-import { CANCELLABLE, HAS_VOUCHERS, IN_REVIEW, STATUS_NOTES } from './tripLifecycle';
-import type { ItineraryDayDto } from './types';
-import { VouchersButton } from './VouchersButton';
+import { useCancelTrip, useTrip, useTripWorkflowId } from './api';
+import { PdfDownloadButton } from './PdfDownloadButton';
+import { CANCELLABLE, IN_REVIEW, QUOTATION_SENT_OR_LATER } from './tripLifecycle';
+import { TripOverview } from './TripOverview';
+import type { TripRequestDto } from './types';
 
-export default function TripDetailPage() {
+const TABS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'quotation', label: 'Quotation' },
+];
+
+interface Props {
+  /** The Quotation tab's content; the app passes it in (features never import each other). */
+  quotationTab?: (trip: TripRequestDto) => ReactNode;
+}
+
+/** One trip request: an Overview tab and a Quotation tab (?tab=quotation), with the trip's actions on top. */
+export default function TripDetailPage({ quotationTab }: Props) {
   const { id = '' } = useParams();
   const trip = useTrip(id);
-  const itinerary = useItinerary(id);
   const cancel = useCancelTrip(id);
   const toast = useToast();
+  const [params, setParams] = useSearchParams();
   const [confirmCancel, setConfirmCancel] = useState(false);
-  const isManager = useAuthStore((s) => s.user?.role === 'OperationsManager');
-  const [editingDay, setEditingDay] = useState<ItineraryDayDto | null>(null);
-  // Stable, so the open dialog does not move focus again when this page re-renders.
-  const closeEditor = useCallback(() => setEditingDay(null), []);
-  // The API only accepts itinerary edits from an Operations Manager on a Confirmed trip.
-  const canEditItinerary = isManager && trip.data?.status === 'Confirmed';
+  const tab = params.get('tab') === 'quotation' && quotationTab ? 'quotation' : 'overview';
   const status = trip.data?.status;
   // The review page is keyed by the workflow id, so it is looked up only for trips that are in review.
   const inReview = status !== undefined && IN_REVIEW.includes(status);
@@ -56,6 +58,14 @@ export default function TripDetailPage() {
                     Open review
                   </Link>
                 )}
+                {QUOTATION_SENT_OR_LATER.includes(trip.data.status) && (
+                  <PdfDownloadButton
+                    path={`/api/trips/${id}/itinerary.pdf`}
+                    fileName={`tripcraft-itinerary-${id}.pdf`}
+                    label="Download itinerary PDF"
+                    errorMessage="Could not download the itinerary."
+                  />
+                )}
                 {CANCELLABLE.includes(trip.data.status) && (
                   <button type="button" className="btn-danger" onClick={() => setConfirmCancel(true)}>
                     Cancel request
@@ -65,97 +75,24 @@ export default function TripDetailPage() {
             }
           />
 
-          <div className="card">
-            <h2 className="mb-3 font-semibold text-slate-900">Status</h2>
-            <StatusTimeline status={trip.data.status} />
-            {/* e.g. Submitted: only the tourist may start planning (API rule), from the mobile app. */}
-            <p className="mt-3 text-sm text-slate-600">{STATUS_NOTES[trip.data.status]}</p>
-            {HAS_VOUCHERS.includes(trip.data.status) && (
-              <div className="mt-3">
-                <VouchersButton tripId={id} />
-              </div>
+          {quotationTab && (
+            <TabList
+              label="Trip sections"
+              tabs={TABS}
+              selected={tab}
+              onSelect={(next) => setParams(next === 'overview' ? {} : { tab: next }, { replace: true })}
+            />
+          )}
+          <div
+            role={quotationTab ? 'tabpanel' : undefined}
+            id={`panel-${tab}`}
+            aria-labelledby={`tab-${tab}`}
+          >
+            {tab === 'quotation' && quotationTab ? (
+              quotationTab(trip.data)
+            ) : (
+              <TripOverview trip={trip.data} />
             )}
-          </div>
-
-          <div className="card">
-            <h2 className="mb-3 font-semibold text-slate-900">Request details</h2>
-            <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-              <Detail label="Status" value={<StatusBadge status={trip.data.status} />} />
-              <Detail
-                label="Dates"
-                value={`${formatDate(trip.data.startDate)} – ${formatDate(trip.data.endDate)}`}
-              />
-              <Detail label="Cities" value={trip.data.cities.join(', ') || '—'} />
-              <Detail label="Travellers" value={trip.data.pax} />
-              <Detail label="Budget" value={formatUsd(trip.data.budgetUsd)} />
-              <Detail
-                label="Preferences"
-                value={
-                  Object.entries(trip.data.preferences)
-                    .map(([k, v]) => `${k}: ${String(v)}`)
-                    .join(', ') || '—'
-                }
-              />
-              <Detail label="Submitted" value={formatDateTime(trip.data.createdAt)} />
-              <Detail label="Last updated" value={formatDateTime(trip.data.updatedAt)} />
-            </dl>
-          </div>
-
-          <div className="card">
-            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="font-semibold text-slate-900">Itinerary</h2>
-              {itinerary.data && (
-                <p className="text-xs text-slate-500">
-                  Version {itinerary.data.version} · {itinerary.data.generatedBy}
-                </p>
-              )}
-            </div>
-            <PageState
-              isLoading={itinerary.isLoading}
-              isError={itinerary.isError}
-              error={itinerary.error}
-              onRetry={() => itinerary.refetch()}
-              isEmpty={!itinerary.data}
-              emptyTitle="No itinerary yet"
-              emptyDescription="The itinerary appears here once planning has produced one."
-            >
-              <ol className="space-y-3">
-                {itinerary.data?.days.map((day) => (
-                  <li key={day.dayNumber} className="rounded border border-slate-200 p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="font-medium text-slate-900">
-                        Day {day.dayNumber} — {day.city}
-                      </h3>
-                      {canEditItinerary && (
-                        <button
-                          type="button"
-                          className="btn-secondary"
-                          aria-label={`Edit day ${day.dayNumber}`}
-                          onClick={() => setEditingDay(day)}
-                        >
-                          Edit day
-                        </button>
-                      )}
-                    </div>
-                    {day.notes && <p className="text-sm text-slate-600">{day.notes}</p>}
-                    <ul className="mt-2 list-inside list-disc text-sm text-slate-700">
-                      {day.stops.map((stop) => (
-                        <li key={stop.sequence}>
-                          {stop.attractionName} ({stop.durationMinutes} min)
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
-              </ol>
-            </PageState>
-          </div>
-
-          {editingDay && <ItineraryDayEditor tripId={id} day={editingDay} onClose={closeEditor} />}
-
-          <div className="card">
-            <h2 className="mb-3 font-semibold text-slate-900">History</h2>
-            <TripHistory tripId={id} />
           </div>
 
           {confirmCancel && (
@@ -187,14 +124,5 @@ export default function TripDetailPage() {
         </section>
       )}
     </PageState>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium text-slate-900">{value}</dd>
-    </div>
   );
 }

@@ -53,6 +53,13 @@ const TONE_BY_STATUS: Record<string, Tone> = {
   Failed: 'red',
   Active: 'green',
   Inactive: 'grey',
+  // Deposit payment
+  Paid: 'green',
+  Unpaid: 'amber',
+  // Availability grid cells
+  Free: 'grey',
+  Held: 'amber',
+  Blocked: 'red',
 };
 
 export const TONE_CLASSES: Record<Tone, string> = {

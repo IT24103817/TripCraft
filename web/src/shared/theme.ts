@@ -5,5 +5,5 @@
 export const CHART_COLORS = {
   primary: '#0F766E', // brand-700
   accent: '#D97706', // accent
-  grid: '#E2E8F0', // slate-200
+  grid: '#94A3B866', // slate-400 at 40%: light enough on white, quiet on the dark surface
 } as const;

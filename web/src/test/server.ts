@@ -6,6 +6,14 @@ export const API = 'http://api.test';
 
 export const CITIES = ['Colombo', 'Ella', 'Galle', 'Kandy', 'Nuwara Eliya', 'Sigiriya'];
 
+export const DASHBOARD_ACTIONS = {
+  proposalsToReview: 0,
+  clientAcceptedToConfirm: 0,
+  guideChangeRequests: 0,
+  recentCancellations: 0,
+  declinedQuotations: 0,
+};
+
 /** Defaults so pages that load extra data (e.g. the dashboard) do not fail. Tests override with server.use. */
 export const server = setupServer(
   http.get(`${API}/api/workflows`, () => HttpResponse.json(paged([]))),
@@ -27,4 +35,11 @@ export const server = setupServer(
   http.get(`${API}/api/trip-requests/:id/workflow`, () =>
     HttpResponse.json({ title: 'Not found', status: 404 }, { status: 404 }),
   ),
+  // No proposal to explain yet: the review page hides "Why this plan".
+  http.get(`${API}/api/trip-requests/:id/plan-explanation`, () =>
+    HttpResponse.json({ title: 'Not found', status: 404 }, { status: 404 }),
+  ),
+  // The manager dashboard: nothing waiting and no trips today or tomorrow.
+  http.get(`${API}/api/dashboard/actions`, () => HttpResponse.json(DASHBOARD_ACTIONS)),
+  http.get(`${API}/api/dashboard/upcoming`, () => HttpResponse.json([])),
 );

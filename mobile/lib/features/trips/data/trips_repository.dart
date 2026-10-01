@@ -78,6 +78,11 @@ class TripsRepository {
         .toList();
   }
 
+  /// GET /api/trips/{id}/itinerary.pdf: the itinerary and quotation (with the deposit) as a PDF file.
+  /// 409 before any quotation was sent to the tourist.
+  Future<List<int>> itineraryPdf(String tripId) =>
+      _api.getBytes('/api/trips/$tripId/itinerary.pdf');
+
   /// GET /api/attractions/cities: the only cities a trip may visit.
   Future<List<String>> cities() async {
     final json = await _api.get('/api/attractions/cities') as List<dynamic>;

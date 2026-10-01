@@ -12,4 +12,5 @@ export const queryRoots = {
   auditLogs: 'auditLogs',
   resources: 'resources',
   notifications: 'notifications',
+  settings: 'settings',
 } as const;

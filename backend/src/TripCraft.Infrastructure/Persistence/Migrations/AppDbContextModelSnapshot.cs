@@ -184,6 +184,53 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                     b.ToTable("notifications", (string)null);
                 });
 
+            modelBuilder.Entity("TripCraft.Application.Common.Settings.AppSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("CancellationCutoffDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("cancellation_cutoff_days");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<decimal>("DepositPct")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("deposit_pct");
+
+                    b.Property<string>("LlmProvider")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("llm_provider");
+
+                    b.Property<string>("OperatorContact")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("operator_contact");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_app_settings");
+
+                    b.ToTable("app_settings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_app_settings_llm_provider", "llm_provider IN ('ollama', 'groq')");
+
+                            t.HasCheckConstraint("ck_app_settings_ranges", "cancellation_cutoff_days BETWEEN 0 AND 30 AND deposit_pct BETWEEN 0 AND 100");
+                        });
+                });
+
             modelBuilder.Entity("TripCraft.Application.Identity.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -306,6 +353,17 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DepositPaidAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deposit_paid_at");
+
+                    b.Property<decimal>("DepositPct")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(30m)
+                        .HasColumnName("deposit_pct");
 
                     b.Property<DateTime>("FxAsOf")
                         .HasColumnType("timestamp with time zone")

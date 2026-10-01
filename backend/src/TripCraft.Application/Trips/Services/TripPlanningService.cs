@@ -6,6 +6,7 @@ using TripCraft.Application.Common;
 using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Common.Security;
+using TripCraft.Application.Common.Settings;
 using TripCraft.Application.Trips.Dtos;
 using TripCraft.Application.Trips.Planning;
 using TripCraft.Application.Workflows;
@@ -25,6 +26,7 @@ public class TripPlanningService(
     IAttractionRepository attractions,
     IAgentWorkflowRepository workflows,
     IAgentServiceClient agentService,
+    TripSettings settings,
     IAuditLogger audit,
     IUnitOfWork unitOfWork,
     ILogger<TripPlanningService> logger) : ITripPlanningService
@@ -82,7 +84,7 @@ public class TripPlanningService(
         // The client never throws: on failure it has already set the workflow to FailedSafely.
         var started = await agentService.StartAsync(workflow, new StartAgentWorkflowRequest(
             workflow.Id, trip.Id, trip.Objective, trip.StartDate, trip.EndDate,
-            trip.Pax, trip.BudgetUsd, trip.Preferences, skeleton, null, cities), ct);
+            trip.Pax, trip.BudgetUsd, trip.Preferences, skeleton, null, cities, settings.LlmProvider), ct);
         if (!started)
         {
             logger.LogWarning("Agent service failed for workflow {WorkflowId}", workflow.Id);

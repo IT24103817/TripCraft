@@ -14,7 +14,14 @@ public record HotelDto(Guid Id, string Name, string City, int StarRating, double
         h.IsActive, h.RoomTypes.OrderBy(r => r.Name).Select(RoomTypeDto.FromEntity).ToList(), h.CreatedAt, h.UpdatedAt);
 }
 
-public record SaveHotelRequest(string Name, string City, int StarRating, double Latitude, double Longitude, bool IsActive);
+/// <summary>
+/// POST /api/hotels and PUT /api/hotels/{id} (v1.1: with the room types in one form). On PUT a row with an Id updates
+/// that room type, a row without one is added, and room types missing from the list are deleted.
+/// </summary>
+public record SaveHotelRequest(string Name, string City, int StarRating, double Latitude, double Longitude, bool IsActive,
+    List<HotelRoomTypeRow> RoomTypes);
+
+public record HotelRoomTypeRow(Guid? Id, string Name, int Capacity, decimal RatePerNightLkr, int TotalRooms);
 
 public record SaveRoomTypeRequest(string Name, int Capacity, decimal RatePerNightLkr, int TotalRooms);
 

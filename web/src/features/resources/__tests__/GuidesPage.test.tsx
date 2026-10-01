@@ -96,6 +96,16 @@ describe('GuidesPage', () => {
     expect(await within(shown).findByText('Copied to the clipboard.')).toBeInTheDocument();
     expect(await navigator.clipboard.readText()).toBe('Temp-4821-Kx');
 
+    // The ready-made message for the guide holds the login and the password.
+    const message =
+      'Your TripCraft guide login: sunil@tripcraft.test / temporary password Temp-4821-Kx. ' +
+      'Open the TripCraft app and sign in; you will be asked to choose a new password.';
+    const share = within(shown).getByRole('region', { name: 'Share with guide' });
+    expect(share).toHaveTextContent(message);
+    await user.click(within(share).getByRole('button', { name: 'Copy message' }));
+    expect(await within(shown).findByText('Message copied to the clipboard.')).toBeInTheDocument();
+    expect(await navigator.clipboard.readText()).toBe(message);
+
     await user.click(within(shown).getByRole('button', { name: 'Done' }));
     expect(screen.queryByText('Temp-4821-Kx')).not.toBeInTheDocument();
   });

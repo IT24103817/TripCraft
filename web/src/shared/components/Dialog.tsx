@@ -1,14 +1,26 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { cn } from '../utils/cn';
 
 interface DialogProps {
   open: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** "wide" for forms with a table (e.g. a hotel and its room types). */
+  size?: 'default' | 'wide';
+  /** "side" slides in from the right as a panel (e.g. one availability cell). */
+  placement?: 'center' | 'side';
 }
 
 /** Accessible modal: labelled, Escape closes it, focus moves inside and returns afterwards. */
-export function Dialog({ open, title, onClose, children }: DialogProps) {
+export function Dialog({
+  open,
+  title,
+  onClose,
+  children,
+  size = 'default',
+  placement = 'center',
+}: DialogProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -27,13 +39,22 @@ export function Dialog({ open, title, onClose, children }: DialogProps) {
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
+    <div
+      className={cn(
+        'fixed inset-0 z-40 flex bg-ink/40',
+        placement === 'side' ? 'justify-end' : 'items-center justify-center p-4',
+      )}
+    >
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-5 shadow-xl"
+        className={cn(
+          'w-full overflow-y-auto bg-surface p-5 shadow-xl',
+          placement === 'side' ? 'h-full max-w-md' : 'max-h-[90vh] rounded-lg',
+          placement === 'center' && (size === 'wide' ? 'max-w-3xl' : 'max-w-lg'),
+        )}
       >
         <h2 id={titleId} className="mb-3 text-lg font-semibold text-slate-900">
           {title}

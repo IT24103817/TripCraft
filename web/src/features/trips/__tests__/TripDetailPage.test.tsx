@@ -60,7 +60,8 @@ describe('TripDetailPage', () => {
       await screen.findByText('Waiting for the tourist to start planning in the mobile app.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Start planning' })).not.toBeInTheDocument();
-    expect(screen.getByText('No itinerary yet')).toBeInTheDocument();
+    // The itinerary loads inside the Overview tab, after the trip itself.
+    expect(await screen.findByText('No itinerary yet')).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Status timeline' })).toHaveTextContent('Submitted');
   });
 
@@ -171,7 +172,7 @@ describe('TripDetailPage', () => {
     expect(await screen.findByText(/Only a Submitted trip request can be cancelled/)).toBeInTheDocument();
   });
 
-  describe('vouchers', () => {
+  describe('PDF downloads', () => {
     // jsdom has no object URLs; the download link only needs some URL. Put the originals back afterwards.
     const original = { create: URL.createObjectURL, revoke: URL.revokeObjectURL };
     afterEach(() => {
@@ -211,5 +212,39 @@ describe('TripDetailPage', () => {
       expect(await screen.findByRole('heading', { name: 'Trip request' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Download vouchers (PDF)' })).not.toBeInTheDocument();
     });
+
+    it('downloads the itinerary PDF once a quotation was sent, with the bearer token', async () => {
+      givenTrip('QuotationSent');
+      let authorization: string | null = null;
+      server.use(
+        http.get(`${API}/api/trips/${ID}/itinerary.pdf`, ({ request }) => {
+          authorization = request.headers.get('Authorization');
+          return new HttpResponse(new Blob(['%PDF-1.4'], { type: 'application/pdf' }), {
+            headers: { 'Content-Type': 'application/pdf' },
+          });
+        }),
+      );
+      URL.createObjectURL = vi.fn(() => 'blob:itinerary');
+      URL.revokeObjectURL = vi.fn();
+      const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+      const { user } = renderApp(`/trips/${ID}`);
+
+      await user.click(await screen.findByRole('button', { name: 'Download itinerary PDF' }));
+
+      await waitFor(() => expect(click).toHaveBeenCalled());
+      expect(authorization).toBe('Bearer test-token');
+      click.mockRestore();
+    });
+
+    it.each(['Submitted', 'PendingReview', 'Cancelled'])(
+      'offers no itinerary PDF before a quotation is sent (%s)',
+      async (status) => {
+        givenTrip(status);
+        renderApp(`/trips/${ID}`);
+
+        expect(await screen.findByRole('heading', { name: 'Trip request' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Download itinerary PDF' })).not.toBeInTheDocument();
+      },
+    );
   });
 });

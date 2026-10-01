@@ -16,21 +16,82 @@
 
 @layer components {
   .btn {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
     @apply btn bg-brand-700 text-white hover:bg-brand-800 focus-visible:ring-brand-500;
   }
   .btn-secondary {
-    @apply btn border border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-brand-500;
+    @apply btn border border-slate-300 bg-surface text-slate-700 hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-brand-500;
   }
   .btn-danger {
     @apply btn bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-500;
   }
   .input {
-    @apply block min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/30;
+    @apply block min-h-10 w-full rounded-md border border-slate-300 bg-surface px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/30;
   }
   .card {
-    @apply rounded-lg border border-slate-200 bg-white p-5 shadow-card;
+    @apply rounded-lg border border-slate-200 bg-surface p-5 shadow-card;
   }
+}
+
+/*
+ * Dark mode contrast. The neutrals turn round by themselves (tailwind.config.ts); the status tones do not, so in
+ * dark mode their soft backgrounds become deep and their text becomes light, keeping at least 4.5:1 on the dark
+ * surface. Buttons with white text (bg-*-700) are left as they are.
+ */
+.dark .bg-brand-50,
+.dark .hover\:bg-brand-50\/60:hover {
+  background-color: theme('colors.brand.950');
+}
+.dark .bg-red-50,
+.dark .bg-red-100 {
+  background-color: theme('colors.red.950 / 60%');
+}
+.dark .bg-amber-50,
+.dark .bg-amber-100 {
+  background-color: theme('colors.amber.950 / 60%');
+}
+.dark .bg-green-50 {
+  background-color: theme('colors.green.950 / 60%');
+}
+.dark .bg-blue-50 {
+  background-color: theme('colors.blue.950 / 60%');
+}
+.dark .bg-purple-50 {
+  background-color: theme('colors.purple.950 / 60%');
+}
+.dark .text-brand-700,
+.dark .hover\:text-brand-700:hover {
+  color: theme('colors.brand.300');
+}
+.dark .text-red-600,
+.dark .text-red-700,
+.dark .text-red-800 {
+  color: theme('colors.red.300');
+}
+.dark .text-amber-700,
+.dark .text-amber-800,
+.dark .text-amber-900 {
+  color: theme('colors.amber.200');
+}
+.dark .text-green-600,
+.dark .text-green-700 {
+  color: theme('colors.green.300');
+}
+.dark .text-blue-700 {
+  color: theme('colors.blue.300');
+}
+.dark .text-purple-700 {
+  color: theme('colors.purple.300');
+}
+.dark .border-red-200 {
+  border-color: theme('colors.red.800');
+}
+.dark .border-amber-200,
+.dark .border-amber-300 {
+  border-color: theme('colors.amber.700');
+}
+.dark .border-brand-200 {
+  border-color: theme('colors.brand.800');
 }

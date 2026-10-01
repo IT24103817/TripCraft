@@ -15,6 +15,8 @@ public interface IResourceHoldAdminService
     Task<PagedResult<HoldDto>> ListAsync(HoldListQuery query, CancellationToken ct);
     Task<HoldDto> CreateAsync(CurrentUser user, CreateHoldRequest request, CancellationToken ct);
     Task<HoldDto> ReleaseAsync(CurrentUser user, Guid id, CancellationToken ct);
+    Task<HoldDto> GetAsync(Guid id, CancellationToken ct);
+    Task<HoldDto> UpdateBlockAsync(CurrentUser user, Guid id, UpdateBlockRequest request, CancellationToken ct);
 }
 
 /// <summary>The manager's view of holds (availability calendar), manual blocks and releases.</summary>
@@ -74,6 +76,47 @@ public class ResourceHoldAdminService(
             new { Status = nameof(HoldStatus.Held) }, new { Status = nameof(HoldStatus.Released) });
         await unitOfWork.SaveChangesAsync(ct);
         return ToDto(hold, await NamesAsync([hold], ct));
+    }
+
+    public async Task<HoldDto> GetAsync(Guid id, CancellationToken ct)
+    {
+        var hold = await resources.FindHoldAsync(id, ct) ?? throw new NotFoundException("Hold not found.");
+        return ToDto(hold, await NamesAsync([hold], ct));
+    }
+
+    /// <summary>
+    /// Changes a manual block (v1.1 availability grid). The block is replaced in one transaction: the old one is
+    /// released first, so the overlap check of the new dates does not count the block against itself.
+    /// A trip's hold cannot be edited here (409): it changes only through Confirm, cancellation or a guide change.
+    /// </summary>
+    public async Task<HoldDto> UpdateBlockAsync(CurrentUser user, Guid id, UpdateBlockRequest request, CancellationToken ct)
+    {
+        var old = await resources.FindHoldAsync(id, ct) ?? throw new NotFoundException("Hold not found.");
+        if (old.TripRequestId is not null)
+            throw new ConflictException("This hold belongs to a trip; only manual blocks can be edited.");
+        if (old.Status == HoldStatus.Released)
+            throw new ConflictException("This block was already released.");
+
+        await using var transaction = await unitOfWork.BeginTransactionAsync(ct);
+        old.Status = HoldStatus.Released;
+        await unitOfWork.SaveChangesAsync(ct);
+        try
+        {
+            await holdService.CreateHoldAsync(new ResourceHoldRequest(old.ResourceType, old.ResourceId, Guid.Empty,
+                request.FromDate, request.ToDate, request.Quantity, request.Note?.Trim()), ct);
+        }
+        catch (ConflictException)
+        {
+            unitOfWork.DiscardChanges(); // the transaction is not committed, so the release is rolled back too
+            throw;
+        }
+        var replacement = resources.StagedHolds().Single();
+        audit.Record(user.Id, "ResourceBlockUpdated", nameof(ResourceHold), replacement.Id,
+            new { HoldId = old.Id, old.FromDate, old.ToDate, old.Quantity, old.Note },
+            new { replacement.FromDate, replacement.ToDate, replacement.Quantity, replacement.Note });
+        await unitOfWork.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+        return ToDto(replacement, await NamesAsync([replacement], ct));
     }
 
     /// <summary>Display names for the resources of these holds: guide name, vehicle registration, "Hotel — room type".</summary>

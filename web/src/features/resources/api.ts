@@ -3,7 +3,7 @@ import { http } from '@/shared/api/http';
 import { queryRoots } from '@/shared/api/queryKeys';
 import type { PagedResult } from '@/shared/api/types';
 import type {
-  AvailableResourceDto,
+  AvailabilityGridDto,
   CreateGuideRequest,
   CreateHoldRequest,
   GuideAccountDto,
@@ -12,11 +12,10 @@ import type {
   HoldDto,
   HotelDto,
   ListQuery,
-  RoomTypeDto,
   SaveGuideRequest,
   SaveHotelRequest,
-  SaveRoomTypeRequest,
   SaveVehicleRequest,
+  UpdateHoldRequest,
   VehicleDto,
 } from './types';
 
@@ -114,43 +113,6 @@ export const useHotels = (query: ListQuery) => useList<HotelDto>('/api/hotels', 
 export const useSaveHotel = () => useSave<SaveHotelRequest, HotelDto>('/api/hotels');
 export const useDeleteHotel = () => useDelete('/api/hotels');
 
-export function useSaveRoomType(hotelId: string) {
-  return useSave<SaveRoomTypeRequest, RoomTypeDto>(`/api/hotels/${hotelId}/room-types`);
-}
-
-export function useDeleteRoomType(hotelId: string) {
-  return useDelete(`/api/hotels/${hotelId}/room-types`);
-}
-
-/** GET /api/availability — only runs once the search form has been submitted (query not null). */
-export function useAvailability(query: ListQuery | null) {
-  return useQuery({
-    queryKey: [queryRoots.resources, 'availability', query],
-    queryFn: async () =>
-      (await http.get<AvailableResourceDto[]>('/api/availability', { params: clean(query ?? {}) })).data,
-    enabled: query !== null,
-  });
-}
-
-/** The most holds the calendar asks for in one window (the API's largest page size). */
-export const HOLDS_PAGE_SIZE = 100;
-
-/**
- * Held holds overlapping [from, to], first page only. The result keeps the API's `total`, so the
- * calendar can say when there are more holds than it shows instead of dropping them silently.
- */
-export function useHolds(from: string, to: string) {
-  return useQuery({
-    queryKey: [queryRoots.resources, 'holds', from, to],
-    queryFn: async () =>
-      (
-        await http.get<PagedResult<HoldDto>>('/api/resource-holds', {
-          params: { from, to, status: 'Held', pageSize: HOLDS_PAGE_SIZE },
-        })
-      ).data,
-  });
-}
-
 export function useCreateHold() {
   const client = useQueryClient();
   return useMutation({
@@ -165,5 +127,46 @@ export function useReleaseHold() {
   return useMutation({
     mutationFn: async (id: string) => (await http.post<HoldDto>(`/api/resource-holds/${id}/release`)).data,
     onSuccess: () => client.invalidateQueries({ queryKey: [queryRoots.resources] }),
+  });
+}
+
+/**
+ * GET /api/availability/grid: every guide, vehicle and room type with its state on each day of [from, to]
+ * (at most 62 days). Optional filters: type, language (guides), seats (vehicles, minimum) and city (rooms).
+ */
+export function useAvailabilityGrid(query: ListQuery) {
+  return useQuery({
+    queryKey: [queryRoots.resources, 'availability-grid', clean(query)],
+    queryFn: async () =>
+      (await http.get<AvailabilityGridDto>('/api/availability/grid', { params: clean(query) })).data,
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** GET /api/resource-holds/{id}: one hold, e.g. a manual block to edit. */
+export function useHold(id: string | null | undefined) {
+  return useQuery({
+    queryKey: [queryRoots.resources, 'hold', id],
+    queryFn: async () => (await http.get<HoldDto>(`/api/resource-holds/${id}`)).data,
+    enabled: Boolean(id),
+  });
+}
+
+/** PUT /api/resource-holds/{id}: change a manual block's dates, quantity or note. */
+export function useUpdateHold() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, body }: { id: string; body: UpdateHoldRequest }) =>
+      (await http.put<HoldDto>(`/api/resource-holds/${id}`, body)).data,
+    onSuccess: () => client.invalidateQueries({ queryKey: [queryRoots.resources] }),
+  });
+}
+
+/** GET /api/attractions/cities: the cities TripCraft covers (the grid's city filter for room types). */
+export function useCoveredCities() {
+  return useQuery({
+    queryKey: [queryRoots.attractions, 'cities'],
+    queryFn: async () => (await http.get<string[]>('/api/attractions/cities')).data,
+    staleTime: 5 * 60_000,
   });
 }

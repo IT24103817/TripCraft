@@ -7,6 +7,7 @@ using TripCraft.Application.Common.Notifications;
 using TripCraft.Application.Common.Settings;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Quotations;
+using TripCraft.Application.Quotations.Documents;
 using TripCraft.Application.Quotations.Reports;
 using TripCraft.Application.Resources;
 using TripCraft.Application.Trips;
@@ -61,20 +62,20 @@ public static class DependencyInjection
 
         // v1.1: notifications, email, vouchers and operator settings
         services.AddScoped<INotificationRepository, NotificationRepository>();
-        if (string.IsNullOrWhiteSpace(configuration["SMTP_HOST"]))
-            services.AddSingleton<IEmailSender, PickupDirectoryEmailSender>();
-        else
-            services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IVoucherRepository, VoucherRepository>();
         services.AddSingleton<IVoucherPdfRenderer, QuestPdfVoucherRenderer>();
+        services.AddSingleton<IItineraryPdfRenderer, QuestPdfItineraryRenderer>();
         // Created on first use, so the API still starts without the key; issuing or scanning a voucher then fails.
         services.AddSingleton(_ => new VoucherSigner(configuration["VOUCHER_SIGNING_KEY"] ?? string.Empty));
-        services.AddSingleton(new TripSettings(
+        // Configuration defaults; an Admin's saved Settings row overrides them, read again on every request.
+        var settingsDefaults = new TripSettings(
             int.TryParse(configuration["CANCELLATION_CUTOFF_DAYS"], out var cutoff) && cutoff >= 0
                 ? cutoff
                 : TripSettings.DefaultCancellationCutoffDays,
             configuration["OPERATOR_CONTACT"] is { Length: > 0 } contact ? contact : TripSettings.DefaultOperatorContact,
-            configuration["OPERATOR_TIME_ZONE"] is { Length: > 0 } zone ? zone : TripSettings.DefaultTimeZoneId));
+            configuration["OPERATOR_TIME_ZONE"] is { Length: > 0 } zone ? zone : TripSettings.DefaultTimeZoneId);
+        services.AddScoped(sp => SettingsRepository.Load(sp.GetRequiredService<AppDbContext>(), settingsDefaults));
+        services.AddScoped<ISettingsRepository, SettingsRepository>();
 
         services.AddWorkflows(configuration);
         services.AddExternalServices(configuration);

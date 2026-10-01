@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { paged, pendingWorkflow, trip, WORKFLOW_ID } from '@/test/fixtures';
+import { pendingWorkflow, trip, WORKFLOW_ID } from '@/test/fixtures';
 import { renderApp, signInAs } from '@/test/render';
 import { API, server } from '@/test/server';
 
@@ -29,6 +29,18 @@ const QUOTATION = {
 
 describe('Reports, quotations and re-pricing (Component C)', () => {
   beforeEach(() => signInAs('OperationsManager'));
+
+  it("sends old Quotations links to the trips list, or to the trip's Quotation tab", async () => {
+    const plain = renderApp('/quotations');
+    await waitFor(() => expect(plain.location()).toBe('/trips'));
+    plain.unmount();
+
+    server.use(
+      http.get(`${API}/api/trip-requests/:id`, () => HttpResponse.json(trip({ status: 'QuotationSent' }))),
+    );
+    const forTrip = renderApp('/quotations?tripRequestId=abc');
+    await waitFor(() => expect(forTrip.location()).toBe('/trips/abc?tab=quotation'));
+  });
 
   it('shows revenue and utilisation from the reports API', async () => {
     server.use(
@@ -65,71 +77,6 @@ describe('Reports, quotations and re-pricing (Component C)', () => {
     expect(
       screen.getByRole('table', { name: 'Trip requests starting in the period, per status' }),
     ).toHaveTextContent('Completed');
-  });
-
-  it('lists quotations and sends the status filter', async () => {
-    const requests: URLSearchParams[] = [];
-    server.use(
-      http.get(`${API}/api/quotations`, ({ request }) => {
-        requests.push(new URL(request.url).searchParams);
-        return HttpResponse.json(paged([QUOTATION]));
-      }),
-    );
-    const { user } = renderApp('/quotations');
-
-    const table = await screen.findByRole('table', { name: 'Quotations' });
-    expect(within(table).getByText('300 (stale)')).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Status'), 'Approved');
-    await waitFor(() => expect(requests.at(-1)?.get('status')).toBe('Approved'));
-    expect(requests[0]?.get('sort')).toBe('-createdAt');
-  });
-
-  it('sends the Min total (USD) filter as minTotalUsd', async () => {
-    const requests: URLSearchParams[] = [];
-    server.use(
-      http.get(`${API}/api/quotations`, ({ request }) => {
-        requests.push(new URL(request.url).searchParams);
-        return HttpResponse.json(paged([QUOTATION]));
-      }),
-    );
-    const { user } = renderApp('/quotations');
-
-    await screen.findByRole('table', { name: 'Quotations' });
-    expect(requests[0]?.has('minTotalUsd')).toBe(false);
-    await user.type(screen.getByLabelText('Min total (USD)'), '500');
-
-    await waitFor(() => expect(requests.at(-1)?.get('minTotalUsd')).toBe('500'));
-  });
-
-  it('offers Clear filters when filters hide every quotation, and clears them all', async () => {
-    const requests: URLSearchParams[] = [];
-    server.use(
-      http.get(`${API}/api/quotations`, ({ request }) => {
-        const params = new URL(request.url).searchParams;
-        requests.push(params);
-        const filtered = params.has('search') || params.has('status') || params.has('minTotalUsd');
-        return HttpResponse.json(paged(filtered ? [] : [QUOTATION]));
-      }),
-    );
-    const { user } = renderApp('/quotations?search=zzz&status=Rejected&minTotalUsd=9000');
-
-    expect(await screen.findByText('No quotations match these filters')).toBeInTheDocument();
-    expect(screen.getByRole('searchbox')).toHaveValue('zzz');
-    await user.click(screen.getByRole('button', { name: 'Clear filters' }));
-
-    expect(await screen.findByRole('table', { name: 'Quotations' })).toBeInTheDocument();
-    const last = requests.at(-1)!;
-    expect(last.has('search') || last.has('status') || last.has('minTotalUsd')).toBe(false);
-    expect(screen.getByRole('searchbox')).toHaveValue('');
-    expect(screen.getByLabelText('Min total (USD)')).toHaveValue(null);
-  });
-
-  it('has no Clear filters button when nothing is filtered', async () => {
-    server.use(http.get(`${API}/api/quotations`, () => HttpResponse.json(paged([]))));
-    renderApp('/quotations');
-
-    expect(await screen.findByText('No quotations yet')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument();
   });
 
   it('re-prices the stored quotation from the review page as a new version', async () => {

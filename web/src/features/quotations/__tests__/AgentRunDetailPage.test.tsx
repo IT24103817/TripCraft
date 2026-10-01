@@ -5,7 +5,7 @@ import { pendingWorkflow, step, WORKFLOW_ID } from '@/test/fixtures';
 import { renderApp, signInAs } from '@/test/render';
 import { API, server } from '@/test/server';
 
-describe('WorkflowDetailPage', () => {
+describe('AgentRunDetailPage', () => {
   beforeEach(() => signInAs('Admin'));
 
   it('renders the agent steps in order with tools, duration, retries and status', async () => {
@@ -20,7 +20,7 @@ describe('WorkflowDetailPage', () => {
         ]),
       ),
     );
-    const { user } = renderApp(`/workflows/${WORKFLOW_ID}`);
+    const { user } = renderApp(`/agent-runs/${WORKFLOW_ID}`);
 
     const timeline = await screen.findByRole('list', { name: 'Agent steps' });
     const items = within(timeline)
@@ -52,7 +52,7 @@ describe('WorkflowDetailPage', () => {
       ),
       http.get(`${API}/api/workflows/${WORKFLOW_ID}/steps`, () => HttpResponse.json([step(1, 'planner')])),
     );
-    renderApp(`/workflows/${WORKFLOW_ID}`);
+    renderApp(`/agent-runs/${WORKFLOW_ID}`);
 
     expect(await screen.findByText('Planning — refreshing every 5 s')).toBeInTheDocument();
   });
@@ -77,7 +77,7 @@ describe('WorkflowDetailPage', () => {
       ),
       http.get(`${API}/api/workflows/${WORKFLOW_ID}/steps`, () => HttpResponse.json([step(1, 'planner')])),
     );
-    renderApp(`/workflows/${WORKFLOW_ID}`);
+    renderApp(`/agent-runs/${WORKFLOW_ID}`);
 
     const checklist = await screen.findByRole('list', { name: 'Validation checklist' });
     expect(within(checklist).getByText('Guide exists').closest('li')).toHaveTextContent('— not checked');

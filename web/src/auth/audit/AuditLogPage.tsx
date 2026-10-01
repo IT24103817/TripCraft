@@ -4,9 +4,18 @@ import { PageState } from '@/shared/components/PageState';
 import { SearchFilterBar } from '@/shared/components/SearchFilterBar';
 import { useListParams } from '@/shared/hooks/useListParams';
 import { formatDateTime, shortId } from '@/shared/utils/format';
+import { ActorFilter } from './ActorFilter';
 import { useAuditLogs, type AuditLogDto } from './auditApi';
 
-const ENTITIES = ['TripRequest', 'AgentWorkflow', 'Attraction', 'Tourist', 'User'];
+const ENTITIES = [
+  'TripRequest',
+  'AgentWorkflow',
+  'Quotation',
+  'ResourceHold',
+  'Attraction',
+  'Tourist',
+  'User',
+];
 
 const columns: Column<AuditLogDto>[] = [
   { key: 'at', header: 'When', sortKey: 'at', render: (a) => formatDateTime(a.at) },
@@ -27,10 +36,11 @@ const columns: Column<AuditLogDto>[] = [
   },
 ];
 
-/** Admin: who changed what and when (audit_logs), with search, entity and date filters, sorting and paging. */
+/** Admin: who changed what and when (audit_logs), with search, actor, entity and date filters, sorting and paging. */
 export default function AuditLogPage() {
   const list = useListParams({ sort: '-at' });
   const query = {
+    actor: list.get('actor'),
     entity: list.get('entity'),
     from: list.get('from'),
     to: list.get('to'),
@@ -65,7 +75,9 @@ export default function AuditLogPage() {
           to: query.to,
           onChange: (from, to) => list.set({ from, to }),
         }}
-      />
+      >
+        <ActorFilter value={query.actor} onChange={(actor) => list.set({ actor })} />
+      </SearchFilterBar>
       <PageState
         isLoading={logs.isLoading}
         isError={logs.isError}

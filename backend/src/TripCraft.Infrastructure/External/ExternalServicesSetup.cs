@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TripCraft.Application.Common.Notifications;
 using TripCraft.Application.Workflows.External;
+using TripCraft.Infrastructure.Persistence.Notifications;
 
 namespace TripCraft.Infrastructure.External;
 
@@ -25,6 +27,15 @@ public static class ExternalServicesSetup
                 c.BaseAddress = BaseUrl(configuration, "OWM_API_BASE_URL", "https://api.openweathermap.org/"))
             .AddRetryAndTimeout(PerTryTimeout)
             .RemoveAllLoggers(); // OWM needs the key in the URL; the default logger would print it
+
+        // Email (v1.1): SMTP when SMTP_HOST is set; otherwise the Mailtrap sandbox API with the pickup folder as fallback.
+        services.AddSingleton<PickupDirectoryEmailSender>();
+        if (!string.IsNullOrWhiteSpace(configuration["SMTP_HOST"]))
+            services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        else
+            services.AddHttpClient<IEmailSender, MailtrapEmailSender>(c =>
+                    c.BaseAddress = BaseUrl(configuration, "MAILTRAP_API_BASE_URL", "https://sandbox.api.mailtrap.io/"))
+                .AddRetryAndTimeout(PerTryTimeout);
 
         return services;
     }

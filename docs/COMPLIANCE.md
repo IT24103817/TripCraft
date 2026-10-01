@@ -20,6 +20,33 @@ It was regenerated on **28 Sep 2026** after a completeness audit of merged `main
 
 No row is PARTIAL or MISSING because of code.
 
+## v1.1 additions (2 Oct 2026)
+
+The audit below was written for v1.0. v1.1 builds on it with three branches:
+1. `feat/v1.1-workflow`: the lifecycle state machine, guide accounts, vouchers and notifications.
+2. `feat/v1.1-app`: the Flutter home with mood packages, clear statuses and guide flows.
+3. `feat/v1.1-web`: simpler navigation, an action dashboard, the availability grid, the hotel form, Settings,
+   dark mode, deposits, PDF export and Mailtrap email.
+
+Every new rule has a test.
+
+| Area | Status | Evidence |
+|------|--------|----------|
+| Trip lifecycle in one state machine; 409 on illegal moves; actor and reason in the history | DONE | `Application/Trips/TripStatusMachine.cs`; `TripStatusMachineTests` (every allowed move, every other move refused); `QuotationApprovalTests.Every_status_change_is_in_the_trip_history_with_actor_and_reason` |
+| Cities from a list; free text rejected with the supported cities named | DONE | `GET /api/attractions/cities`; `TripRequestsEndpointsTests.Free_text_city_is_rejected_*`; planner forces the chosen cities (`agents/tests/test_planner.py`) |
+| Manager review: send, request revision (v1/v2), edit directly, re-price; client accept/decline; Confirm as one transaction | DONE | `QuotationApprovalTests`, `ProposalEditTests`, `TripConfirmationServiceTests`, `ApprovalTransactionPostgresTests` |
+| Cancellation with reason, N-day cut-off, holds released in a transaction | DONE | `TripHistoryAndCancelTests` |
+| Guide accounts (temporary password, forced change, reset), guide change requests | DONE | `GuidesEndpointsTests`, `GuideChangeRequestTests`, Flutter `change_password_test.dart` |
+| Signed vouchers, PDF, voucher check-in (signature, trip, day, guide) | DONE | `VoucherSignerTests`, `VoucherEndpointsTests`, `VoucherCheckInTests`; [evidence/sample-voucher.pdf](evidence/sample-voucher.pdf) |
+| Notifications (web bell, phone polling) and tourist emails | DONE | `NotificationsEndpointsTests`, `NotificationBell.test.tsx`, `notifications_poller_test.dart` |
+| Mood packages (`trip_templates`), Book as is / Customize, guide rating, trip assignment | DONE | `TripTemplatesEndpointsTests`, `TemplatePricingTests`, `TripAssignmentAndRatingTests`, Flutter `tourist_home_test.dart`, `package_booking_test.dart` |
+| Dashboard actions, "Why this plan", availability grid with blocks, hotel form with room types | DONE | `DashboardAndDocumentsTests`, `AvailabilityGridTests`, `VehiclesAndHotelsEndpointsTests`, web `Dashboard.test.tsx`, `WhyThisPlan.test.tsx`, `AvailabilityPage.test.tsx`, `HotelForm.test.tsx` |
+| Admin Settings in the database, read per request (LLM provider sent with each workflow) | DONE | `SettingsEndpointsTests`; agents `test_llm.py` (per-run provider, Groq without a key fails safely); web `SettingsPage.test.tsx` |
+| Deposit %, paid/unpaid flag, itinerary + quotation PDF, audit-log actor filter, dark mode | DONE | `DashboardAndDocumentsTests`, `AuditLogActorFilterTests`, web `TripQuotationTab.test.tsx`, `ThemeToggle.test.tsx` |
+| End to end with real agents | DONE | [evidence/v1.1-e2e.md](evidence/v1.1-e2e.md): API flow submit → review → send → accept → confirm → voucher scan → InProgress; Playwright 6/6 |
+
+**v1.1 test totals:** backend 464, agents 62, web 159, Flutter 162, Playwright 6.
+
 ## Run results (28 Sep 2026, final code)
 
 MacBook (Apple Silicon), PostgreSQL 16, Ollama `llama3.1:8b`, API, agent service, React (Vite), and the release APK on an
@@ -339,7 +366,7 @@ own business logic, so it stays in its owner's folder:
 
 | Requirement | Status | Evidence | How to demonstrate in the viva |
 |-------------|--------|----------|-------------------------------|
-| At least one meaningful third-party API | DONE | `Infrastructure/External/ExchangeRateService.cs` (open.er-api.com), `DistanceService.cs` (OpenRouteService), `WeatherService.cs` (OpenWeatherMap) | Quotation shows the live LKR/USD rate |
+| At least one meaningful third-party API | DONE | `Infrastructure/External/ExchangeRateService.cs` (open.er-api.com), `DistanceService.cs` (OpenRouteService), `WeatherService.cs` (OpenWeatherMap); v1.1 fourth: `MailtrapEmailSender.cs` (Mailtrap email sandbox, same typed-HttpClient + retry/timeout wrapper, pickup-folder fallback; `MailtrapEmailSenderTests` cover success, 5xx, 429, 401, network error and missing settings) | Quotation shows the live LKR/USD rate; a confirmation email arrives in the Mailtrap inbox |
 | Business purpose and user benefit explained | DONE | README "Third-party" rows and `docs/report/06-technical-report.md` table | Explain why the quotation needs FX |
 | Routed through ASP.NET Core | DONE | Agents call `/api/internal/{fx-rate,distance,weather}`; clients never call providers | Show `InternalToolsController` |
 | Credentials protected | DONE | `ORS_API_KEY`, `OWM_API_KEY` from env; ORS key in a header, OWM client has logging removed; no key in logs (checked live) | `.env.example` has names only |

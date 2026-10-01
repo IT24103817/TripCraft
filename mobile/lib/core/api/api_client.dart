@@ -38,6 +38,17 @@ class ApiClient {
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
       _send(() => _dio.get<dynamic>(path, queryParameters: _clean(query)));
 
+  /// A file download (e.g. a PDF): the raw bytes instead of JSON.
+  Future<List<int>> getBytes(String path) async {
+    final data = await _send(
+      () => _dio.get<List<int>>(
+        path,
+        options: Options(responseType: ResponseType.bytes),
+      ),
+    );
+    return data as List<int>;
+  }
+
   Future<dynamic> post(String path, {Object? body}) =>
       _send(() => _dio.post<dynamic>(path, data: body));
 

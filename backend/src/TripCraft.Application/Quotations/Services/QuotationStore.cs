@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TripCraft.Application.Common.Settings;
 using TripCraft.Application.Workflows.Ports;
 
 namespace TripCraft.Application.Quotations.Services;
@@ -7,7 +8,7 @@ namespace TripCraft.Application.Quotations.Services;
 /// Component C's persistence for the workflow (IQuotationStore): a new version per proposal, its status and the
 /// manager's decision. Every method only stages changes; the proposal or approval service commits them.
 /// </summary>
-public class QuotationStore(IQuotationRepository quotations) : IQuotationStore
+public class QuotationStore(IQuotationRepository quotations, TripSettings settings) : IQuotationStore
 {
     public async Task<Guid> AddVersionAsync(QuotationDraft draft, CancellationToken ct)
     {
@@ -24,6 +25,7 @@ public class QuotationStore(IQuotationRepository quotations) : IQuotationStore
             FxAsOf = draft.FxAsOf,
             FxStale = draft.FxStale,
             ProposalSnapshot = draft.ProposalSnapshot,
+            DepositPct = settings.DepositPct,
             Status = QuotationStatus.Pending
         };
         quotation.Lines = draft.Lines.Select(l => new QuotationLine

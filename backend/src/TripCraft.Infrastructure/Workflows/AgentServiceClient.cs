@@ -34,6 +34,7 @@ public class AgentServiceClient(HttpClient http, IConfiguration configuration, I
         r.Skeleton,
         PreviousViolations = r.PreviousViolations ?? [],
         Cities = r.Cities ?? [],
+        r.LlmProvider, // null: the agent service uses its own LLM_PROVIDER
         ManagerComment = managerComment,
         CallbackBaseUrl = configuration["AGENT_CALLBACK_BASE_URL"]
     };

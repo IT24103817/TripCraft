@@ -10,12 +10,12 @@ import { useListParams } from '@/shared/hooks/useListParams';
 import { useDeleteHotel, useHotels } from './api';
 import { DeleteButton } from './DeleteButton';
 import { HotelFormDialog } from './HotelFormDialog';
-import { RoomTypesDialog } from './RoomTypesDialog';
+import { HotelDetailsDialog } from './HotelDetailsDialog';
 import type { HotelDto } from './types';
 
 const CITIES = ['Colombo', 'Kandy', 'Ella', 'Galle'];
 
-/** Component B: hotels CRUD with room types, search, city and star filters, sorting and paging. */
+/** Component B: hotels CRUD with their room types (edited in the hotel form), search, city and star filters, sorting and paging. */
 export default function HotelsPage() {
   const list = useListParams({ sort: 'name' });
   const query = {
@@ -31,7 +31,7 @@ export default function HotelsPage() {
   const toast = useToast();
   const [editing, setEditing] = useState<HotelDto | null>(null);
   const [formOpen, setFormOpen] = useState(false);
-  const [rooms, setRooms] = useState<HotelDto | null>(null);
+  const [details, setDetails] = useState<HotelDto | null>(null);
   const [toDelete, setToDelete] = useState<HotelDto | null>(null);
 
   const openForm = (hotel: HotelDto | null) => {
@@ -50,10 +50,10 @@ export default function HotelsPage() {
         <button
           type="button"
           className="text-brand-700 hover:underline"
-          aria-label={`Room types of ${h.name}`}
+          aria-label={`Details of ${h.name}`}
           onClick={(event) => {
             event.stopPropagation();
-            setRooms(h);
+            setDetails(h);
           }}
         >
           {h.roomTypes.length} types · {h.roomTypes.reduce((n, r) => n + r.totalRooms, 0)} rooms
@@ -134,7 +134,14 @@ export default function HotelsPage() {
         )}
       </PageState>
       <HotelFormDialog open={formOpen} hotel={editing} onClose={() => setFormOpen(false)} />
-      <RoomTypesDialog hotel={rooms} onClose={() => setRooms(null)} />
+      <HotelDetailsDialog
+        hotel={details}
+        onClose={() => setDetails(null)}
+        onEdit={(hotel) => {
+          setDetails(null);
+          openForm(hotel);
+        }}
+      />
       <ConfirmDialog
         open={toDelete !== null}
         title="Delete hotel"

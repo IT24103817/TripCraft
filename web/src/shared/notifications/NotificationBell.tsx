@@ -67,7 +67,7 @@ export function NotificationBell() {
       {open && (
         <div
           id="notification-list"
-          className="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-slate-200 bg-white shadow-xl"
+          className="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-slate-200 bg-surface shadow-xl"
         >
           <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
             <h2 className="text-sm font-semibold text-slate-900">Notifications</h2>

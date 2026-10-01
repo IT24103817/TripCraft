@@ -30,6 +30,8 @@ class WorkflowRequest(ApiModel):
     # v1.1: the destinations the tourist picked from the API's city list, in travel order. When given, they are
     # the trip's cities; the Planner does not guess them from the objective text.
     cities: list[str] = Field(default_factory=list, max_length=10)
+    # v1.1: "ollama" or "groq" from the operator's Settings, for this run only. None = LLM_PROVIDER.
+    llm_provider: Literal["ollama", "groq"] | None = None
     # Where to POST step reports and the proposal. Defaults to API_BASE_URL when missing.
     callback_base_url: str | None = None
 

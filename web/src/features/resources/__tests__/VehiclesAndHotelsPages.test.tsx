@@ -46,26 +46,18 @@ describe('Vehicles and hotels', () => {
     expect(await screen.findByText('Could not load this page')).toBeInTheDocument();
   });
 
-  it('adds a room type to a hotel', async () => {
-    let added: unknown = null;
-    server.use(
-      http.get(`${API}/api/hotels`, () => HttpResponse.json(paged([KANDY_HILLS]))),
-      http.post(`${API}/api/hotels/h1/room-types`, async ({ request }) => {
-        added = await request.json();
-        return HttpResponse.json({ id: 'r2', hotelId: 'h1', ...(added as object) }, { status: 201 });
-      }),
-    );
+  it("shows a hotel's room types in its details and opens the edit form from there", async () => {
+    server.use(http.get(`${API}/api/hotels`, () => HttpResponse.json(paged([KANDY_HILLS]))));
     const { user } = renderApp('/resources/hotels');
 
-    await user.click(await screen.findByRole('button', { name: 'Room types of Kandy Hills' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Room types — Kandy Hills' });
-    expect(within(dialog).getByRole('list', { name: 'Room types' })).toHaveTextContent('Standard Double');
-    await user.type(within(dialog).getByLabelText('Room type name'), 'Family Room');
-    await user.clear(within(dialog).getByLabelText('Sleeps'));
-    await user.type(within(dialog).getByLabelText('Sleeps'), '4');
-    await user.click(within(dialog).getByRole('button', { name: 'Add room type' }));
+    await user.click(await screen.findByRole('button', { name: 'Details of Kandy Hills' }));
+    const details = await screen.findByRole('dialog', { name: 'Kandy Hills' });
+    const rooms = within(details).getByRole('table', { name: 'Room types' });
+    expect(within(rooms).getByRole('rowheader', { name: 'Standard Double' })).toBeInTheDocument();
+    expect(rooms).toHaveTextContent('LKR 12,000.00');
 
-    expect(await screen.findByText('Added Family Room.')).toBeInTheDocument();
-    expect(added).toMatchObject({ name: 'Family Room', capacity: 4 });
+    await user.click(within(details).getByRole('button', { name: 'Edit hotel' }));
+    const form = await screen.findByRole('dialog', { name: 'Edit hotel' });
+    expect(within(form).getByLabelText('Room type 1 name')).toHaveValue('Standard Double');
   });
 });

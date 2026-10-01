@@ -48,6 +48,32 @@ Examples enforced in code: a Tourist calling `POST /api/quotations/{id}/approve`
 another tourist's trip gets **403** (checked in `TripRequestService.EnsureCanAccess`); an Admin opening the
 approval inbox gets **403**.
 
+## What's new in v1.1
+
+- **One trip lifecycle** in `TripStatusMachine`: Submitted → Planning → PendingReview → QuotationSent → ClientAccepted
+  → Confirmed → InProgress → Completed, plus Cancelled, RevisionRequested and FailedSafely. An illegal move returns
+  409, and every change goes into the trip history with its actor and reason. See
+  [docs/diagrams/workflow.md](docs/diagrams/workflow.md) and [docs/API-V11.md](docs/API-V11.md).
+- **Tourist app:**
+  - a home screen with five mood packages (`trip_templates`, priced from today's rate cards), with "Book as is" or
+    "Customize with the planner";
+  - cities chosen from a list;
+  - accept or decline with a reason;
+  - cancellation with a notice period;
+  - signed QR vouchers, the itinerary PDF and "Rate your guide".
+- **Guide app:** a home screen with today's trip, voucher-scan and GPS check-in, change requests, and a forced
+  password change for new accounts.
+- **Staff web** ([docs/API-V11-WEB.md](docs/API-V11-WEB.md)):
+  - four navigation groups and a dashboard that starts with "Needs your action";
+  - a review page with "Why this plan", v1/v2 comparison, Edit directly and Re-price;
+  - an availability grid with manual blocks;
+  - a hotel form with its room types, and guide accounts with a temporary password;
+  - an Admin Settings page (Ollama/Groq, cancellation notice, margin, deposit);
+  - dark mode, audit-log filters, deposit paid/unpaid, and PDF export.
+- **Emails** go to the tourist when a quotation is sent and when the trip is confirmed. They use the **Mailtrap
+  sandbox** (the fourth third-party integration) and fall back to a pickup folder. In-app notifications appear on
+  the web bell and as phone notifications.
+
 ## Features per component
 
 The three business components and where each lives in every layer (ownership in [Component ownership](#component-ownership)).
@@ -237,7 +263,7 @@ lists the API's names; each component has its own example file.
 
 | Component | Variables |
 |-----------|-----------|
-| API | `DATABASE_URL`, `JWT_SECRET`, `JWT_ISSUER`, `ALLOWED_ORIGINS`, `INTERNAL_AGENT_KEY`, `AGENT_SERVICE_URL`, `AGENT_CALLBACK_BASE_URL`, `RUN_MIGRATIONS`, `ORS_API_KEY`, `OWM_API_KEY`, `FX_FALLBACK_LKR_PER_USD`, `UPLOADS_DIR`, optional `FX_API_BASE_URL` / `ORS_API_BASE_URL` / `OWM_API_BASE_URL` |
+| API | `DATABASE_URL`, `JWT_SECRET`, `JWT_ISSUER`, `ALLOWED_ORIGINS`, `INTERNAL_AGENT_KEY`, `AGENT_SERVICE_URL`, `AGENT_CALLBACK_BASE_URL`, `RUN_MIGRATIONS`, `ORS_API_KEY`, `OWM_API_KEY`, `FX_FALLBACK_LKR_PER_USD`, `UPLOADS_DIR`, optional `FX_API_BASE_URL` / `ORS_API_BASE_URL` / `OWM_API_BASE_URL`; v1.1: `VOUCHER_SIGNING_KEY`, `CANCELLATION_CUTOFF_DAYS`, `OPERATOR_CONTACT`, `OPERATOR_TIME_ZONE`, `MAILTRAP_API_TOKEN`, `MAILTRAP_INBOX_ID`, `MAIL_FROM`, optional `SMTP_*`, `EMAIL_PICKUP_DIR`, `MAILTRAP_API_BASE_URL` (the Admin Settings page overrides the cut-off, contact, deposit % and LLM provider at run time) |
 | Agent service ([agents/.env.example](agents/.env.example)) | `INTERNAL_AGENT_KEY`, `API_BASE_URL`, `LLM_PROVIDER`, `OLLAMA_MODEL`, `OLLAMA_BASE_URL`, `GROQ_API_KEY`, `GROQ_MODEL`, `NODE_TIMEOUT_SECONDS`, `MAX_RETRIES`, `MAX_REPLANS` |
 | Web ([web/.env.example](web/.env.example)) | `VITE_API_URL`, `VITE_APK_URL`, `VITE_GROUP_NUMBER` |
 | Mobile | `API_URL` (`--dart-define`) |
@@ -368,14 +394,15 @@ Agent service (internal, `http://127.0.0.1:8001`): `POST /run-workflow`, `POST /
 
 | Layer | Command | Count (latest run) |
 |-------|---------|--------------------|
-| Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 333 passed |
-| Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 58 passed |
-| React | `cd web && npm run lint && npm test && npm run build` | 82 passed (19 files) |
-| Flutter | `cd mobile && flutter analyze && flutter test` | 68 passed |
-| End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 6 passed (4 roles, over-budget → RevisionRequested, demo → approved → Confirmed) |
+| Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 464 passed |
+| Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 62 passed |
+| React | `cd web && npm run lint && npm test && npm run build` | 159 passed (30 files) |
+| Flutter | `cd mobile && flutter analyze && flutter test` | 162 passed |
+| End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 6 passed (4 roles, over-budget → review with warning, demo → reviewed → sent → accepted → Confirmed) |
 | Performance | `k6 run tests/perf/list-load.js` (and `auth-load.js`, `agent-latency.js`) from the repo root | `list-load.js`: 610,814 requests, p95 9.56 ms, 0 % errors; others in [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md) |
 
-Latest run: 28 Sep 2026 on merged `main`, plus `dotnet build -warnaserror` (0 warnings), `ruff check`,
+Latest run: 2 Oct 2026 on `feat/v1.1-web` (v1.1), with real Ollama agents for the e2e; evidence in
+[docs/evidence/v1.1-e2e.md](docs/evidence/v1.1-e2e.md). The earlier v1.0 run (28 Sep 2026) also had `dotnet build -warnaserror` (0 warnings), `ruff check`,
 `flutter analyze` (no issues) and Lighthouse accessibility **100** on the landing page.
 
 ### Screenshots

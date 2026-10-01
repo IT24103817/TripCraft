@@ -55,3 +55,11 @@ export function monthRange(date = new Date()): { from: string; to: string } {
     to: toIsoDate(new Date(date.getFullYear(), date.getMonth() + 1, 0)),
   };
 }
+
+/** The last `count` months as "yyyy-MM", oldest first, ending with the current month (e.g. "2026-05" … "2026-10"). */
+export function lastMonths(count: number, today = new Date()): string[] {
+  return Array.from({ length: count }, (_, i) => {
+    const month = new Date(today.getFullYear(), today.getMonth() - (count - 1) + i, 1);
+    return `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
+  });
+}

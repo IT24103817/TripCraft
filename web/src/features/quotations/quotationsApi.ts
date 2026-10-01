@@ -1,4 +1,4 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { http } from '@/shared/api/http';
 import { queryRoots } from '@/shared/api/queryKeys';
 import type { PagedResult } from '@/shared/api/types';
@@ -12,19 +12,6 @@ import type {
 } from './types';
 
 const QUOTATIONS = queryRoots.quotations;
-
-/**
- * GET /api/quotations with status, created from/to and minTotalUsd filters, search (trip objective),
- * sort and paging. Empty values are left out so the API only sees filters that are set.
- */
-export function useQuotations(query: Record<string, string | number>) {
-  const params = Object.fromEntries(Object.entries(query).filter(([, v]) => v !== ''));
-  return useQuery({
-    queryKey: [QUOTATIONS, 'list', params],
-    queryFn: async () => (await http.get<PagedResult<QuotationDto>>('/api/quotations', { params })).data,
-    placeholderData: keepPreviousData,
-  });
-}
 
 export function useQuotation(id: string | null | undefined) {
   return useQuery({
@@ -101,3 +88,16 @@ export const useUtilisation = (from: string, to: string) =>
   useReport<UtilisationDto[]>('utilisation', from, to);
 export const useTripsByStatus = (from: string, to: string) =>
   useReport<StatusCountDto[]>('trips-by-status', from, to);
+
+/**
+ * POST /api/quotations/{id}/payment {paid}: the manager marks the deposit of the newest version paid or unpaid,
+ * once the client has accepted it (409 otherwise). Refreshes the quotations.
+ */
+export function useDepositPayment() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ quotationId, paid }: { quotationId: string; paid: boolean }) =>
+      (await http.post<QuotationDto>(`/api/quotations/${quotationId}/payment`, { paid })).data,
+    onSuccess: () => client.invalidateQueries({ queryKey: [QUOTATIONS] }),
+  });
+}

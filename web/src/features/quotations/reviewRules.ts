@@ -98,3 +98,11 @@ export function declineReason(quotation: QuotationDto | undefined): string | nul
   const declined = quotation.decisions.filter((d) => d.decision === 'Declined').at(-1);
   return declined?.comment ?? 'No reason was given.';
 }
+
+/** The API accepts a deposit payment change only once the client has accepted the newest version. */
+export const PAYMENT_STATUSES: TripRequestStatus[] = [
+  'ClientAccepted',
+  'Confirmed',
+  'InProgress',
+  'Completed',
+];

@@ -7,6 +7,7 @@ import '../../../shared/widgets/status_chip.dart';
 import '../data/trip_models.dart';
 import 'assignment_card.dart';
 import 'cancel_trip_section.dart';
+import 'itinerary_pdf_card.dart';
 import 'planning_section.dart';
 import 'rate_guide_card.dart';
 import 'trip_detail_rules.dart';
@@ -14,7 +15,7 @@ import 'trip_history_section.dart';
 import 'trip_progress_card.dart';
 
 /// The "Overview" tab, top to bottom: the request, where it is and what happens next, the decision to make
-/// (at QuotationSent), planning, the guide and vehicle, the guide rating, the history and cancellation.
+/// (at QuotationSent), planning, the itinerary PDF, the guide and vehicle, the guide rating, the history and cancellation.
 class TripOverviewTab extends StatelessWidget {
   const TripOverviewTab({
     super.key,
@@ -39,6 +40,8 @@ class TripOverviewTab extends StatelessWidget {
       if (status == 'QuotationSent' && decisionPanel != null)
         decisionPanel!(trip.id, onRefresh),
       PlanningSection(trip: trip, workflow: workflow, onBack: onRefresh),
+      if (itineraryPdfStatuses.contains(status))
+        ItineraryPdfCard(tripId: trip.id),
       if (voucherStatuses.contains(status)) AssignmentCard(tripId: trip.id),
       if (status == 'Completed') RateGuideCard(tripId: trip.id),
       TripHistorySection(tripId: trip.id),

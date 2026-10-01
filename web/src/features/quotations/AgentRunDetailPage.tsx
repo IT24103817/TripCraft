@@ -7,7 +7,8 @@ import { useWorkflow, useWorkflowSteps } from './api';
 import { StepTimeline } from './StepTimeline';
 import { ValidationChecklist } from './ValidationChecklist';
 
-export default function WorkflowDetailPage() {
+/** One agent run: its status, timings, validation result and every agent step. */
+export default function AgentRunDetailPage() {
   const { id = '' } = useParams();
   const workflow = useWorkflow(id);
   const planning = workflow.data?.status === 'Planning';
@@ -23,12 +24,12 @@ export default function WorkflowDetailPage() {
       {workflow.data && (
         <section className="space-y-4">
           <PageHeader
-            title={`Workflow ${shortId(workflow.data.id)}`}
+            title={`Agent run ${shortId(workflow.data.id)}`}
             description={`Trip ${shortId(workflow.data.tripRequestId)}`}
             actions={
               <>
-                <Link to="/workflows" className="btn-secondary">
-                  All workflows
+                <Link to="/agent-runs" className="btn-secondary">
+                  All agent runs
                 </Link>
                 {/* Review, send, confirm: possible once the agents produced a proposal. */}
                 {(workflow.data.status === 'PendingApproval' ||

@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using TripCraft.Application.Common;
+using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Common.Paging;
 using TripCraft.Application.Common.Security;
@@ -12,6 +14,7 @@ public interface IQuotationService
 {
     Task<PagedResult<QuotationDto>> ListAsync(QuotationListQuery query, CancellationToken ct);
     Task<QuotationDto> GetAsync(CurrentUser user, Guid id, CancellationToken ct);
+    Task<QuotationDto> SetPaymentAsync(CurrentUser user, Guid id, bool paid, CancellationToken ct);
 }
 
 /// <summary>
@@ -20,7 +23,9 @@ public interface IQuotationService
 /// </summary>
 public class QuotationService(
     IQuotationRepository quotations,
-    ITripRequestRepository trips) : IQuotationService
+    ITripRequestRepository trips,
+    IAuditLogger audit,
+    IUnitOfWork unitOfWork) : IQuotationService
 {
     public static readonly IReadOnlyDictionary<string, Expression<Func<Quotation, object>>> SortableFields =
         new Dictionary<string, Expression<Func<Quotation, object>>>
@@ -68,6 +73,28 @@ public class QuotationService(
         var quotation = await LoadForUserAsync(user, id, ct);
         var decisions = await quotations.Decisions().Where(d => d.QuotationId == id).ToListAsync(ct);
         return QuotationDto.FromEntity(quotation, decisions);
+    }
+
+    /// <summary>
+    /// The manager marks the deposit paid (or unpaid again) — only on the newest version, after the client accepted
+    /// it (trip ClientAccepted, Confirmed, InProgress or Completed). Audited.
+    /// </summary>
+    public async Task<QuotationDto> SetPaymentAsync(CurrentUser user, Guid id, bool paid, CancellationToken ct)
+    {
+        var quotation = await quotations.FindAsync(id, ct) ?? throw new NotFoundException("Quotation not found.");
+        var newest = await quotations.LatestVersionAsync(quotation.TripRequestId, ct);
+        var trip = await trips.GetByIdAsync(quotation.TripRequestId, ct) ?? throw new NotFoundException("Trip request not found.");
+        if (quotation.Version != newest || quotation.AcceptedAt is null
+            || trip.Status is not (TripRequestStatus.ClientAccepted or TripRequestStatus.Confirmed
+                or TripRequestStatus.InProgress or TripRequestStatus.Completed))
+            throw new ConflictException("The deposit can only be recorded on the newest quotation after the client accepted it.");
+
+        var before = new { DepositPaid = quotation.DepositPaidAt is not null };
+        quotation.DepositPaidAt = paid ? quotation.DepositPaidAt ?? DateTime.UtcNow : null;
+        audit.Record(user.Id, paid ? "DepositMarkedPaid" : "DepositMarkedUnpaid", nameof(Quotation), quotation.Id, before,
+            new { DepositPaid = paid });
+        await unitOfWork.SaveChangesAsync(ct);
+        return await GetAsync(user, id, ct);
     }
 
     /// <summary>Managers see every quotation; a tourist only the quotations of their own trips (403 otherwise).</summary>

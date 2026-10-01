@@ -55,7 +55,37 @@ export const vehicleSchema = z.object({
 });
 export type VehicleForm = z.infer<typeof vehicleSchema>;
 
-/** Mirrors SaveHotelRequestValidator (coordinates must be in Sri Lanka). */
+/** Mirrors SaveRoomTypeRequestValidator. */
+const roomTypeSchema = z.object({
+  name: z.string().trim().min(2, 'At least 2 characters.').max(60),
+  capacity: whole(1, 8),
+  ratePerNightLkr: money(1_000_000),
+  totalRooms: whole(1, 500),
+});
+/** One row of the hotel form's room-types table. roomTypeId is set for a room type that already exists. */
+const roomTypeRowSchema = roomTypeSchema.extend({ roomTypeId: z.string().optional() });
+export type RoomTypeRow = z.infer<typeof roomTypeRowSchema>;
+
+/** At least one room type, and no two with the same name (ignoring case and spaces). */
+const roomTypeRowsSchema = z
+  .array(roomTypeRowSchema)
+  .min(1, 'Add at least one room type.')
+  .superRefine((rows, ctx) => {
+    const seen = new Set<string>();
+    rows.forEach((row, index) => {
+      const name = row.name.trim().toLowerCase();
+      if (seen.has(name)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [index, 'name'],
+          message: 'Each room type needs a different name.',
+        });
+      }
+      seen.add(name);
+    });
+  });
+
+/** Mirrors SaveHotelRequestValidator (coordinates must be in Sri Lanka) with its room types (docs/API-V11-WEB.md). */
 export const hotelSchema = z.object({
   name: z.string().trim().min(2).max(150),
   city: z.string().trim().min(2).max(100),
@@ -69,14 +99,41 @@ export const hotelSchema = z.object({
     .min(79.4, 'Longitude must be in Sri Lanka (79.4–82.1).')
     .max(82.1, 'Longitude must be in Sri Lanka (79.4–82.1).'),
   isActive: z.boolean(),
+  roomTypes: roomTypeRowsSchema,
 });
 export type HotelForm = z.infer<typeof hotelSchema>;
 
-/** Mirrors SaveRoomTypeRequestValidator. */
-export const roomTypeSchema = z.object({
-  name: z.string().trim().min(2).max(60),
-  capacity: whole(1, 8),
-  ratePerNightLkr: money(1_000_000),
-  totalRooms: whole(1, 500),
-});
-export type RoomTypeForm = z.infer<typeof roomTypeSchema>;
+/** A new room-type row starts with the most common room: a double for two. */
+export const NEW_ROOM_TYPE: RoomTypeRow = { name: '', capacity: 2, ratePerNightLkr: 12000, totalRooms: 5 };
+
+export const BLOCK_REASONS = ['Leave', 'Maintenance', 'Other'] as const;
+
+/**
+ * A manual block on the availability grid (POST or PUT /api/resource-holds). "Other" needs a note; the dates
+ * must be in order; room types may block up to their total rooms, guides and vehicles exactly one.
+ */
+export function blockSchema(maxQuantity: number) {
+  return z
+    .object({
+      reason: z.enum(BLOCK_REASONS),
+      details: z.string().trim().max(150, 'At most 150 characters.'),
+      fromDate: z.string().min(1, 'Choose the first day.'),
+      toDate: z.string().min(1, 'Choose the last day.'),
+      quantity: whole(1, maxQuantity),
+    })
+    .refine((block) => block.reason !== 'Other' || block.details !== '', {
+      path: ['details'],
+      message: 'Write what the block is for.',
+    })
+    .refine((block) => block.toDate >= block.fromDate, {
+      path: ['toDate'],
+      message: 'The last day cannot be before the first day.',
+    });
+}
+export type BlockFormValues = z.infer<ReturnType<typeof blockSchema>>;
+
+/** The hold's note: "Leave", "Maintenance: brakes", or just the details for "Other". */
+export function blockNote(block: Pick<BlockFormValues, 'reason' | 'details'>): string {
+  if (block.reason === 'Other') return block.details;
+  return block.details ? `${block.reason}: ${block.details}` : block.reason;
+}

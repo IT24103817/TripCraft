@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { DataTable, type Column } from '@/shared/components/DataTable';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { PageState } from '@/shared/components/PageState';
@@ -47,8 +47,13 @@ export default function TripsListPage() {
   return (
     <section className="space-y-4">
       <PageHeader
-        title="Trip requests"
+        title="Trips"
         description="Every trip request submitted from the mobile app, through review, booking and the trip itself."
+        actions={
+          <Link to="/attractions" className="btn-secondary">
+            Attractions
+          </Link>
+        }
       />
       <SearchFilterBar
         search={{

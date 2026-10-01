@@ -134,15 +134,15 @@ export function useTripWorkflowId(id: string, enabled: boolean) {
 }
 
 /**
- * GET /api/trips/{id}/vouchers.pdf needs the bearer token, so a plain link cannot open it. The PDF is fetched
- * through the API client as a blob and handed to the browser as a download.
+ * The trip PDFs (GET /api/trips/{id}/vouchers.pdf and /itinerary.pdf) need the bearer token, so a plain link cannot
+ * open them. The PDF is fetched through the API client as a blob and handed to the browser as a download.
  */
-export async function downloadVouchersPdf(tripId: string): Promise<void> {
-  const response = await http.get<Blob>(`/api/trips/${tripId}/vouchers.pdf`, { responseType: 'blob' });
+export async function downloadPdf(path: string, fileName: string): Promise<void> {
+  const response = await http.get<Blob>(path, { responseType: 'blob' });
   const url = URL.createObjectURL(response.data);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `tripcraft-vouchers-${tripId}.pdf`;
+  link.download = fileName;
   document.body.appendChild(link);
   link.click();
   link.remove();

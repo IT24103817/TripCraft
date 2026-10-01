@@ -1,8 +1,9 @@
 import { PageState } from '@/shared/components/PageState';
 import { StatusBadge } from '@/shared/components/StatusBadge';
-import { formatDateTime, formatLkr, formatUsd, shortId } from '@/shared/utils/format';
+import { formatLkr, formatUsd, shortId } from '@/shared/utils/format';
+import { DecisionList } from './DecisionList';
 import { useQuotation, useQuotationVersions } from './quotationsApi';
-import { DECISION_LABELS, QUOTATION_STATUS_LABELS } from './reviewRules';
+import { QUOTATION_STATUS_LABELS } from './reviewRules';
 import type { QuotationDto } from './types';
 
 interface Props {
@@ -89,19 +90,7 @@ function VersionColumn({ quotation, names }: { quotation: QuotationDto; names: R
           </ol>
         </div>
       )}
-      {quotation.decisions.length > 0 && (
-        <div>
-          <h4 className="font-medium text-slate-800">Decisions</h4>
-          <ul className="space-y-1 text-slate-700">
-            {quotation.decisions.map((d, i) => (
-              <li key={i}>
-                {DECISION_LABELS[d.decision] ?? d.decision} ({formatDateTime(d.decidedAt)})
-                {d.comment && <span className="block text-slate-600">“{d.comment}”</span>}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <DecisionList decisions={quotation.decisions} />
     </article>
   );
 }

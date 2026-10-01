@@ -67,13 +67,15 @@ public class QuotationApprovalTests
         var (workflow, vouchers, emails, audit) = await factory.QueryDbAsync(async db => (
             await db.AgentWorkflows.SingleAsync(w => w.Id == outcome.WorkflowId),
             await db.Vouchers.Where(v => v.TripRequestId == trip.Id).ToListAsync(),
-            await db.EmailOutbox.Where(e => e.TripRequestId == trip.Id).ToListAsync(),
+            await db.EmailOutbox.Where(e => e.TripRequestId == trip.Id).OrderBy(e => e.CreatedAt).ToListAsync(),
             await db.AuditLogs.AnyAsync(a => a.Action == "TripConfirmed" && a.EntityId == trip.Id)));
         workflow.FinalOutcome.Should().Contain("\"decision\":\"Confirmed\"");
         vouchers.Should().HaveCount(5); // 1 trip voucher + 4 hotel nights
         vouchers.Count(v => v.Type == Application.Vouchers.VoucherType.Trip).Should().Be(1);
-        emails.Should().ContainSingle().Which.SentAt.Should().NotBeNull();
-        Directory.GetFiles(factory.MailDir, "*.eml").Should().ContainSingle();
+        // One email when the quotation was sent, one when the trip was confirmed (Mailtrap is not set: pickup folder).
+        emails.Select(e => e.Subject).Should().Equal("Your TripCraft quotation is ready", "Your TripCraft trip is confirmed");
+        emails.Should().OnlyContain(e => e.SentAt != null);
+        Directory.GetFiles(factory.MailDir, "*.eml").Should().HaveCount(2);
         audit.Should().BeTrue();
 
         // Step 11: the tourist now sees the saved itinerary (5 days) instead of the proposal.

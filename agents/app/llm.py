@@ -1,6 +1,7 @@
 """Chat model factory and the call_json helper every agent node uses to talk to the LLM."""
 from collections.abc import Callable
-from typing import TypeVar
+from contextvars import ContextVar
+from typing import Literal, TypeVar
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -14,23 +15,40 @@ T = TypeVar("T", bound=BaseModel)
 # Optional extra rules checked in code after the schema passes. Returns a list of problems (empty = OK).
 RuleCheck = Callable[[T], list[str]]
 
+# v1.1: the operator picks Ollama or Groq in the web Settings page; the API sends the choice with each workflow and
+# run_workflow puts it here for that run only. None = the LLM_PROVIDER environment setting.
+_provider_for_run: ContextVar[str | None] = ContextVar("llm_provider_for_run", default=None)
+
+
+def use_provider_for_run(provider: Literal["ollama", "groq"] | None) -> None:
+    """Sets the LLM provider for the current workflow run (its own asyncio task, so runs never mix)."""
+    _provider_for_run.set(provider)
+
+
+def current_provider() -> str:
+    return _provider_for_run.get() or get_settings().llm_provider
+
 
 def get_chat_model() -> BaseChatModel:
-    """Returns the configured chat model, always in JSON output mode and temperature 0."""
+    """Returns the chat model for this run, always in JSON output mode and temperature 0."""
     settings = get_settings()
-    if settings.llm_provider == "groq":
+    provider = current_provider()
+    if provider == "groq":
+        if not settings.groq_api_key:
+            # A clear safe failure instead of a confusing auth error from Groq.
+            raise AgentOutputError("Groq is selected in Settings but GROQ_API_KEY is not set on the agent service")
         from langchain_groq import ChatGroq
 
         model = ChatGroq(model=settings.groq_model, api_key=settings.groq_api_key, temperature=0)
         return model.bind(response_format={"type": "json_object"})
-    if settings.llm_provider == "ollama":
+    if provider == "ollama":
         from langchain_ollama import ChatOllama
 
         return ChatOllama(model=settings.ollama_model, base_url=settings.ollama_base_url, format="json", temperature=0)
-    if settings.llm_provider == "fake":
+    if provider == "fake":
         # CI sets LLM_PROVIDER=fake: the tests replace get_chat_model with a FakeLLM, so no real model is ever built.
         raise RuntimeError("LLM_PROVIDER=fake is for tests only; they inject a FakeLLM")
-    raise ValueError(f"Unknown LLM_PROVIDER '{settings.llm_provider}' (use ollama or groq)")
+    raise ValueError(f"Unknown LLM provider '{provider}' (use ollama or groq)")
 
 
 async def call_json(system: str, user: str, schema: type[T], check: RuleCheck | None = None,
@@ -42,7 +60,7 @@ async def call_json(system: str, user: str, schema: type[T], check: RuleCheck | 
     and tries again. Returns (parsed result, number of retries used). Raises AgentOutputError after MAX_RETRIES.
     """
     max_retries = get_settings().max_retries
-    model = get_chat_model()
+    model = get_chat_model()  # an AgentOutputError here (e.g. Groq without a key) fails the node safely
     messages = [SystemMessage(content=system), HumanMessage(content=user)]
     retries = 0
 

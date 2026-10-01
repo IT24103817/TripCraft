@@ -205,3 +205,40 @@ export function itinerary(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 }
+
+/** GET /api/quotations/{id}: version 1, waiting for review, with its deposit (docs/API-V11-WEB.md). */
+export function quotation(overrides: Record<string, unknown> = {}) {
+  return {
+    id: QUOTATION_ID,
+    tripRequestId: trip().id,
+    workflowId: WORKFLOW_ID,
+    version: 1,
+    status: 'Pending',
+    subtotalLkr: 162800,
+    marginPct: 15,
+    marginLkr: 24420,
+    totalLkr: 187220,
+    totalUsd: 624.07,
+    fxRate: 300,
+    fxAsOf: '2026-10-01T00:00:00Z',
+    fxStale: false,
+    acceptedAt: null,
+    lines: [
+      {
+        lineType: 'guide',
+        description: 'Guide Nimal Perera, 5 days',
+        qty: 5,
+        unitLkr: 6000,
+        amountLkr: 30000,
+      },
+    ],
+    decisions: [],
+    depositPct: 30,
+    depositLkr: 56166,
+    depositUsd: 187.22,
+    depositPaid: false,
+    depositPaidAt: null,
+    createdAt: '2026-09-26T04:00:00Z',
+    ...overrides,
+  };
+}

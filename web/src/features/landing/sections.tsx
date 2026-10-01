@@ -37,7 +37,7 @@ const AUDIENCES = [
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" aria-labelledby="how-title" className="bg-white py-16 sm:py-20">
+    <section id="how-it-works" aria-labelledby="how-title" className="bg-surface py-16 sm:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <h2 id="how-title" className="text-3xl font-bold tracking-tight text-slate-900">
           How it works

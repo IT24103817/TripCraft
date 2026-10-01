@@ -7,6 +7,7 @@ import type {
   AvailableOption,
   CityAttraction,
   EditableProposalDto,
+  PlanExplanationDto,
   QuotationDecisionResponse,
   SwapResourcesRequest,
 } from './types';
@@ -83,5 +84,22 @@ export function useAvailableOptions(params: Record<string, string | number>) {
   return useQuery({
     queryKey: [queryRoots.resources, 'availability', params],
     queryFn: async () => (await http.get<AvailableOption[]>('/api/availability', { params })).data,
+  });
+}
+
+/**
+ * GET /api/trip-requests/{id}/plan-explanation: "Why this plan" in plain language. A 404 (no proposal yet) is
+ * returned as null, so the review page simply hides the panel.
+ */
+export function usePlanExplanation(tripId: string | undefined) {
+  return useQuery({
+    queryKey: [queryRoots.trips, 'plan-explanation', tripId],
+    queryFn: async () => {
+      const response = await http.get<PlanExplanationDto>(`/api/trip-requests/${tripId}/plan-explanation`, {
+        validateStatus: (status) => status === 200 || status === 404,
+      });
+      return response.status === 404 ? null : response.data;
+    },
+    enabled: Boolean(tripId),
   });
 }

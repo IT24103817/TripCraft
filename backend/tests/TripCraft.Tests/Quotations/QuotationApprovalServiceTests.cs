@@ -6,6 +6,7 @@ using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Common.Notifications;
 using TripCraft.Application.Common.Security;
+using TripCraft.Application.Common.Settings;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Quotations;
 using TripCraft.Application.Trips;
@@ -47,7 +48,8 @@ public class QuotationApprovalServiceTests
     }
 
     private QuotationApprovalService Service() => new(_quotations.Object, _workflows.Object, _trips.Object,
-        _agent.Object, _notifier.Object, _audit.Object, _unitOfWork.Object);
+        _agent.Object, _notifier.Object, TripSettings.Default with { LlmProvider = "groq" }, Mock.Of<IUserRepository>(),
+        Mock.Of<IEmailDispatcher>(), _audit.Object, _unitOfWork.Object);
 
     [Fact]
     public async Task Send_to_client_moves_the_trip_to_QuotationSent_notifies_the_tourist_and_places_no_holds()
@@ -158,6 +160,7 @@ public class QuotationApprovalServiceTests
         sent!.PreviousViolations.Should().ContainSingle()
             .Which.Should().Be(new PreviousViolation("OVER_BUDGET", "Total USD 624.07 is over the budget of USD 400."));
         sent.Cities.Should().Equal("Kandy", "Ella");
+        sent.LlmProvider.Should().Be("groq", "the replan uses the provider chosen in Settings");
     }
 
     [Fact]

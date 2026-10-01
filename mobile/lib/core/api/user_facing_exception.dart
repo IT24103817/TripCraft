@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 import '../../shared/utils/friendly_error.dart';
@@ -41,7 +43,7 @@ UserFacingException mapDioError(DioException error) {
   }
 
   final status = error.response?.statusCode;
-  final body = error.response?.data;
+  final body = _jsonBody(error.response?.data);
   final problem = body is Map ? body : const {};
   final detail = problem['detail'] is String
       ? problem['detail'] as String
@@ -71,4 +73,14 @@ UserFacingException mapDioError(DioException error) {
     statusCode: status,
     fieldErrors: fieldErrors,
   );
+}
+
+/// A file download gets its error body as bytes too: decode them so the ProblemDetails can still be read.
+Object? _jsonBody(Object? data) {
+  if (data is! List<int>) return data;
+  try {
+    return jsonDecode(utf8.decode(data));
+  } catch (_) {
+    return null;
+  }
 }

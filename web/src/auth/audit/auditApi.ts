@@ -16,7 +16,9 @@ export interface AuditLogDto {
   after: string | null;
 }
 
+/** actor matches part of the user's email (case-insensitive); "system" means rows without a user. */
 export interface AuditLogQuery {
+  actor: string;
   entity: string;
   from: string;
   to: string;

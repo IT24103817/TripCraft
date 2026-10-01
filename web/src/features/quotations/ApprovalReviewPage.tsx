@@ -14,6 +14,7 @@ import { toPanelQuotation, useQuotation } from './quotationsApi';
 import { QUOTATION_STATUS_LABELS } from './reviewRules';
 import { ReviewStatusBanner } from './ReviewStatusBanner';
 import { ValidationChecklist } from './ValidationChecklist';
+import { WhyThisPlan } from './WhyThisPlan';
 
 /**
  * The manager's review of one trip (PLAN.md section 6, step 9; v1.1 lifecycle). :id is the workflow id.
@@ -46,12 +47,12 @@ export default function ApprovalReviewPage() {
             actions={
               <>
                 <Link to="/approvals" className="btn-secondary">
-                  Back to approvals
+                  Back to review queue
                 </Link>
                 <Link to={`/trips/${workflow.data.tripRequestId}`} className="btn-secondary">
                   Trip details
                 </Link>
-                <Link to={`/workflows/${id}`} className="btn-secondary">
+                <Link to={`/agent-runs/${id}`} className="btn-secondary">
                   Agent timeline
                 </Link>
               </>
@@ -81,6 +82,8 @@ export default function ApprovalReviewPage() {
           {trip.data && (
             <ReviewStatusBanner tripId={trip.data.id} tripStatus={trip.data.status} quotation={stored.data} />
           )}
+
+          {proposal && <WhyThisPlan tripId={workflow.data.tripRequestId} />}
 
           <PageState
             isLoading={false}

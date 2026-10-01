@@ -13,6 +13,7 @@ from langgraph.graph import END, START, StateGraph
 from app.callbacks import post_proposal, post_step
 from app.config import get_settings
 from app.errors import ToolNotAllowed
+from app.llm import use_provider_for_run
 from app.nodes.common import failed_update
 from app.nodes.itinerary import itinerary_node
 from app.nodes.planner import planner_node
@@ -100,6 +101,7 @@ def initial_state(request: WorkflowRequest) -> WorkflowState:
 
 async def run_workflow(request: WorkflowRequest) -> WorkflowState:
     """Runs the graph to the end and POSTs the proposal. Never raises (it runs as a background task)."""
+    use_provider_for_run(request.llm_provider)
     state = initial_state(request)
     try:
         state = await GRAPH.ainvoke(state, config={"recursion_limit": 50})

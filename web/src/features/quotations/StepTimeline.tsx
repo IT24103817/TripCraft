@@ -25,7 +25,7 @@ export function StepTimeline({ steps }: { steps: AgentStepDto[] }) {
         <li key={step.id} className="relative">
           <span
             aria-hidden="true"
-            className="absolute -left-[29px] top-1 h-3 w-3 rounded-full border-2 border-white bg-brand-600"
+            className="absolute -left-[29px] top-1 h-3 w-3 rounded-full border-2 border-surface bg-brand-600"
           />
           <div className="card space-y-2">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">

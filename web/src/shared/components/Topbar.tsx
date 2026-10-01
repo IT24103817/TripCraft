@@ -1,5 +1,6 @@
 import { NotificationBell } from '../notifications/NotificationBell';
 import { statusLabel } from '../statuses';
+import { ThemeToggle } from './ThemeToggle';
 
 interface TopbarProps {
   userName: string;
@@ -11,7 +12,7 @@ interface TopbarProps {
 
 export function Topbar({ userName, role, menuOpen, onToggleMenu, onLogout }: TopbarProps) {
   return (
-    <header className="flex items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-3">
+    <header className="flex items-center justify-between gap-2 border-b border-slate-200 bg-surface px-4 py-3">
       <button
         type="button"
         className="btn-secondary md:hidden"
@@ -23,6 +24,7 @@ export function Topbar({ userName, role, menuOpen, onToggleMenu, onLogout }: Top
       </button>
       <div className="ml-auto flex items-center gap-3 text-sm">
         <NotificationBell />
+        <ThemeToggle />
         <span className="hidden text-right sm:block">
           <span className="block font-medium text-slate-900">{userName}</span>
           <span className="block text-xs text-slate-500">{statusLabel(role)}</span>

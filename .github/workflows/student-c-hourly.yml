@@ -13,7 +13,7 @@ on:
         required: true
         default: validate
         type: choice
-        options: [validate, publish]
+        options: [validate, publish, recover]
   schedule:
     # UTC 02:30-11:30 = Sri Lanka 08:00-17:00 on October 2.
     # The script enforces the year, count, date and each change's due time.
@@ -32,7 +32,7 @@ concurrency:
 jobs:
   verify-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 360
     steps:
       - name: Check out the reviewed queue
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -62,7 +62,12 @@ jobs:
           MODE: ${{ github.event_name == 'schedule' && 'publish' || inputs.mode || 'validate' }}
           GH_TOKEN: ${{ github.token }}
           DOTNET_CLI_TELEMETRY_OPTOUT: '1'
-        run: python3 automation/student-c-20261002/publish.py --student student --integration integration --mode "$MODE"
+        run: |
+          if [ "$MODE" = "recover" ]; then
+            python3 -u automation/student-c-20261002/recover.py --student student --integration integration
+          else
+            python3 automation/student-c-20261002/publish.py --student student --integration integration --mode "$MODE"
+          fi
       - name: Save test evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

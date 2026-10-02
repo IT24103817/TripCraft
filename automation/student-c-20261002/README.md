@@ -41,3 +41,16 @@ defaults to **validate**; **publish** can retry a due item during that date only
 Test results are attached to each run. Disable the workflow in GitHub Actions to
 cancel the remaining queue. No API keys, PATs or additional secrets are stored;
 the workflow uses its repository-scoped `GITHUB_TOKEN`.
+
+## Recovery when GitHub does not emit cron events
+
+On October 2 at 11:58 Sri Lanka time, no scheduled workflow events had appeared,
+despite the workflow being active and its initial validation succeeding. The exact
+GitHub scheduler cause is unknown. `workflow_dispatch` mode **recover** starts one
+cloud runner immediately. It publishes overdue items with their actual current
+timestamps, then waits in that runner for each remaining original hourly slot.
+Every item still goes through the same tests, history checks and idempotency guards.
+This avoids relying on another cron event while the recovery job is running. The
+job is limited to six hours, so launch it within roughly five hours of the final
+17:00 slot. It needs no running laptop. Its failure remains visible in Actions;
+restart recovery if an infrastructure failure interrupts it.

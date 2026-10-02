@@ -7,11 +7,11 @@ import { StatusBadge } from '@/shared/components/StatusBadge';
 import { useListParams } from '@/shared/hooks/useListParams';
 import { formatDate, formatLkr, formatUsd, shortId } from '@/shared/utils/format';
 import { useLatestQuotations } from './quotationsApi';
-import { QUOTATION_STATUS_LABELS } from './reviewRules';
+import { budgetNoteText, QUOTATION_STATUS_LABELS } from './reviewRules';
 import type { QuotationDto, QuotationStatus } from './types';
 
 /** The newest version of a trip is never Superseded, so that status is not offered as a filter. */
-const STATUSES: QuotationStatus[] = ['Pending', 'Approved', 'RevisionRequested', 'Declined', 'Rejected'];
+const STATUSES: QuotationStatus[] = ['Approved', 'Pending', 'Declined'];
 
 const tripName = (q: QuotationDto) => q.tripObjective || `Trip ${shortId(q.tripRequestId)}`;
 
@@ -45,8 +45,16 @@ const columns: Column<QuotationDto>[] = [
     key: 'totalUsd',
     header: 'Total (USD)',
     sortKey: 'totalUsd',
-    render: (q) => formatUsd(q.totalUsd),
-    className: 'whitespace-nowrap px-4 py-3 font-medium tabular-nums text-slate-900',
+    render: (q) => {
+      const note = budgetNoteText(q);
+      return (
+        <>
+          {formatUsd(q.totalUsd)}
+          {note && <span className="block text-xs font-normal text-amber-800">{note}</span>}
+        </>
+      );
+    },
+    className: 'px-4 py-3 font-medium tabular-nums text-slate-900',
   },
   {
     key: 'totalLkr',

@@ -162,6 +162,20 @@ export function useTripCount(from: string, to: string) {
   });
 }
 
+/** How many trips are in one status; only the total is used (dashboard KPI). */
+export function useTripStatusCount(status: string, enabled = true) {
+  return useQuery({
+    queryKey: [queryRoots.trips, 'count', status],
+    queryFn: async () =>
+      (
+        await http.get<PagedResult<TripRequestDto>>('/api/trip-requests', {
+          params: { status, pageSize: 1 },
+        })
+      ).data.total,
+    enabled,
+  });
+}
+
 export const attractionKeys = {
   list: (query: AttractionListQuery) => [queryRoots.attractions, 'list', query] as const,
   all: [queryRoots.attractions, 'all'] as const,

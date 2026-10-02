@@ -18,10 +18,10 @@ public class VoucherEndpointsTests
         var owner = await factory.CreateClientAsAsync(WorkflowFlow.Tourist);
         var other = await factory.CreateClientAsAsync(WorkflowFlow.OtherTourist);
 
-        var vouchers = await owner.GetFromJsonAsync<List<VoucherDto>>($"/api/trips/{trip.Id}/vouchers", TestJson.Options);
+        var vouchers = (await owner.GetFromJsonAsync<List<VoucherDto>>($"/api/trips/{trip.Id}/vouchers", TestJson.Options))!;
         var pdf = await owner.GetAsync($"/api/trips/{trip.Id}/vouchers.pdf");
 
-        vouchers!.Should().HaveCount(5);
+        vouchers.Should().HaveCount(5);
         vouchers[0].Type.Should().Be("Trip", "the trip voucher is shown first");
         vouchers.Skip(1).Should().BeInAscendingOrder(v => v.Night);
         vouchers.Should().OnlyContain(v => v.QrPayload.StartsWith(VoucherSigner.QrPrefix));

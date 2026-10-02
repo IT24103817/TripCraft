@@ -36,6 +36,7 @@ class QuotationsRepository {
         await _api.get('/api/quotations/$quotationId') as Map<String, dynamic>;
     return view.copyWith(
       quotation: Quotation.fromJson(_toProposalShape(stored)),
+      version: (stored['version'] as num?)?.toInt(),
       quotationStatus: stored['status'] as String?,
       acceptedAt: stored['acceptedAt'] as String?,
     );
@@ -48,7 +49,7 @@ class QuotationsRepository {
             as Map<String, dynamic>,
       );
 
-  /// POST /api/quotations/{id}/decline {reason}: the trip goes back to the operator (PendingReview).
+  /// POST /api/quotations/{id}/decline {reason}: the trip becomes ClientDeclined and the operator sees the reason.
   Future<QuotationDecision> decline(String quotationId, String reason) async =>
       QuotationDecision.fromJson(
         await _api.post(
@@ -77,6 +78,9 @@ class QuotationsRepository {
     'fx_as_of': q['fxAsOf'],
     'fx_stale': q['fxStale'],
     'total_usd': q['totalUsd'],
+    'best_available_price': q['bestAvailablePrice'] ?? false,
+    'over_budget_usd': q['overBudgetUsd'],
+    'budget_note': q['budgetNote'],
   };
 }
 

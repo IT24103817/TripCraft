@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { pendingWorkflow, QUOTATION_ID, quotation, trip, WORKFLOW_ID } from '@/test/fixtures';
@@ -28,7 +28,7 @@ function givenReview() {
   server.use(
     http.get(`${API}/api/workflows/${WORKFLOW_ID}`, () => HttpResponse.json(pendingWorkflow())),
     http.get(`${API}/api/trip-requests/${TRIP_ID}`, () =>
-      HttpResponse.json(trip({ status: 'PendingReview' })),
+      HttpResponse.json(trip({ status: 'QuotationSent' })),
     ),
     http.get(`${API}/api/quotations/${QUOTATION_ID}`, () => HttpResponse.json(quotation())),
   );
@@ -56,41 +56,20 @@ describe('Review page: Why this plan', () => {
     givenReview();
     renderApp(`/approvals/${WORKFLOW_ID}`);
 
-    expect(await screen.findByRole('button', { name: 'Send to client' })).toBeEnabled();
+    expect(await screen.findByRole('list', { name: 'Validation checklist' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Why this plan' })).not.toBeInTheDocument();
   });
 
-  it('still sends to the client and asks for a revision with the panel shown', async () => {
+  it('keeps the panel next to the checks and the versions, with no decision buttons', async () => {
     givenReview();
-    const calls: string[] = [];
     server.use(
       http.get(`${API}/api/trip-requests/${TRIP_ID}/plan-explanation`, () => HttpResponse.json(EXPLANATION)),
-      http.post(`${API}/api/quotations/${QUOTATION_ID}/:decision`, ({ params }) => {
-        calls.push(String(params.decision));
-        return HttpResponse.json({
-          quotationId: QUOTATION_ID,
-          tripRequestId: TRIP_ID,
-          workflowId: WORKFLOW_ID,
-          decision: params.decision === 'approve' ? 'Approved' : 'RevisionRequested',
-          tripStatus: params.decision === 'approve' ? 'QuotationSent' : 'RevisionRequested',
-          workflowStatus: 'Approved',
-          holdsCreated: 0,
-        });
-      }),
     );
-    const { user } = renderApp(`/approvals/${WORKFLOW_ID}`);
+    renderApp(`/approvals/${WORKFLOW_ID}`);
+
     await screen.findByRole('region', { name: 'Why this plan' });
-
-    await user.click(screen.getByRole('button', { name: 'Send to client' }));
-    const send = screen.getByRole('dialog', { name: 'Send to client' });
-    await user.click(within(send).getByRole('button', { name: 'Send to client' }));
-    expect(await screen.findByText(/Sent to the client\. Trip is now quotation sent/)).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Request revision' }));
-    const revision = screen.getByRole('dialog', { name: 'Request a revision' });
-    await user.type(within(revision).getByLabelText(/Comment/), 'Use a cheaper hotel in Ella');
-    await user.click(within(revision).getByRole('button', { name: 'Send to the planner' }));
-
-    await waitFor(() => expect(calls).toEqual(['approve', 'request-revision']));
+    expect(screen.getByRole('list', { name: 'Validation checklist' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Send to client' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Request revision' })).not.toBeInTheDocument();
   });
 });

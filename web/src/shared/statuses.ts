@@ -1,16 +1,18 @@
-/** Trip request lifecycle v1.1 (TripRequestStatus in C#, docs/API-V11.md). Main path first, then side states. */
+/**
+ * Trip request lifecycle v1.1 (TripRequestStatus in C#, docs/API-V11.md "Trip statuses"). Main path first, then
+ * the side states. Quotations go to the client automatically; the manager's gate is Confirm.
+ */
 export const TRIP_STATUSES = [
   'Submitted',
   'Planning',
-  'PendingReview',
   'QuotationSent',
   'ClientAccepted',
   'Confirmed',
   'InProgress',
   'Completed',
+  'ClientDeclined',
+  'NeedsOperator',
   'Cancelled',
-  'RevisionRequested',
-  'FailedSafely',
 ] as const;
 export type TripRequestStatus = (typeof TRIP_STATUSES)[number];
 
@@ -32,17 +34,18 @@ const TONE_BY_STATUS: Record<string, Tone> = {
   // Trip statuses
   Submitted: 'grey',
   Planning: 'blue',
-  PendingReview: 'amber',
   QuotationSent: 'blue',
   ClientAccepted: 'purple',
   Confirmed: 'green',
   InProgress: 'blue',
   Completed: 'green',
+  ClientDeclined: 'amber',
+  NeedsOperator: 'red',
   Cancelled: 'grey',
-  RevisionRequested: 'purple',
-  FailedSafely: 'red',
   // Workflow and quotation statuses
   PendingApproval: 'amber',
+  RevisionRequested: 'purple',
+  FailedSafely: 'red',
   Approved: 'green',
   Rejected: 'red',
   Pending: 'amber',
@@ -75,8 +78,16 @@ export function toneFor(status: string): Tone {
   return TONE_BY_STATUS[status] ?? 'grey';
 }
 
-/** "PendingReview" -> "Pending review", "QuotationSent" -> "Quotation sent", "FailedSafely" -> "Failed safely". */
+/** Trip statuses whose name reads badly when only spaced out ("Client accepted" is just "Accepted" to staff). */
+const LABELS: Record<string, string> = {
+  ClientAccepted: 'Accepted',
+  ClientDeclined: 'Declined',
+};
+
+/** "QuotationSent" -> "Quotation sent", "NeedsOperator" -> "Needs operator", "ClientAccepted" -> "Accepted". */
 export function statusLabel(status: string): string {
+  const known = LABELS[status];
+  if (known) return known;
   const spaced = status.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }

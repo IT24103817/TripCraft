@@ -52,7 +52,10 @@ public static class WorkflowFlow
         AgentProposalRequest proposal) =>
         await factory.CreateInternalClient().PostAsJsonAsync($"/api/internal/workflows/{workflowId}/proposal", proposal);
 
-    /// <summary>Start planning and post the golden proposal. Returns the outcome (PendingApproval unless over budget).</summary>
+    /// <summary>
+    /// Start planning and post the golden proposal. v1.1: a valid proposal (or one only over budget) is sent to the
+    /// client automatically, so the trip ends in QuotationSent.
+    /// </summary>
     public static async Task<(TripRequestDto Trip, ProposalOutcomeResponse Outcome)> RunToProposalAsync(
         this TestWebApplicationFactory factory, decimal budgetUsd = 1500)
     {
@@ -63,19 +66,11 @@ public static class WorkflowFlow
         return (trip, (await response.Content.ReadFromJsonAsync<ProposalOutcomeResponse>(TestJson.Options))!);
     }
 
-    /// <summary>Manager sends the quotation (PendingReview → QuotationSent).</summary>
-    public static async Task SendToClientAsync(this TestWebApplicationFactory factory, Guid quotationId)
-    {
-        var manager = await factory.CreateClientAsAsync(Manager);
-        (await manager.PostAsync($"/api/quotations/{quotationId}/approve", null)).EnsureSuccessStatusCode();
-    }
-
-    /// <summary>Proposal → sent → accepted by the tourist. Returns the trip in ClientAccepted.</summary>
+    /// <summary>Proposal (auto-sent, v1.1) → accepted by the tourist. Returns the trip in ClientAccepted.</summary>
     public static async Task<(TripRequestDto Trip, ProposalOutcomeResponse Outcome)> RunToClientAcceptedAsync(
         this TestWebApplicationFactory factory)
     {
         var (trip, outcome) = await factory.RunToProposalAsync();
-        await factory.SendToClientAsync(outcome.QuotationId!.Value);
         var tourist = await factory.CreateClientAsAsync(Tourist);
         (await tourist.PostAsync($"/api/quotations/{outcome.QuotationId}/accept", null)).EnsureSuccessStatusCode();
         return (trip, outcome);

@@ -4,7 +4,7 @@ import { ConfirmDialog } from '../ConfirmDialog';
 import type { ReasonDialogProps } from './ReasonDialog.types';
 
 /**
- * A confirmation that asks for a reason or a comment (cancel a trip, request a revision, reopen a review…).
+ * A confirmation that asks for a reason or a comment (cancel a trip, replan with a note, send with a comment…).
  * Rendered only while open, so the text box starts empty every time.
  */
 export const ReasonDialog = (props: ReasonDialogProps) => {

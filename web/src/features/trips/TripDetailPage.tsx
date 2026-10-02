@@ -9,7 +9,7 @@ import { TabList } from '@/shared/components/TabList';
 import { useToast } from '@/shared/components/Toast';
 import { useCancelTrip, useTrip, useTripWorkflowId } from './api';
 import { PdfDownloadButton } from './PdfDownloadButton';
-import { CANCELLABLE, IN_REVIEW, QUOTATION_SENT_OR_LATER } from './tripLifecycle';
+import { CANCEL_IN_ACTION_PANEL, CANCELLABLE, HAS_PROPOSAL, QUOTATION_SENT_OR_LATER } from './tripLifecycle';
 import { TripOverview } from './TripOverview';
 import type { TripRequestDto } from './types';
 
@@ -21,10 +21,15 @@ const TABS = [
 interface Props {
   /** The Quotation tab's content; the app passes it in (features never import each other). */
   quotationTab?: (trip: TripRequestDto) => ReactNode;
+  /**
+   * The manager's next step for the trip's status (Confirm, Edit & resend, Replan…), shown above the tabs.
+   * `openCancel` opens this page's "Cancel trip request" dialog.
+   */
+  statusActions?: (trip: TripRequestDto, openCancel: () => void) => ReactNode;
 }
 
 /** One trip request: an Overview tab and a Quotation tab (?tab=quotation), with the trip's actions on top. */
-export default function TripDetailPage({ quotationTab }: Props) {
+export default function TripDetailPage({ quotationTab, statusActions }: Props) {
   const { id = '' } = useParams();
   const trip = useTrip(id);
   const cancel = useCancelTrip(id);
@@ -33,9 +38,14 @@ export default function TripDetailPage({ quotationTab }: Props) {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const tab = params.get('tab') === 'quotation' && quotationTab ? 'quotation' : 'overview';
   const status = trip.data?.status;
-  // The review page is keyed by the workflow id, so it is looked up only for trips that are in review.
-  const inReview = status !== undefined && IN_REVIEW.includes(status);
-  const workflowId = useTripWorkflowId(id, inReview);
+  // The review page is keyed by the workflow id, so it is looked up only for trips that have a proposal.
+  const hasProposal = status !== undefined && HAS_PROPOSAL.includes(status);
+  const workflowId = useTripWorkflowId(id, hasProposal);
+  // When the action panel offers "Cancel with reason", the header does not repeat it.
+  const cancelInHeader =
+    status !== undefined &&
+    CANCELLABLE.includes(status) &&
+    !(statusActions && CANCEL_IN_ACTION_PANEL.includes(status));
 
   return (
     <PageState
@@ -54,8 +64,8 @@ export default function TripDetailPage({ quotationTab }: Props) {
                 <Link to="/trips" className="btn-secondary">
                   Back to trips
                 </Link>
-                {inReview && workflowId.data && (
-                  <Link to={`/approvals/${workflowId.data}`} className="btn-primary">
+                {hasProposal && workflowId.data && (
+                  <Link to={`/approvals/${workflowId.data}`} className="btn-secondary">
                     Open review
                   </Link>
                 )}
@@ -67,7 +77,7 @@ export default function TripDetailPage({ quotationTab }: Props) {
                     errorMessage="Could not download the itinerary."
                   />
                 )}
-                {CANCELLABLE.includes(trip.data.status) && (
+                {cancelInHeader && (
                   <Button variant="danger" onClick={() => setConfirmCancel(true)}>
                     Cancel request
                   </Button>
@@ -75,6 +85,8 @@ export default function TripDetailPage({ quotationTab }: Props) {
               </>
             }
           />
+
+          {statusActions?.(trip.data, () => setConfirmCancel(true))}
 
           {quotationTab && (
             <TabList

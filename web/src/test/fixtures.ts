@@ -25,7 +25,10 @@ export function trip(overrides: Record<string, unknown> = {}) {
 export const WORKFLOW_ID = '33333333-3333-3333-3333-333333333333';
 export const QUOTATION_ID = '44444444-4444-4444-4444-444444444444';
 
-/** A PendingApproval workflow as GET /api/workflows/{id} returns it (the PLAN.md section 6 demo). */
+/**
+ * An agent workflow with a priced proposal, as GET /api/workflows/{id} and GET /api/trip-requests/{id}/workflow
+ * return it (the PLAN.md section 6 demo). The workflow statuses are unchanged in v1.1.
+ */
 export function pendingWorkflow(overrides: Record<string, unknown> = {}) {
   return {
     id: WORKFLOW_ID,
@@ -206,7 +209,7 @@ export function itinerary(overrides: Record<string, unknown> = {}) {
   };
 }
 
-/** GET /api/quotations/{id}: version 1, waiting for review, with its deposit (docs/API-V11-WEB.md). */
+/** GET /api/quotations/{id}: version 1, priced and not sent yet, within budget, with its deposit. */
 export function quotation(overrides: Record<string, unknown> = {}) {
   return {
     id: QUOTATION_ID,
@@ -238,7 +241,27 @@ export function quotation(overrides: Record<string, unknown> = {}) {
     depositUsd: 187.22,
     depositPaid: false,
     depositPaidAt: null,
+    bestAvailablePrice: false,
+    overBudgetUsd: null as number | null,
+    budgetNote: null as string | null,
     createdAt: '2026-09-26T04:00:00Z',
+    ...overrides,
+  };
+}
+
+/** One row of GET /api/dashboard/attention (a trip that needs the Operations Manager). */
+export function attentionItem(overrides: Record<string, unknown> = {}) {
+  return {
+    tripRequestId: trip().id,
+    objective: trip().objective,
+    status: 'ClientAccepted',
+    startDate: '2026-10-10',
+    endDate: '2026-10-14',
+    pax: 4,
+    touristName: 'Anna Silva',
+    detail: 'Version 2 accepted',
+    since: '2026-09-28T10:00:00Z',
+    totalUsd: 603.94,
     ...overrides,
   };
 }

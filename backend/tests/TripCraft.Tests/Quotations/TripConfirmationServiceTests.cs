@@ -130,7 +130,8 @@ public class TripConfirmationServiceTests
 
     [Theory]
     [InlineData(TripRequestStatus.QuotationSent)]
-    [InlineData(TripRequestStatus.PendingReview)]
+    [InlineData(TripRequestStatus.ClientDeclined)]
+    [InlineData(TripRequestStatus.NeedsOperator)]
     [InlineData(TripRequestStatus.Confirmed)]
     public async Task Confirm_is_only_allowed_after_the_client_accepted(TripRequestStatus status)
     {
@@ -151,5 +152,17 @@ public class TripConfirmationServiceTests
         var act = () => Service().ConfirmAsync(Manager, _trip.Id, CancellationToken.None);
 
         await act.Should().ThrowAsync<ConflictException>().WithMessage("*not accepted*");
+    }
+
+    [Fact]
+    public async Task Confirm_is_disabled_while_the_trip_was_edited_after_the_client_accepted()
+    {
+        var outcome = WorkflowJson.Deserialize<WorkflowOutcome>(_workflow.FinalOutcome)!;
+        _workflow.FinalOutcome = WorkflowJson.Serialize(outcome with { EditedSinceQuotation = true });
+
+        var act = () => Service().ConfirmAsync(Manager, _trip.Id, CancellationToken.None);
+
+        await act.Should().ThrowAsync<ConflictException>().WithMessage("*must accept again*");
+        _holds.Verify(h => h.CreateHoldAsync(It.IsAny<ResourceHoldRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

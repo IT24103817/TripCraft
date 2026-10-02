@@ -13,10 +13,12 @@ public class ReportQueries(AppDbContext db) : IReportQueries
     {
         var start = from.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
         var endExclusive = to.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        // Revenue = confirmed bookings (v1.1): the month of the manager's Confirm, the human approval gate. Quotes
+        // that were only sent or accepted are not revenue yet.
         var approved = await (
                 from decision in db.ApprovalDecisions.AsNoTracking()
                 join quotation in db.Quotations on decision.QuotationId equals quotation.Id
-                where decision.Decision == QuotationDecision.Approved && quotation.Status == QuotationStatus.Approved
+                where decision.Decision == QuotationDecision.Confirmed && quotation.Status == QuotationStatus.Approved
                       && decision.DecidedAt >= start && decision.DecidedAt < endExclusive
                 select new { decision.DecidedAt, quotation.TotalLkr, quotation.TotalUsd })
             .ToListAsync(ct);

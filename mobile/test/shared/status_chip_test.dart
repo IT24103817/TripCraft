@@ -8,14 +8,13 @@ void main() {
   test('every v1.1 trip status has the colour from the lifecycle', () {
     expect(statusColor('Submitted'), AppColors.neutral);
     expect(statusColor('Planning'), AppColors.info);
-    expect(statusColor('PendingReview'), AppColors.warning);
     expect(statusColor('QuotationSent'), AppColors.accent);
     expect(statusColor('ClientAccepted'), AppColors.success);
     expect(statusColor('Confirmed'), AppColors.success);
     expect(statusColor('InProgress'), AppColors.info);
     expect(statusColor('Completed'), AppColors.success);
-    expect(statusColor('RevisionRequested'), AppColors.purple);
-    expect(statusColor('FailedSafely'), AppColors.danger);
+    expect(statusColor('ClientDeclined'), AppColors.danger);
+    expect(statusColor('NeedsOperator'), AppColors.warning);
     expect(statusColor('Cancelled'), AppColors.neutral);
     expect(statusColor('SomethingNew'), AppColors.neutral);
   });
@@ -24,26 +23,47 @@ void main() {
     expect(statusColor('PendingApproval'), AppColors.warning);
     expect(statusColor('Approved'), AppColors.success);
     expect(statusColor('Rejected'), AppColors.danger);
+    expect(statusColor('RevisionRequested'), AppColors.purple);
+    expect(statusColor('FailedSafely'), AppColors.danger);
   });
 
   test(
-    'the old PendingApproval / Approved / Rejected are not trip statuses',
+    'the trip statuses are the new lifecycle, without an operator review',
     () {
-      expect(tripStatuses, isNot(contains('PendingApproval')));
-      expect(tripStatuses, isNot(contains('Approved')));
-      expect(tripStatuses, isNot(contains('Rejected')));
-      expect(tripStatuses, hasLength(11));
+      expect(tripStatuses, [
+        'Submitted',
+        'Planning',
+        'QuotationSent',
+        'ClientAccepted',
+        'Confirmed',
+        'InProgress',
+        'Completed',
+        'ClientDeclined',
+        'NeedsOperator',
+        'Cancelled',
+      ]);
+      for (final gone in [
+        'PendingReview',
+        'RevisionRequested',
+        'FailedSafely',
+        'PendingApproval',
+        'Approved',
+        'Rejected',
+      ]) {
+        expect(tripStatuses, isNot(contains(gone)), reason: gone);
+      }
     },
   );
 
   test('labels are readable', () {
-    expect(statusLabel('PendingReview'), 'Pending review');
     expect(statusLabel('QuotationSent'), 'Quotation sent');
     expect(statusLabel('ClientAccepted'), 'Accepted');
+    expect(statusLabel('ClientDeclined'), 'Declined');
+    expect(statusLabel('NeedsOperator'), 'Needs operator');
     expect(statusLabel('InProgress'), 'In progress');
-    expect(statusLabel('RevisionRequested'), 'Revision requested');
-    expect(statusLabel('FailedSafely'), 'Planning failed');
     expect(statusLabel('Confirmed'), 'Confirmed');
+    // Workflow status, still shown on the workflow chip.
+    expect(statusLabel('FailedSafely'), 'Planning failed');
   });
 
   testWidgets('StatusChip shows the label in the status colour', (
@@ -51,12 +71,12 @@ void main() {
   ) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(body: StatusChip(status: 'PendingReview')),
+        home: Scaffold(body: StatusChip(status: 'NeedsOperator')),
       ),
     );
 
-    final text = tester.widget<Text>(find.text('Pending review'));
+    final text = tester.widget<Text>(find.text('Needs operator'));
     expect(text.style!.color, AppColors.warning);
-    expect(find.bySemanticsLabel('Status: Pending review'), findsOneWidget);
+    expect(find.bySemanticsLabel('Status: Needs operator'), findsOneWidget);
   });
 }

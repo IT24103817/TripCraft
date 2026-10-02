@@ -1,6 +1,7 @@
 import { PageState } from '@/shared/components/PageState';
 import { StatusBadge } from '@/shared/components/StatusBadge';
 import { formatLkr, formatUsd, shortId } from '@/shared/utils/format';
+import { BudgetNote } from './BudgetNote';
 import { DecisionList } from './DecisionList';
 import { useQuotation, useQuotationVersions } from './quotationsApi';
 import { QUOTATION_STATUS_LABELS } from './reviewRules';
@@ -14,8 +15,8 @@ interface Props {
 
 /**
  * Versions side by side: when a trip has two or more quotation versions, the previous and the newest are shown
- * next to each other (totals, lines, day-by-day stops, guide and vehicle) with the decisions on each — the
- * manager's revision comment and the client's decline reason.
+ * next to each other (totals, best-price note, lines, day-by-day stops, guide and vehicle) with the decisions
+ * on each — for example the client's decline reason.
  */
 export function QuotationVersions({ tripRequestId, names }: Props) {
   const versions = useQuotationVersions(tripRequestId);
@@ -65,6 +66,7 @@ function VersionColumn({ quotation, names }: { quotation: QuotationDto; names: R
       <p className="text-slate-900">
         Total {formatLkr(quotation.totalLkr)} ({formatUsd(quotation.totalUsd)})
       </p>
+      <BudgetNote quotation={quotation} />
       <ul className="space-y-1 text-slate-700">
         {quotation.lines.map((line, i) => (
           <li key={i} className="flex justify-between gap-2">

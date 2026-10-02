@@ -20,10 +20,13 @@ public interface IProposalEditService
         CancellationToken ct);
     Task<EditableProposalDto> SwapResourcesAsync(CurrentUser user, Guid tripId, SwapResourcesRequest request, CancellationToken ct);
     Task<RepriceResponse> RepriceAsync(CurrentUser user, Guid quotationId, CancellationToken ct);
+
+    /// <summary>Re-price by trip: also works when no quotation exists yet (NeedsOperator after a Hard rule).</summary>
+    Task<RepriceResponse> RepriceTripAsync(CurrentUser user, Guid tripRequestId, CancellationToken ct);
 }
 
 /// <summary>
-/// "Edit directly" on the review page (trip PendingReview, v1.1). The manager changes a day's stops or swaps the
+/// "Edit &amp; resend" / "Edit &amp; send manually" (v1.1, trip ClientAccepted or NeedsOperator). The manager changes a day's stops or swaps the
 /// guide, vehicle or hotel; each edit marks the proposal as changed since it was priced. Re-price then makes a new
 /// quotation version with today's rates, checks it with ProposalValidator (a Hard rule is a 409) and supersedes the
 /// old version, so the review page can show v1 and v2 side by side. Only then can it be sent to the client.
@@ -104,7 +107,20 @@ public class ProposalEditService(
         var latest = await quotations.GetLatestForTripAsync(previous.TripRequestId, ct);
         if (latest is not null && latest.Id != previous.Id)
             throw new ConflictException($"Version {latest.Version} replaced this quotation; re-price that one.");
-        var (trip, workflow, outcome) = await LoadAsync(previous.TripRequestId, ct);
+        return await RepriceAsync(user, previous.TripRequestId, previous, ct);
+    }
+
+    public async Task<RepriceResponse> RepriceTripAsync(CurrentUser user, Guid tripRequestId, CancellationToken ct) =>
+        await RepriceAsync(user, tripRequestId, await quotations.GetLatestForTripAsync(tripRequestId, ct), ct);
+
+    /// <summary>
+    /// A new version from the (edited) proposal with today's rates, not sent yet: the manager sends it
+    /// (POST /api/quotations/{id}/send). The previous version, if any, is superseded.
+    /// </summary>
+    private async Task<RepriceResponse> RepriceAsync(CurrentUser user, Guid tripRequestId, QuotationSummary? previous,
+        CancellationToken ct)
+    {
+        var (trip, workflow, outcome) = await LoadAsync(tripRequestId, ct);
 
         // 1. Today's rates and exchange rate.
         var card = await resources.GetRateCardAsync(ct);
@@ -126,28 +142,38 @@ public class ProposalEditService(
             throw new ConflictException("The edited proposal breaks a rule: " +
                                         string.Join(" ", validation.Violations.Where(v => v.Severity == ViolationSeverity.Hard).Select(v => v.Message)));
 
-        // 3. New version, old one superseded, workflow points at the new one.
+        // 3. New version (over budget is allowed: it is then marked best available price), the old one superseded,
+        //    the workflow points at the new one and waits for the manager to send it.
+        decimal? overBudgetUsd = validation.HasSoft ? Math.Max(0, Math.Round(breakdown.TotalUsd - trip.BudgetUsd, 2)) : null;
         var newId = await quotations.AddVersionAsync(
-            WorkflowProposalService.ToDraft(trip, workflow, priced, facts, ProposalSnapshot.Serialize(proposal)), ct);
-        await quotations.SetStatusAsync(previous.Id, QuotationDecision.Superseded, ct);
-        workflow.Status = validation.HasSoft ? AgentWorkflowStatus.RevisionRequested : AgentWorkflowStatus.PendingApproval;
+            WorkflowProposalService.ToDraft(trip, workflow, priced, facts, ProposalSnapshot.Serialize(proposal)) with
+            {
+                OverBudgetUsd = overBudgetUsd
+            }, ct);
+        if (previous is not null)
+            await quotations.SetStatusAsync(previous.Id, QuotationDecision.Superseded, ct);
+        workflow.Status = AgentWorkflowStatus.PendingApproval;
+        workflow.CurrentStep = "awaiting-operator-send";
         workflow.ValidationResult = WorkflowJson.Serialize(validation);
         workflow.FinalOutcome = WorkflowJson.Serialize(new WorkflowOutcome(proposal with { QuotationId = newId }, null));
         audit.Record(user.Id, "QuotationRepriced", "Quotation", newId,
-            new { QuotationId = previous.Id, previous.Version, previous.TotalLkr, previous.TotalUsd },
+            new { QuotationId = previous?.Id, previous?.Version, previous?.TotalLkr, previous?.TotalUsd },
             new { breakdown.TotalLkr, breakdown.TotalUsd, fx.Rate, fx.Stale });
         await unitOfWork.SaveChangesAsync(ct);
 
-        return new RepriceResponse(newId, previous.Version + 1, breakdown.TotalLkr, breakdown.TotalUsd,
-            previous.TotalLkr, previous.TotalUsd, workflow.Status.ToString(), validation);
+        return new RepriceResponse(newId, (previous?.Version ?? 0) + 1, breakdown.TotalLkr, breakdown.TotalUsd,
+            previous?.TotalLkr ?? 0, previous?.TotalUsd ?? 0, workflow.Status.ToString(), validation);
     }
 
-    /// <summary>The trip must be in review; its newest workflow holds the proposal being edited.</summary>
+    /// <summary>
+    /// "Edit &amp; resend" (ClientAccepted) or "Edit &amp; send manually" (NeedsOperator); the newest workflow holds the
+    /// proposal being edited. At QuotationSent the client is deciding, so nothing is edited under them.
+    /// </summary>
     private async Task<(TripRequest, AgentWorkflow, WorkflowOutcome)> LoadAsync(Guid tripId, CancellationToken ct)
     {
         var trip = await trips.GetByIdAsync(tripId, ct) ?? throw new NotFoundException("Trip request not found.");
-        if (trip.Status != TripRequestStatus.PendingReview)
-            throw new ConflictException($"The proposal can only be edited while the trip is pending review; it is {TripStatusMachine.Describe(trip.Status)}.");
+        if (trip.Status is not (TripRequestStatus.ClientAccepted or TripRequestStatus.NeedsOperator))
+            throw new ConflictException($"The proposal can be edited after the client accepted or when the trip needs the operator; it is {TripStatusMachine.Describe(trip.Status)}.");
         var workflow = await workflows.GetLatestForTripAsync(trip.Id, ct)
                        ?? throw new ConflictException("The trip request has no agent workflow.");
         var outcome = WorkflowJson.Deserialize<WorkflowOutcome>(workflow.FinalOutcome)

@@ -20,7 +20,7 @@ from app.nodes.planner import planner_node
 from app.nodes.resources import resources_node
 from app.nodes.validation import validation_node
 from app.schemas import Proposal, WorkflowRequest
-from app.state import FAILED_SAFELY, PENDING_APPROVAL, RUNNING, WorkflowState
+from app.state import FAILED_SAFELY, PENDING_APPROVAL, REVISION_REQUESTED, RUNNING, WorkflowState
 from app.tools.check_business_rules import BUDGET_CODES
 
 logger = logging.getLogger("tripcraft.graph")
@@ -109,9 +109,12 @@ async def run_workflow(request: WorkflowRequest) -> WorkflowState:
         logger.exception("workflow crashed", extra={"workflow_id": state["workflow_id"]})
         state = {**state, "status": FAILED_SAFELY, "error_summary": f"workflow: unexpected {type(ex).__name__}"}
 
+    codes = {v["code"] for v in state["violations"]}
+    best_available = state["status"] == REVISION_REQUESTED and bool(codes) and codes <= BUDGET_CODES
     proposal = Proposal(plan=state["plan"], days=state["days"], resources=state["resources"],
                         quotation=state["quotation"], violations=state["violations"], status=state["status"],
-                        replans=state["replans"], error_summary=state.get("error_summary"))
+                        replans=state["replans"], error_summary=state.get("error_summary"),
+                        best_available_price=best_available)
     await post_proposal(request, proposal.model_dump(mode="json"))
     logger.info("workflow finished", extra={"workflow_id": state["workflow_id"], "status": state["status"]})
     return state

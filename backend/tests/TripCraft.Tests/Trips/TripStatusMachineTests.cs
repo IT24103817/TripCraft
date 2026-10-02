@@ -7,18 +7,20 @@ using static TripCraft.Application.Trips.TripRequestStatus;
 
 namespace TripCraft.Tests.Trips;
 
-/// <summary>The v1.1 trip lifecycle: every allowed move, a sample of illegal ones, and what Move records.</summary>
+/// <summary>
+/// The v1.1 trip lifecycle (quotations go straight to the client; Confirm is the human approval gate): every allowed
+/// move, a sample of illegal ones (409), and what Move records.
+/// </summary>
 public class TripStatusMachineTests
 {
     public static TheoryData<TripRequestStatus, TripRequestStatus> AllowedMoves => new()
     {
         { Submitted, Planning }, { Submitted, Cancelled },
-        { Planning, PendingReview }, { Planning, FailedSafely },
-        { FailedSafely, Planning }, { FailedSafely, Cancelled },
-        { PendingReview, QuotationSent }, { PendingReview, RevisionRequested }, { PendingReview, Cancelled },
-        { RevisionRequested, PendingReview }, { RevisionRequested, FailedSafely }, { RevisionRequested, Cancelled },
-        { QuotationSent, ClientAccepted }, { QuotationSent, PendingReview }, { QuotationSent, Cancelled },
-        { ClientAccepted, Confirmed }, { ClientAccepted, PendingReview }, { ClientAccepted, Cancelled },
+        { Planning, QuotationSent }, { Planning, NeedsOperator },
+        { NeedsOperator, Planning }, { NeedsOperator, QuotationSent }, { NeedsOperator, Cancelled },
+        { QuotationSent, ClientAccepted }, { QuotationSent, ClientDeclined }, { QuotationSent, Cancelled },
+        { ClientAccepted, Confirmed }, { ClientAccepted, QuotationSent }, { ClientAccepted, Cancelled },
+        { ClientDeclined, Planning }, { ClientDeclined, Cancelled },
         { Confirmed, InProgress }, { Confirmed, Cancelled },
         { InProgress, Completed }
     };
@@ -42,9 +44,12 @@ public class TripStatusMachineTests
     }
 
     [Theory]
-    [InlineData(Submitted, Confirmed)]        // no skipping the review
-    [InlineData(PendingReview, Confirmed)]    // the client must accept first
-    [InlineData(QuotationSent, Confirmed)]
+    [InlineData(Submitted, Confirmed)]        // no booking without a quotation the client accepted
+    [InlineData(Planning, ClientAccepted)]    // the client must see the quote first
+    [InlineData(QuotationSent, Confirmed)]    // Confirm (the approval gate) only after the client accepted
+    [InlineData(ClientDeclined, Confirmed)]
+    [InlineData(ClientDeclined, QuotationSent)] // after a decline the operator replans or cancels
+    [InlineData(NeedsOperator, Confirmed)]
     [InlineData(Planning, Cancelled)]         // not while the agents run
     [InlineData(InProgress, Cancelled)]       // a running tour is not cancelled in the app
     [InlineData(Completed, Cancelled)]
@@ -94,8 +99,8 @@ public class TripStatusMachineTests
     }
 
     [Theory]
-    [InlineData(PendingReview, "pending review")]
-    [InlineData(FailedSafely, "failed safely")]
+    [InlineData(QuotationSent, "quotation sent")]
+    [InlineData(NeedsOperator, "needs operator")]
     [InlineData(Submitted, "submitted")]
     public void Describe_turns_the_name_into_words(TripRequestStatus status, string expected)
     {

@@ -154,7 +154,7 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
         SnackBar(
           content: Text(
             planning.workflowStatus == 'FailedSafely'
-                ? 'Trip saved, but planning could not start: ${planning.errorSummary ?? 'please try again later'}'
+                ? 'Trip saved. Our team is looking at it and will send you a quote.'
                 : 'Trip submitted. Our agents are planning it now.',
           ),
         ),

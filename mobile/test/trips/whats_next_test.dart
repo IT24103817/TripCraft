@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tripcraft_mobile/features/trips/application/greeting.dart';
 import 'package:tripcraft_mobile/features/trips/application/whats_next.dart';
 import 'package:tripcraft_mobile/features/trips/data/trip_models.dart';
+import 'package:tripcraft_mobile/shared/utils/statuses.dart';
 
 import '../helpers.dart';
 
@@ -13,20 +14,21 @@ void main() {
   final today = DateTime(2026, 10, 2, 9);
 
   group('whatsNextLine', () {
-    test('one line per status', () {
+    test('one line for every trip status', () {
       final expected = {
         'Submitted': 'Ready to plan',
         'Planning': 'Our planner agents are building your trip',
-        'PendingReview': 'Operator is reviewing your plan',
-        'RevisionRequested':
-            'Operator asked for changes; a new version is coming',
-        'QuotationSent': 'Waiting for your acceptance',
+        'QuotationSent': 'Your quote is ready — accept or decline',
         'ClientAccepted': 'Operator is confirming',
+        'ClientDeclined': 'The operator is reviewing your feedback',
+        'NeedsOperator': 'Our team is preparing your quote',
         'Confirmed': 'Starts 10 Oct',
+        'InProgress': 'On tour — day 1 of 5',
         'Completed': 'Rate your guide',
-        'FailedSafely': 'Planning failed — tap to try again',
         'Cancelled': 'Cancelled',
       };
+      // Every status of the lifecycle has its own line (none falls back to the default).
+      expect(expected.keys, unorderedEquals(tripStatuses));
       for (final entry in expected.entries) {
         expect(
           whatsNextLine(trip(entry.key), today: today),
@@ -34,6 +36,13 @@ void main() {
           reason: entry.key,
         );
       }
+    });
+
+    test('an unknown status gets the general line', () {
+      expect(
+        whatsNextLine(trip('PendingReview'), today: today),
+        'We will let you know when something changes',
+      );
     });
 
     test('Confirmed names the guide by first name when known', () {

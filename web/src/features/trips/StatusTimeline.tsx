@@ -6,7 +6,6 @@ import { cn } from '@/shared/utils/cn';
 const MAIN_PATH: TripRequestStatus[] = [
   'Submitted',
   'Planning',
-  'PendingReview',
   'QuotationSent',
   'ClientAccepted',
   'Confirmed',
@@ -14,10 +13,10 @@ const MAIN_PATH: TripRequestStatus[] = [
   'Completed',
 ];
 
-/** Side statuses and the main-path step they follow. */
+/** Side statuses and the main-path step they branch off from. */
 const SIDE_STEP: Partial<Record<TripRequestStatus, TripRequestStatus>> = {
-  FailedSafely: 'Planning',
-  RevisionRequested: 'PendingReview',
+  NeedsOperator: 'Planning',
+  ClientDeclined: 'QuotationSent',
   Cancelled: 'Submitted',
 };
 

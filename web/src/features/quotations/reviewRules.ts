@@ -1,9 +1,10 @@
-import type { TripRequestStatus, WorkflowStatus } from '@/shared/statuses';
+import type { TripRequestStatus } from '@/shared/statuses';
+import { formatUsd } from '@/shared/utils/format';
 import type { QuotationDto, QuotationStatus } from './types';
 
 /** What a quotation status means to the manager (an "Approved" quotation was sent to the client). */
 export const QUOTATION_STATUS_LABELS: Record<QuotationStatus, string> = {
-  Pending: 'Waiting for review',
+  Pending: 'Not sent yet',
   Approved: 'Sent to client',
   Declined: 'Declined by client',
   RevisionRequested: 'Revision requested',
@@ -16,28 +17,33 @@ export const DECISION_LABELS: Record<string, string> = {
   Approved: 'Sent to the client',
   Accepted: 'Client accepted',
   Declined: 'Client declined',
+  Confirmed: 'Confirmed by the operator',
   RevisionRequested: 'Manager asked for a revision',
   Rejected: 'Rejected by the operator',
   Superseded: 'Replaced by a re-priced version',
 };
 
-/** The banner at the top of the review page: what the trip's status means and what happens next. */
-export const TRIP_STATUS_BANNERS: Partial<Record<TripRequestStatus, { title: string; body: string }>> = {
-  PendingReview: {
-    title: 'Pending review',
-    body: 'The proposal is waiting for you. Send it to the client, edit it directly, ask the Planner agent for a revision, or reject it.',
-  },
-  RevisionRequested: {
-    title: 'Re-planning',
-    body: 'The Planner agent is re-planning with your comment. A new version comes back here for review.',
+/** A short "what happens next" banner per trip status (the trip page's action panel and the review page). */
+export const NEXT_STEP_BANNERS: Partial<Record<TripRequestStatus, { title: string; body: string }>> = {
+  Planning: {
+    title: 'The agents are planning',
+    body: 'A proposal that passes the checks is sent to the client automatically. If it cannot be, the trip comes back to you as "Needs operator".',
   },
   QuotationSent: {
     title: 'Waiting for the client',
     body: 'The tourist has the quotation in the app and can accept or decline it. Nothing is booked yet.',
   },
   ClientAccepted: {
-    title: 'Client accepted',
-    body: 'Confirm books the guide, vehicle and rooms, issues vouchers and emails the tourist — all in one step. Reopen review sends the trip back to you for changes.',
+    title: 'Accepted — confirm to book',
+    body: 'Confirm holds the guide, vehicle and rooms, issues the vouchers and emails the tourist, all in one step. If something must change first, use Edit & resend: the tourist will be asked to accept the updated quote.',
+  },
+  ClientDeclined: {
+    title: 'Declined — needs a decision',
+    body: 'Replan with a note for the Planner agent (the new version goes to the client automatically), or cancel the trip with a reason.',
+  },
+  NeedsOperator: {
+    title: 'Needs operator',
+    body: 'The agents could not produce a quotation that passes the checks, so nothing was sent. Retry planning, edit the proposal and send it yourself, or cancel the trip.',
   },
   Confirmed: {
     title: 'Confirmed',
@@ -46,57 +52,66 @@ export const TRIP_STATUS_BANNERS: Partial<Record<TripRequestStatus, { title: str
   InProgress: { title: 'In progress', body: 'The trip has started.' },
   Completed: { title: 'Completed', body: 'The trip is finished.' },
   Cancelled: { title: 'Cancelled', body: 'This trip was cancelled. Nothing is held for it.' },
-  FailedSafely: {
-    title: 'Failed safely',
-    body: 'Planning stopped without a usable proposal. The tourist can try again from the app.',
-  },
 };
 
-/** "What happens next" under the review buttons (trip PendingReview). */
-export const NEXT_STEPS: { action: string; text: string }[] = [
-  {
-    action: 'Send to client',
-    text: 'the tourist gets the quotation in the app and can accept or decline. Nothing is booked yet.',
-  },
-  {
-    action: 'Request revision',
-    text: 'the Planner agent re-plans with your comment and a new version comes back for review.',
-  },
-  { action: 'Reject', text: 'the trip is cancelled and the tourist is told.' },
-  {
-    action: 'Edit directly',
-    text: "change a day's stops or swap the guide, vehicle or hotel, then re-price.",
-  },
-  { action: 'Re-price', text: "makes a new version with today's rates." },
-];
+/** The trip statuses in which the manager has something to do on the trip page. */
+export const ACTION_STATUSES: TripRequestStatus[] = ['ClientAccepted', 'ClientDeclined', 'NeedsOperator'];
+
+/** True when the client accepted this version (the API sets acceptedAt). */
+export function isAccepted(quotation: QuotationDto | undefined): boolean {
+  return Boolean(quotation?.acceptedAt);
+}
 
 /**
- * Why "Send to client" is not possible right now, or null when it is. Mirrors the API's 409 rules for
- * POST /api/quotations/{id}/approve, so the manager sees the reason before clicking.
+ * Why Confirm is not possible right now, or null when it is. Mirrors the API's 409 rules for
+ * POST /api/trip-requests/{id}/confirm: the newest version must be the accepted one, and nothing may have been
+ * edited since it was priced.
  */
-export function sendBlockedReason(check: {
-  workflowStatus: WorkflowStatus;
+export function confirmBlockedReason(check: {
+  newest: QuotationDto | undefined;
   editedSinceQuotation: boolean;
-  quotationId: string | null | undefined;
-  quotationStatus: QuotationStatus | undefined;
 }): string | null {
-  if (!check.quotationId) return 'There is no priced quotation to send yet.';
-  if (check.workflowStatus === 'RevisionRequested')
-    return 'A rule warning is open (for example the total is over the budget). Request a revision, or edit and re-price, before sending.';
+  if (!check.newest) return 'There is no quotation to confirm yet.';
   if (check.editedSinceQuotation)
-    return 'The proposal was edited after it was priced. Re-price it first, so the client gets the right total.';
-  if (check.quotationStatus === 'Declined')
-    return 'The client declined this version. Edit and re-price it, or request a revision, to make a new version.';
-  if (check.quotationStatus !== undefined && check.quotationStatus !== 'Pending')
-    return `This version is already decided (${QUOTATION_STATUS_LABELS[check.quotationStatus].toLowerCase()}).`;
+    return 'The proposal was edited after it was priced. Re-price it and send it to the client; they must accept it before you can confirm.';
+  if (!isAccepted(check.newest))
+    return `Version ${check.newest.version} has not been accepted by the client. Send it to the client; they must accept it before you can confirm.`;
   return null;
 }
 
-/** The client's reason when the newest version was declined, or null. */
+/**
+ * Why "Send to client" (POST /api/quotations/{id}/send) is not possible right now, or null when it is: only a
+ * re-priced version that was not sent yet can be sent, and only when nothing was edited after that price.
+ */
+export function sendBlockedReason(check: {
+  newest: QuotationDto | undefined;
+  editedSinceQuotation: boolean;
+}): string | null {
+  if (check.editedSinceQuotation)
+    return 'The proposal was edited after it was priced. Re-price it first, so the client gets the right total.';
+  if (!check.newest) return 'There is no priced version yet. Re-price the proposal first.';
+  if (check.newest.status !== 'Pending')
+    return `Version ${check.newest.version} is already ${QUOTATION_STATUS_LABELS[check.newest.status].toLowerCase()}. Edit or re-price to make a new version to send.`;
+  return null;
+}
+
+/** The client's reason when the version was declined, or null. */
 export function declineReason(quotation: QuotationDto | undefined): string | null {
   if (quotation?.status !== 'Declined') return null;
   const declined = quotation.decisions.filter((d) => d.decision === 'Declined').at(-1);
   return declined?.comment ?? 'No reason was given.';
+}
+
+/**
+ * The best-price sentence of a version that is still over the budget after the agents' lowest-cost re-plans,
+ * or null when the version is within budget. The API's own sentence is used when it sends one.
+ */
+export function budgetNoteText(quotation: QuotationDto): string | null {
+  if (!quotation.bestAvailablePrice) return null;
+  if (quotation.budgetNote) return quotation.budgetNote;
+  return quotation.overBudgetUsd
+    ? `Best price we can offer — ${formatUsd(quotation.overBudgetUsd)} above your budget`
+    : 'Best price we can offer';
 }
 
 /** The API accepts a deposit payment change only once the client has accepted the newest version. */

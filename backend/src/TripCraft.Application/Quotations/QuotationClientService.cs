@@ -18,7 +18,7 @@ public interface IQuotationClientService
 /// <summary>
 /// The tourist's answer to a quotation that was sent (trip QuotationSent, v1.1):
 /// Accept → ClientAccepted and the managers are told to confirm;
-/// Decline (reason required) → back to PendingReview, and the reason is shown to the manager.
+/// Decline (reason required) → ClientDeclined, and the reason is shown to the manager (Replan with note or Cancel).
 /// </summary>
 public class QuotationClientService(
     IQuotationStore quotations,
@@ -43,27 +43,26 @@ public class QuotationClientService(
         audit.Record(user.Id, "QuotationAccepted", "Quotation", quotation.Id, null, new { quotation.TotalUsd });
 
         await unitOfWork.SaveChangesAsync(ct);
-        return QuotationApprovalService.Response(quotation.Id, trip, workflow, "Accepted", 0);
+        return QuotationDecisionResponse.From(quotation.Id, trip, workflow, "Accepted", 0);
     }
 
     public async Task<QuotationDecisionResponse> DeclineAsync(CurrentUser user, Guid quotationId, string reason,
         CancellationToken ct)
     {
         var (quotation, trip, workflow) = await LoadAsync(user, quotationId, ct);
-        TripStatusMachine.EnsureCanMove(trip.Status, TripRequestStatus.PendingReview);
+        TripStatusMachine.EnsureCanMove(trip.Status, TripRequestStatus.ClientDeclined);
 
         await quotations.SetStatusAsync(quotation.Id, QuotationDecision.Declined, ct);
         quotations.RecordDecision(quotation.Id, user.Id, QuotationDecision.Declined, reason);
-        // Back on the manager's desk: request a revision, or edit and re-price, then send again.
-        workflow.Status = AgentWorkflowStatus.PendingApproval;
-        workflow.CurrentStep = "awaiting-manager";
-        TripStatusMachine.Move(trip, TripRequestStatus.PendingReview, user.Id, $"Declined by the client: {reason.Trim()}", audit);
+        // On the manager's desk: Replan with note (the agents get the reason) or Cancel with reason.
+        workflow.CurrentStep = "client-declined";
+        TripStatusMachine.Move(trip, TripRequestStatus.ClientDeclined, user.Id, $"Declined by the client: {reason.Trim()}", audit);
         await notifier.NotifyManagersAsync("ClientDeclined", "Client declined a quotation",
             $"Version {quotation.Version} was declined: {reason.Trim()}", trip.Id, ct);
         audit.Record(user.Id, "QuotationDeclined", "Quotation", quotation.Id, null, new { Reason = reason.Trim() });
 
         await unitOfWork.SaveChangesAsync(ct);
-        return QuotationApprovalService.Response(quotation.Id, trip, workflow, "Declined", 0);
+        return QuotationDecisionResponse.From(quotation.Id, trip, workflow, "Declined", 0);
     }
 
     /// <summary>Only the trip's tourist, only the newest version, only once it was sent and not yet answered.</summary>

@@ -8,36 +8,41 @@ move is not allowed now.
 
 ## Trip statuses (`TripStatusMachine`)
 
+Quotations go straight to the client. **The human approval gate is Confirm**: an Operations Manager confirms a
+quotation the client accepted, and only then are guide, vehicle and rooms held. No manager action sits between the
+agents and the client.
+
 ```
-Submitted ─► Planning ─► PendingReview ─► QuotationSent ─► ClientAccepted ─► Confirmed ─► InProgress ─► Completed
-              │   ▲          │   ▲  ▲          │                 │
-              ▼   │          ▼   │  └──────────┘ (declined)      └─► PendingReview (reopen)
-        FailedSafely    RevisionRequested
-Cancelled: from Submitted, FailedSafely, PendingReview, RevisionRequested, QuotationSent, ClientAccepted, Confirmed.
+Submitted ─► Planning ─► QuotationSent ─► ClientAccepted ─► Confirmed ─► InProgress ─► Completed
+               │  ▲          │   ▲              │
+               ▼  │          ▼   └──────────────┘ (manager: Edit & resend)
+          NeedsOperator   ClientDeclined ─► Planning (manager: Replan with note)
+Cancelled: from Submitted, NeedsOperator, QuotationSent, ClientAccepted, ClientDeclined, Confirmed.
 ```
 
 | From | Allowed next |
 |------|--------------|
 | Submitted | Planning, Cancelled |
-| Planning | PendingReview, FailedSafely |
-| FailedSafely | Planning ("Try again"), Cancelled |
-| PendingReview | QuotationSent, RevisionRequested, Cancelled |
-| RevisionRequested | PendingReview, FailedSafely, Cancelled |
-| QuotationSent | ClientAccepted, PendingReview (declined), Cancelled |
-| ClientAccepted | Confirmed, PendingReview (reopen), Cancelled |
+| Planning | QuotationSent (proposal passed validation, auto-sent), NeedsOperator (agents failed safely or a Hard rule failed) |
+| NeedsOperator | Planning (Retry planning), QuotationSent (Edit & send manually), Cancelled |
+| QuotationSent | ClientAccepted, ClientDeclined, Cancelled |
+| ClientAccepted | Confirmed (manager Confirm), QuotationSent (manager Edit & resend), Cancelled |
+| ClientDeclined | Planning (manager Replan with note), Cancelled |
 | Confirmed | InProgress, Cancelled |
 | InProgress | Completed |
 | Completed, Cancelled | — |
 
-Every change is an audit row. `GET /api/trip-requests/{id}/history` returns
-`[{at, action, entity, actor, fromStatus, toStatus, reason}]`. A status change has `action = "TripRequestStatusChanged"`
-and a human-readable `reason`. `actor` is a role (`Tourist`, `OperationsManager`, `Guide`) or `System`.
+`PendingReview`, `RevisionRequested` and `FailedSafely` are no longer trip statuses. The migration maps old rows:
+PendingReview → ClientDeclined (if the newest quotation was declined) or NeedsOperator; RevisionRequested → Planning;
+FailedSafely → NeedsOperator.
 
-The agent workflow status (`GET /api/trip-requests/{id}/workflow`, `.status`) is separate. Its values are Planning,
-PendingApproval (valid, can be sent), RevisionRequested (over budget: only a warning, so "Send" is disabled until it
-is revised or edited and re-priced), Approved (sent), Completed (confirmed), Rejected and FailedSafely.
-`workflow.finalOutcome.editedSinceQuotation = true` means the proposal was edited after it was priced, so Re-price
-must run first.
+Every change is an audit row. `GET /api/trip-requests/{id}/history` returns
+`[{at, action, entity, actor, fromStatus, toStatus, reason}]`. `actor` is a role or `System`; the auto-send is
+`System`.
+
+The agent workflow status (`GET /api/trip-requests/{id}/workflow`, `.status`) is unchanged. It is Approved once
+the quotation was sent and Completed after Confirm. `finalOutcome.editedSinceQuotation = true` means the proposal
+was edited after it was priced.
 
 ## Cities
 
@@ -48,34 +53,56 @@ must run first.
 - `TripRequestDto.cities: string[]`.
 - `GET /api/trip-requests?cities=Kandy&cities=Ella` returns only trips that visit every listed city.
 
-## Manager review (PendingReview) — Operations Manager
+## Auto-send and the budget rule
 
-| Button | Call | Result |
-|--------|------|--------|
-| Send to client | `POST /api/quotations/{quotationId}/approve` `{comment?}` | trip → QuotationSent, tourist notified. 409 if over budget (workflow RevisionRequested), edited and not re-priced, or not the newest version |
-| Request revision | `POST /api/quotations/{id}/request-revision` `{comment}` (required) | trip → RevisionRequested; Planner re-plans with the comment; the new proposal → PendingReview with quotation version n+1 |
-| Reject | `POST /api/quotations/{id}/reject` `{comment?}` | trip → Cancelled |
-| Edit a day | `PUT /api/trip-requests/{id}/proposal/days/{dayNumber}` `{attractionIds:[guid], notes?}` | 1–3 attractions in that day's city. Returns `EditableProposalDto {workflowId, tripRequestId, editedSinceQuotation, days, resources}` |
-| Swap resources | `PUT /api/trip-requests/{id}/proposal/resources` `{guideId?, vehicleId?, rooms?:[{city, roomTypeId}]}` | each must be free (use `GET /api/availability`). 409 otherwise |
-| Re-price | `POST /api/quotations/{quotationId}/calculate` | new version: `RepriceResponse {quotationId, version, totalLkr, totalUsd, previousTotalLkr, previousTotalUsd, workflowStatus, validation}`. The old version → Superseded. 409 on a Hard rule |
-| Confirm (at ClientAccepted) | `POST /api/trip-requests/{id}/confirm` | one transaction: holds, itinerary, vouchers, Confirmed, audit, email. 409 and no change on conflict |
-| Reopen review (at ClientAccepted) | `POST /api/trip-requests/{id}/reopen-review` `{reason}` | → PendingReview |
+When the agents' proposal arrives, the API runs `ProposalValidator`:
+- **Valid:** a quotation version is created, marked sent, and the trip moves Planning → QuotationSent. The tourist
+  gets a notification ("Your quotation is ready") and an email.
+- **Only over budget (Soft rule) after the agents' re-plans:** the agents re-plan with a lowest-cost strategy
+  (cheapest rooms, cheapest eligible guide and vehicle, fewer paid entries) up to `MAX_REPLANS`. If the total is
+  still over the budget, the quotation is **sent anyway** with `bestAvailablePrice = true` and
+  `budgetNote = "Best price we can offer — USD X above your budget"`.
+- **Any Hard rule, or the agents failed safely:** nothing is sent. The trip becomes NeedsOperator, with the error
+  summary on the workflow.
 
-These calls return `QuotationDecisionResponse {quotationId, tripRequestId, workflowId, decision, tripStatus,
-workflowStatus, holdsCreated}`.
-
-**Versions side by side:** use `GET /api/quotations?tripRequestId={id}&sort=version` for the list, then
-`GET /api/quotations/{id}` for each version. A `QuotationDto` has `version`, `status` (Pending, Approved = sent,
-Declined, RevisionRequested, Superseded, Rejected), `acceptedAt`, `lines` and `proposalSnapshot`
-(`{days, resources}`, snake_case inside). `decisions: [{decision, comment, decidedAt}]` carries the manager's
-revision comment (`RevisionRequested`) and the client's decline reason (`Declined`).
+`QuotationDto` adds `bestAvailablePrice` (bool), `overBudgetUsd` (decimal, null when within budget) and `budgetNote`
+(string, null when within budget).
 
 ## Client (Tourist) at QuotationSent
 
 - Find the quotation id with `GET /api/trip-requests/{id}/workflow` → `finalOutcome.proposal.quotationId`, or the
-  `quotationId` of the newest version.
+  newest version.
 - `POST /api/quotations/{id}/accept` → ClientAccepted, and the managers are notified.
-- `POST /api/quotations/{id}/decline` `{reason}` (required) → PendingReview. The reason is shown to the manager.
+- `POST /api/quotations/{id}/decline` `{reason}` (required) → ClientDeclined. The reason is shown to the manager.
+- After the manager edits and resends, the tourist gets "Your quote was updated, please review" and must accept the
+  new version again.
+
+## Operations Manager actions
+
+| Trip status | Action | Call |
+|-------------|--------|------|
+| ClientAccepted | **Confirm** (the approval gate: holds, itinerary, vouchers, email in one transaction) | `POST /api/trip-requests/{id}/confirm`. Returns 409 unless the newest version is the accepted one and nothing was edited since it was priced. |
+| ClientAccepted, NeedsOperator | **Edit** a day / swap resources | `PUT /api/trip-requests/{id}/proposal/days/{n}`, `PUT /api/trip-requests/{id}/proposal/resources` |
+| ClientAccepted, NeedsOperator | **Re-price** (new version, not sent yet) | `POST /api/quotations/{id}/calculate` → `RepriceResponse`. A Hard rule returns 409. |
+| ClientAccepted, NeedsOperator | **Send** the re-priced version (Edit & resend / Edit & send manually) | `POST /api/quotations/{id}/send` `{comment?}` → QuotationSent; the tourist is notified "Your quote was updated, please review". |
+| ClientDeclined | **Replan with note** | `POST /api/trip-requests/{id}/replan` `{note}` (required) → Planning. The note and the client's reason go to the Planner, and the new version is auto-sent. |
+| NeedsOperator | **Retry planning** | `POST /api/trip-requests/{id}/start-planning` (managers may call it) → Planning |
+| any cancellable | **Cancel** with reason | `POST /api/trip-requests/{id}/cancel` `{reason}` (the tourist is notified) |
+
+These endpoints are removed: `POST /api/quotations/{id}/approve`, `/reject`, `/request-revision` and
+`POST /api/trip-requests/{id}/reopen-review`.
+
+**Versions side by side** work as before: `GET /api/quotations?tripRequestId={id}&sort=version`, then
+`GET /api/quotations/{id}`, which includes `proposalSnapshot` and `decisions` (Declined with the client's reason,
+Accepted, Approved = sent by a manager, Confirmed).
+
+**Dashboard (manager):**
+- `GET /api/dashboard/actions` →
+  `{acceptedToConfirm, declinedNeedsDecision, needsOperator, guideChangeRequests, recentCancellations}`.
+- `GET /api/dashboard/attention?status=ClientAccepted|ClientDeclined|NeedsOperator` (optional; all three when
+  omitted) →
+  `[{tripRequestId, objective, status, startDate, endDate, pax, touristName, detail, since, totalUsd}]`.
+  `detail` is the client's decline reason, the error summary, or "Version N accepted".
 
 ## Cancellation
 
@@ -122,5 +149,5 @@ revision comment (`RevisionRequested`) and the client's decline reason (`Decline
 - `GET /api/notifications/mine` → `{unreadCount, items:[{id, type, title, body, tripRequestId, isRead, createdAt}]}`
   (the newest 50).
 - `POST /api/notifications/{id}/read` and `POST /api/notifications/read-all` → 204.
-- Types: ReviewNeeded, QuotationSent, ClientAccepted, ClientDeclined, TripConfirmed, TripAssigned, TripCancelled,
-  TripRejected, GuideChangeRequested, GuideReplaced, GuideChanged, ReviewReopened.
+- Types: QuotationSent, QuotationUpdated, ClientAccepted, ClientDeclined, NeedsOperator, TripConfirmed, TripAssigned,
+  TripCancelled, GuideChangeRequested, GuideReplaced, GuideChanged.

@@ -43,10 +43,11 @@ public static class QuotationsSeeder
             }).ToList()
         };
         db.Quotations.Add(quotation);
+        // v1.1: the booking is the Confirm decision (the approval gate); revenue reports count it.
         db.ApprovalDecisions.Add(new ApprovalDecision
         {
-            QuotationId = quotation.Id, DecidedBy = manager.Id, Decision = QuotationDecision.Approved,
-            Comment = "Sample approved trip", DecidedAt = new DateTime(2026, 8, 1, 10, 0, 0, DateTimeKind.Utc)
+            QuotationId = quotation.Id, DecidedBy = manager.Id, Decision = QuotationDecision.Confirmed,
+            Comment = "Sample confirmed trip", DecidedAt = new DateTime(2026, 8, 1, 10, 0, 0, DateTimeKind.Utc)
         });
         await db.SaveChangesAsync(ct);
         logger.LogInformation("Seeded the sample trip's approved quotation ({TotalUsd} USD)", price.TotalUsd);

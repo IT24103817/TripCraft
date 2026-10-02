@@ -20,6 +20,29 @@ It was regenerated on **28 Sep 2026** after a completeness audit of merged `main
 
 No row is PARTIAL or MISSING because of code.
 
+## v1.1 lifecycle: quotations go straight to the client (2 Oct 2026)
+
+**The human approval gate is Confirm.** Plan section 3C requires a human to approve before any guide, vehicle or
+room is held. In v1.1 that human step is **Confirm**: a manager-only action in React, offered only after the client
+accepted the newest quotation version. Confirm places every hold, saves the itinerary, issues the vouchers and
+queues the email in one transaction (`TripConfirmationService.ConfirmAsync`). The operator no longer sits between
+the agents and the client:
+
+| Rule | Code | Tests |
+|------|------|-------|
+| Submitted → Planning → QuotationSent → ClientAccepted → Confirmed → InProgress → Completed, plus ClientDeclined, NeedsOperator, Cancelled; every other move is 409 | `TripStatusMachine` | `TripStatusMachineTests` (allowed and illegal moves), `QuotationApprovalTests.Every_status_change_is_in_the_trip_history_with_actor_and_reason` |
+| A proposal that passes the deterministic validation is sent automatically (actor `System`), with push + email; no holds | `WorkflowProposalService.SendToClientAsync` | `A_valid_proposal_is_sent_to_the_client_automatically_with_no_holds` |
+| Still over budget after the lowest-cost re-plans → sent with `bestAvailablePrice` and "Best price we can offer — USD X above your budget" | agents `cost_strategy="lowest"` (`planner.py`, `itinerary.py`, `resources.py`); API `OverBudgetUsd` | `Still_over_budget_after_the_replans_it_is_sent_anyway_as_the_best_available_price`; `agents/tests/test_lowest_cost.py`, `golden/test_over_budget.py` |
+| A Hard rule is never sent → NeedsOperator (Retry planning, Edit & send manually, Cancel) | `FailSafelyAsync`, `OperatorQuotationService.SendAsync` | `A_hard_rule_is_never_sent_the_trip_needs_the_operator_who_retries_planning`, `A_quote_that_failed_a_hard_rule_is_never_sent`, `TripPlanningSafeFailureTests` |
+| Edit & resend makes a new version; the client must accept again; Confirm is refused until the newest version is accepted and nothing was edited since | `ProposalEditService`, `OperatorQuotationService.SendAsync`, `TripConfirmationService` | `Edit_and_resend_sends_the_new_version_and_the_client_must_accept_again`, `Confirm_needs_the_newest_quotation_to_be_accepted`, `Confirm_is_disabled_while_the_trip_was_edited_after_the_client_accepted` |
+| Declined → Replan with note (the note and the client's reason go to the Planner; the new version is auto-sent) or Cancel with reason | `OperatorQuotationService.ReplanAsync` | `A_declined_quote_waits_for_the_operator_who_replans_with_a_note_and_version_2_is_sent`, `Replan_with_note_passes_the_note_and_the_clients_reason_to_the_planner` |
+| Confirm, Send and Replan are manager-only; Tourist and Admin get 403 | `OperatorQuotationsController`, `TripRequestsController` | `Only_an_operations_manager_confirms_sends_or_replans`; e2e `roles.spec.ts` |
+| Revenue counts confirmed bookings (Confirmed decisions) | `ReportQueries` | `QuotationsEndpointsTests` |
+
+The removed endpoints (`/approve`, `/reject`, `/request-revision`, `/reopen-review`) return 404
+(`Old_review_endpoints_are_gone`). Existing rows are mapped by the migration `QuotationsGoStraightToClient`. The
+v1.0 evidence further down (runs on 28 Sep 2026) describes the earlier review-then-send flow and is kept as history.
+
 ## v1.1 additions (2 Oct 2026)
 
 The audit below was written for v1.0. v1.1 builds on it with three branches:
@@ -34,7 +57,7 @@ Every new rule has a test.
 |------|--------|----------|
 | Trip lifecycle in one state machine; 409 on illegal moves; actor and reason in the history | DONE | `Application/Trips/TripStatusMachine.cs`; `TripStatusMachineTests` (every allowed move, every other move refused); `QuotationApprovalTests.Every_status_change_is_in_the_trip_history_with_actor_and_reason` |
 | Cities from a list; free text rejected with the supported cities named | DONE | `GET /api/attractions/cities`; `TripRequestsEndpointsTests.Free_text_city_is_rejected_*`; planner forces the chosen cities (`agents/tests/test_planner.py`) |
-| Manager review: send, request revision (v1/v2), edit directly, re-price; client accept/decline; Confirm as one transaction | DONE | `QuotationApprovalTests`, `ProposalEditTests`, `TripConfirmationServiceTests`, `ApprovalTransactionPostgresTests` |
+| Auto-send to the client; client accept/decline; manager Confirm (the approval gate) as one transaction; Edit & resend, Replan with note, Needs operator | DONE | `QuotationApprovalTests`, `ProposalEditTests`, `TripConfirmationServiceTests`, `ApprovalTransactionPostgresTests` |
 | Cancellation with reason, N-day cut-off, holds released in a transaction | DONE | `TripHistoryAndCancelTests` |
 | Guide accounts (temporary password, forced change, reset), guide change requests | DONE | `GuidesEndpointsTests`, `GuideChangeRequestTests`, Flutter `change_password_test.dart` |
 | Signed vouchers, PDF, voucher check-in (signature, trip, day, guide) | DONE | `VoucherSignerTests`, `VoucherEndpointsTests`, `VoucherCheckInTests`; [evidence/sample-voucher.pdf](evidence/sample-voucher.pdf) |
@@ -170,8 +193,9 @@ plan section 5. Unit tests are in `Tests/Workflows/ProposalValidatorTests.cs` (1
 | total_usd ≤ budget, else revision | `OVER_BUDGET` (Soft) | `Over_budget_is_the_only_soft_violation` |
 
 **Approval gate.**
-- `ResourceHoldService.CreateHoldAsync` is the only runtime creator of trip holds. It is reached only from
-  `QuotationApprovalService.ApproveAsync` inside one transaction.
+- The gate is **Confirm** (v1.1). `ResourceHoldService.CreateHoldAsync` creates trip holds at runtime only from
+  `TripConfirmationService.ConfirmAsync` inside one transaction (and from the guide swap, which replaces an existing
+  hold).
 - `POST /api/resource-holds` is a manager-only manual block with no trip.
 - The internal API and the agent tools are read-only (GET only).
 - Tests:
@@ -311,7 +335,7 @@ own business logic, so it stays in its owner's folder:
 | Quality: server-side validation | DONE | FluentValidation on every request DTO (auto-validation in `Program.cs`) | Post pax 0 → 400 with field errors |
 | Quality: global error handling | DONE | `Middleware/ExceptionHandlingMiddleware.cs`; `Tests/Common/ErrorHandlingTests.cs` (400/404/401/500 without stack) | Stop PostgreSQL → 500 ProblemDetails with traceId only |
 | Quality: structured logging, CORS, Swagger | DONE | Serilog JSON (`Program.cs`); `Setup/CorsSetup.cs` (`ALLOWED_ORIGINS`); `Setup/SwaggerSetup.cs` + `ProblemDetailsResponsesFilter.cs` | Show a log line with traceId; Swagger Authorize |
-| Agent integration: start workflows, review status, human approval, execution summaries | DONE | `POST …/start-planning`, `GET /api/workflows/{id}` + `/steps`, `POST /api/quotations/{id}/approve|reject|request-revision` | Workflow monitor with step timings, then approve |
+| Agent integration: start workflows, review status, human approval, execution summaries | DONE | `POST …/start-planning`, `GET /api/workflows/{id}` + `/steps`, `POST /api/trip-requests/{id}/confirm` (the human approval gate), `POST /api/quotations/{id}/send`, `POST /api/trip-requests/{id}/replan` | Workflow monitor with step timings, then Confirm an accepted quotation |
 | Individual minimum: each component ≥ 4 endpoints + 1 business op | DONE | [Endpoints per component](#completeness-audit-step-4-components) | Each student shows their controller in Swagger |
 
 ## 6 Database

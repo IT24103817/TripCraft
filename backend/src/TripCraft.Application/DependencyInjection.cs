@@ -66,7 +66,7 @@ public static class DependencyInjection
         services.AddScoped<IWorkflowStepService, WorkflowStepService>();
         services.AddScoped<IWorkflowProposalService, WorkflowProposalService>();
         services.AddScoped<IWorkflowQueryService, WorkflowQueryService>();
-        services.AddScoped<IQuotationApprovalService, QuotationApprovalService>();
+        services.AddScoped<IOperatorQuotationService, OperatorQuotationService>();
         services.AddScoped<IQuotationClientService, QuotationClientService>();
         services.AddScoped<ITripConfirmationService, TripConfirmationService>();
         services.AddScoped<IVoucherService, VoucherService>();

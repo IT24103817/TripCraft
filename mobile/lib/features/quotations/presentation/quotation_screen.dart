@@ -11,9 +11,11 @@ import '../../../shared/widgets/status_chip.dart';
 import '../application/quotation_providers.dart';
 import '../data/quotation_models.dart';
 import 'quotation_actions.dart';
+import 'quote_notes.dart';
 
-/// The quotation for a trip: lines, subtotal, margin and total in LKR and USD, with the FX rate.
-/// While the trip is QuotationSent the tourist can accept it, or decline it with a reason (asked in a bottom sheet).
+/// The quotation for a trip: lines, subtotal, margin and total in LKR and USD, with the FX rate, and the budget
+/// note when it is the best price we can offer. While the trip is QuotationSent the tourist can accept it, or
+/// decline it with a reason (asked in a bottom sheet). A resent quote says "Updated quote (version N)".
 class QuotationScreen extends ConsumerWidget {
   const QuotationScreen({super.key, required this.tripId});
 
@@ -40,7 +42,7 @@ class QuotationScreen extends ConsumerWidget {
           empty: const EmptyState(
             icon: Icons.receipt_long_outlined,
             title: 'No quotation yet',
-            message: 'It appears here once the operator has sent it to you.',
+            message: 'It appears here as soon as our planner agents have priced your trip.',
           ),
           data: (v) {
             final id = v.quotationId;
@@ -48,6 +50,7 @@ class QuotationScreen extends ConsumerWidget {
             return QuotationBody(
               quotation: v.quotation!,
               tripStatus: v.tripStatus,
+              version: v.version,
               quotationStatus: v.quotationStatus,
               acceptedAt: v.acceptedAt,
               onAccept: canDecide
@@ -71,6 +74,7 @@ class QuotationBody extends StatelessWidget {
     super.key,
     required this.quotation,
     required this.tripStatus,
+    this.version,
     this.quotationStatus,
     this.acceptedAt,
     this.onAccept,
@@ -79,6 +83,9 @@ class QuotationBody extends StatelessWidget {
 
   final Quotation quotation;
   final String tripStatus;
+
+  /// 2 or more once the operator edited and resent the quote; null while it only exists in the proposal.
+  final int? version;
 
   /// Status of the stored quotation (Pending, Approved = sent, Declined, ...); null while it only exists in
   /// the proposal.
@@ -93,12 +100,12 @@ class QuotationBody extends StatelessWidget {
       return 'You accepted this price on ${formatDateTime(acceptedAt)}.';
     }
     if (quotationStatus == 'Declined') {
-      return 'You declined this version. The operator is preparing a new one.';
+      return 'You declined this version. The operator will replan or contact you.';
     }
     if (tripStatus == 'QuotationSent') {
       return 'Accept to go ahead, or decline and tell the operator what to change.';
     }
-    return 'An operator is checking this quotation. You can accept or decline it once it is sent to you.';
+    return 'You can accept or decline a quote while it is waiting for your answer.';
   }
 
   double _usd(double lkr) => lkr / quotation.fxRate;
@@ -109,6 +116,7 @@ class QuotationBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        UpdatedQuoteLabel(version: version),
         SectionCard(
           title: 'Items',
           trailing: StatusChip(status: tripStatus),
@@ -166,6 +174,10 @@ class QuotationBody extends StatelessWidget {
             'The exchange rate may be out of date.',
             style: TextStyle(color: AppColors.warning),
           ),
+        if (quotation.bestAvailablePrice) ...[
+          const SizedBox(height: 12),
+          BestPriceNote(quotation: quotation),
+        ],
         const SizedBox(height: 16),
         // POST /api/quotations/{id}/accept or /decline: only while the trip is QuotationSent.
         FilledButton(

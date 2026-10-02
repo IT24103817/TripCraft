@@ -7,8 +7,8 @@ import { formatUsd, lastMonths, monthRange } from '@/shared/utils/format';
 const MONTHS = 6;
 
 /**
- * Revenue (quotations sent to clients, USD) for the last six months from GET /api/reports/revenue. A month with
- * nothing sent shows 0. Screen readers get the same numbers as a table.
+ * Revenue from confirmed bookings (dated by the manager's Confirm, USD) for the last six months from GET /api/reports/revenue. A month with
+ * nothing confirmed shows 0. Screen readers get the same numbers as a table.
  */
 export function RevenueChart() {
   const months = lastMonths(MONTHS);
@@ -24,7 +24,7 @@ export function RevenueChart() {
   return (
     <section aria-labelledby="revenue-chart" className="card space-y-3">
       <h2 id="revenue-chart" className="font-semibold text-slate-900">
-        Revenue, last 6 months
+        Revenue from confirmed bookings, last 6 months
       </h2>
       <PageState
         isLoading={revenue.isLoading}
@@ -44,7 +44,7 @@ export function RevenueChart() {
           </ResponsiveContainer>
         </div>
         <table className="sr-only">
-          <caption>Revenue for the last 6 months, in USD</caption>
+          <caption>Revenue from confirmed bookings for the last 6 months, in USD</caption>
           <tbody>
             {data.map((d) => (
               <tr key={d.name}>

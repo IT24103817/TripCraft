@@ -29,11 +29,22 @@ final quotation = Quotation.fromJson({
   'total_usd': 624.07,
 });
 
+/// The same quotation, still USD 120 over budget after the agents' cheapest plan (sent anyway).
+final overBudgetQuotation = quotation.copyWith(
+  bestAvailablePrice: true,
+  overBudgetUsd: 120,
+  budgetNote: 'Best price we can offer — USD 120 above your budget',
+);
+
 /// Serves a fixed quotation view and records the tourist's decision instead of calling the API.
 class FakeQuotationsRepository extends Fake implements QuotationsRepository {
-  FakeQuotationsRepository(this.tripStatus);
+  FakeQuotationsRepository(this.tripStatus, {this.served, this.version = 1});
 
   String tripStatus;
+
+  /// The quotation to serve; the plain [quotation] when null.
+  final Quotation? served;
+  final int version;
   String? acceptedId;
   (String, String)? declined;
   Object? error;
@@ -54,8 +65,9 @@ class FakeQuotationsRepository extends Fake implements QuotationsRepository {
   Future<QuotationView> quotationFor(String tripId) async => QuotationView(
     tripStatus: tripStatus,
     workflowStatus: 'Approved',
-    quotation: quotation,
+    quotation: served ?? quotation,
     quotationId: 'q1',
+    version: version,
     quotationStatus: 'Approved',
   );
 
@@ -68,6 +80,6 @@ class FakeQuotationsRepository extends Fake implements QuotationsRepository {
   @override
   Future<QuotationDecision> decline(String quotationId, String reason) async {
     declined = (quotationId, reason);
-    return _decision(quotationId, 'Declined', 'PendingReview');
+    return _decision(quotationId, 'Declined', 'ClientDeclined');
   }
 }

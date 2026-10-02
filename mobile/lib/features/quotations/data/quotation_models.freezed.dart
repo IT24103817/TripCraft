@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Quotation {
 
- List<QuotationLine> get lines;@JsonKey(name: 'subtotal_lkr') double get subtotalLkr;@JsonKey(name: 'margin_pct') double get marginPct;@JsonKey(name: 'margin_lkr') double get marginLkr;@JsonKey(name: 'total_lkr') double get totalLkr;@JsonKey(name: 'fx_rate') double get fxRate;@JsonKey(name: 'fx_as_of') String get fxAsOf;@JsonKey(name: 'fx_stale') bool get fxStale;@JsonKey(name: 'total_usd') double get totalUsd;
+ List<QuotationLine> get lines;@JsonKey(name: 'subtotal_lkr') double get subtotalLkr;@JsonKey(name: 'margin_pct') double get marginPct;@JsonKey(name: 'margin_lkr') double get marginLkr;@JsonKey(name: 'total_lkr') double get totalLkr;@JsonKey(name: 'fx_rate') double get fxRate;@JsonKey(name: 'fx_as_of') String get fxAsOf;@JsonKey(name: 'fx_stale') bool get fxStale;@JsonKey(name: 'total_usd') double get totalUsd;@JsonKey(name: 'best_available_price') bool get bestAvailablePrice;@JsonKey(name: 'over_budget_usd') double? get overBudgetUsd;@JsonKey(name: 'budget_note') String? get budgetNote;
 /// Create a copy of Quotation
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +30,20 @@ $QuotationCopyWith<Quotation> get copyWith => _$QuotationCopyWithImpl<Quotation>
 @override
 bool operator ==(Object other) {
   final _this = this as Quotation;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Quotation&&const DeepCollectionEquality().equals(other.lines, _this.lines)&&(identical(other.subtotalLkr, _this.subtotalLkr) || other.subtotalLkr == _this.subtotalLkr)&&(identical(other.marginPct, _this.marginPct) || other.marginPct == _this.marginPct)&&(identical(other.marginLkr, _this.marginLkr) || other.marginLkr == _this.marginLkr)&&(identical(other.totalLkr, _this.totalLkr) || other.totalLkr == _this.totalLkr)&&(identical(other.fxRate, _this.fxRate) || other.fxRate == _this.fxRate)&&(identical(other.fxAsOf, _this.fxAsOf) || other.fxAsOf == _this.fxAsOf)&&(identical(other.fxStale, _this.fxStale) || other.fxStale == _this.fxStale)&&(identical(other.totalUsd, _this.totalUsd) || other.totalUsd == _this.totalUsd));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Quotation&&const DeepCollectionEquality().equals(other.lines, _this.lines)&&(identical(other.subtotalLkr, _this.subtotalLkr) || other.subtotalLkr == _this.subtotalLkr)&&(identical(other.marginPct, _this.marginPct) || other.marginPct == _this.marginPct)&&(identical(other.marginLkr, _this.marginLkr) || other.marginLkr == _this.marginLkr)&&(identical(other.totalLkr, _this.totalLkr) || other.totalLkr == _this.totalLkr)&&(identical(other.fxRate, _this.fxRate) || other.fxRate == _this.fxRate)&&(identical(other.fxAsOf, _this.fxAsOf) || other.fxAsOf == _this.fxAsOf)&&(identical(other.fxStale, _this.fxStale) || other.fxStale == _this.fxStale)&&(identical(other.totalUsd, _this.totalUsd) || other.totalUsd == _this.totalUsd)&&(identical(other.bestAvailablePrice, _this.bestAvailablePrice) || other.bestAvailablePrice == _this.bestAvailablePrice)&&(identical(other.overBudgetUsd, _this.overBudgetUsd) || other.overBudgetUsd == _this.overBudgetUsd)&&(identical(other.budgetNote, _this.budgetNote) || other.budgetNote == _this.budgetNote));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as Quotation;
-  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.lines),_this.subtotalLkr,_this.marginPct,_this.marginLkr,_this.totalLkr,_this.fxRate,_this.fxAsOf,_this.fxStale,_this.totalUsd);
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.lines),_this.subtotalLkr,_this.marginPct,_this.marginLkr,_this.totalLkr,_this.fxRate,_this.fxAsOf,_this.fxStale,_this.totalUsd,_this.bestAvailablePrice,_this.overBudgetUsd,_this.budgetNote);
 }
 
 @override
 String toString() {
   final _this = this as Quotation;
-  return 'Quotation(lines: ${_this.lines}, subtotalLkr: ${_this.subtotalLkr}, marginPct: ${_this.marginPct}, marginLkr: ${_this.marginLkr}, totalLkr: ${_this.totalLkr}, fxRate: ${_this.fxRate}, fxAsOf: ${_this.fxAsOf}, fxStale: ${_this.fxStale}, totalUsd: ${_this.totalUsd})';
+  return 'Quotation(lines: ${_this.lines}, subtotalLkr: ${_this.subtotalLkr}, marginPct: ${_this.marginPct}, marginLkr: ${_this.marginLkr}, totalLkr: ${_this.totalLkr}, fxRate: ${_this.fxRate}, fxAsOf: ${_this.fxAsOf}, fxStale: ${_this.fxStale}, totalUsd: ${_this.totalUsd}, bestAvailablePrice: ${_this.bestAvailablePrice}, overBudgetUsd: ${_this.overBudgetUsd}, budgetNote: ${_this.budgetNote})';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $QuotationCopyWith<$Res>  {
   factory $QuotationCopyWith(Quotation value, $Res Function(Quotation) _then) = _$QuotationCopyWithImpl;
 @useResult
 $Res call({
- List<QuotationLine> lines,@JsonKey(name: 'subtotal_lkr') double subtotalLkr,@JsonKey(name: 'margin_pct') double marginPct,@JsonKey(name: 'margin_lkr') double marginLkr,@JsonKey(name: 'total_lkr') double totalLkr,@JsonKey(name: 'fx_rate') double fxRate,@JsonKey(name: 'fx_as_of') String fxAsOf,@JsonKey(name: 'fx_stale') bool fxStale,@JsonKey(name: 'total_usd') double totalUsd
+ List<QuotationLine> lines,@JsonKey(name: 'subtotal_lkr') double subtotalLkr,@JsonKey(name: 'margin_pct') double marginPct,@JsonKey(name: 'margin_lkr') double marginLkr,@JsonKey(name: 'total_lkr') double totalLkr,@JsonKey(name: 'fx_rate') double fxRate,@JsonKey(name: 'fx_as_of') String fxAsOf,@JsonKey(name: 'fx_stale') bool fxStale,@JsonKey(name: 'total_usd') double totalUsd,@JsonKey(name: 'best_available_price') bool bestAvailablePrice,@JsonKey(name: 'over_budget_usd') double? overBudgetUsd,@JsonKey(name: 'budget_note') String? budgetNote
 });
 
 
@@ -71,7 +71,7 @@ class _$QuotationCopyWithImpl<$Res>
 
 /// Create a copy of Quotation
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? lines = null,Object? subtotalLkr = null,Object? marginPct = null,Object? marginLkr = null,Object? totalLkr = null,Object? fxRate = null,Object? fxAsOf = null,Object? fxStale = null,Object? totalUsd = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? lines = null,Object? subtotalLkr = null,Object? marginPct = null,Object? marginLkr = null,Object? totalLkr = null,Object? fxRate = null,Object? fxAsOf = null,Object? fxStale = null,Object? totalUsd = null,Object? bestAvailablePrice = null,Object? overBudgetUsd = freezed,Object? budgetNote = freezed,}) {
   return _then(Quotation(
 lines: null == lines ? _self.lines : lines // ignore: cast_nullable_to_non_nullable
 as List<QuotationLine>,subtotalLkr: null == subtotalLkr ? _self.subtotalLkr : subtotalLkr // ignore: cast_nullable_to_non_nullable
@@ -82,7 +82,10 @@ as double,fxRate: null == fxRate ? _self.fxRate : fxRate // ignore: cast_nullabl
 as double,fxAsOf: null == fxAsOf ? _self.fxAsOf : fxAsOf // ignore: cast_nullable_to_non_nullable
 as String,fxStale: null == fxStale ? _self.fxStale : fxStale // ignore: cast_nullable_to_non_nullable
 as bool,totalUsd: null == totalUsd ? _self.totalUsd : totalUsd // ignore: cast_nullable_to_non_nullable
-as double,
+as double,bestAvailablePrice: null == bestAvailablePrice ? _self.bestAvailablePrice : bestAvailablePrice // ignore: cast_nullable_to_non_nullable
+as bool,overBudgetUsd: freezed == overBudgetUsd ? _self.overBudgetUsd : overBudgetUsd // ignore: cast_nullable_to_non_nullable
+as double?,budgetNote: freezed == budgetNote ? _self.budgetNote : budgetNote // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -167,10 +170,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<QuotationLine> lines, @JsonKey(name: 'subtotal_lkr')  double subtotalLkr, @JsonKey(name: 'margin_pct')  double marginPct, @JsonKey(name: 'margin_lkr')  double marginLkr, @JsonKey(name: 'total_lkr')  double totalLkr, @JsonKey(name: 'fx_rate')  double fxRate, @JsonKey(name: 'fx_as_of')  String fxAsOf, @JsonKey(name: 'fx_stale')  bool fxStale, @JsonKey(name: 'total_usd')  double totalUsd)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<QuotationLine> lines, @JsonKey(name: 'subtotal_lkr')  double subtotalLkr, @JsonKey(name: 'margin_pct')  double marginPct, @JsonKey(name: 'margin_lkr')  double marginLkr, @JsonKey(name: 'total_lkr')  double totalLkr, @JsonKey(name: 'fx_rate')  double fxRate, @JsonKey(name: 'fx_as_of')  String fxAsOf, @JsonKey(name: 'fx_stale')  bool fxStale, @JsonKey(name: 'total_usd')  double totalUsd, @JsonKey(name: 'best_available_price')  bool bestAvailablePrice, @JsonKey(name: 'over_budget_usd')  double? overBudgetUsd, @JsonKey(name: 'budget_note')  String? budgetNote)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Quotation() when $default != null:
-return $default(_that.lines,_that.subtotalLkr,_that.marginPct,_that.marginLkr,_that.totalLkr,_that.fxRate,_that.fxAsOf,_that.fxStale,_that.totalUsd);case _:
+return $default(_that.lines,_that.subtotalLkr,_that.marginPct,_that.marginLkr,_that.totalLkr,_that.fxRate,_that.fxAsOf,_that.fxStale,_that.totalUsd,_that.bestAvailablePrice,_that.overBudgetUsd,_that.budgetNote);case _:
   return orElse();
 
 }
@@ -188,10 +191,10 @@ return $default(_that.lines,_that.subtotalLkr,_that.marginPct,_that.marginLkr,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<QuotationLine> lines, @JsonKey(name: 'subtotal_lkr')  double subtotalLkr, @JsonKey(name: 'margin_pct')  double marginPct, @JsonKey(name: 'margin_lkr')  double marginLkr, @JsonKey(name: 'total_lkr')  double totalLkr, @JsonKey(name: 'fx_rate')  double fxRate, @JsonKey(name: 'fx_as_of')  String fxAsOf, @JsonKey(name: 'fx_stale')  bool fxStale, @JsonKey(name: 'total_usd')  double totalUsd)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<QuotationLine> lines, @JsonKey(name: 'subtotal_lkr')  double subtotalLkr, @JsonKey(name: 'margin_pct')  double marginPct, @JsonKey(name: 'margin_lkr')  double marginLkr, @JsonKey(name: 'total_lkr')  double totalLkr, @JsonKey(name: 'fx_rate')  double fxRate, @JsonKey(name: 'fx_as_of')  String fxAsOf, @JsonKey(name: 'fx_stale')  bool fxStale, @JsonKey(name: 'total_usd')  double totalUsd, @JsonKey(name: 'best_available_price')  bool bestAvailablePrice, @JsonKey(name: 'over_budget_usd')  double? overBudgetUsd, @JsonKey(name: 'budget_note')  String? budgetNote)  $default,) {final _that = this;
 switch (_that) {
 case _Quotation():
-return $default(_that.lines,_that.subtotalLkr,_that.marginPct,_that.marginLkr,_that.totalLkr,_that.fxRate,_that.fxAsOf,_that.fxStale,_that.totalUsd);case _:
+return $default(_that.lines,_that.subtotalLkr,_that.marginPct,_that.marginLkr,_that.totalLkr,_that.fxRate,_that.fxAsOf,_that.fxStale,_that.totalUsd,_that.bestAvailablePrice,_that.overBudgetUsd,_that.budgetNote);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -208,10 +211,10 @@ return $default(_that.lines,_that.subtotalLkr,_that.marginPct,_that.marginLkr,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<QuotationLine> lines, @JsonKey(name: 'subtotal_lkr')  double subtotalLkr, @JsonKey(name: 'margin_pct')  double marginPct, @JsonKey(name: 'margin_lkr')  double marginLkr, @JsonKey(name: 'total_lkr')  double totalLkr, @JsonKey(name: 'fx_rate')  double fxRate, @JsonKey(name: 'fx_as_of')  String fxAsOf, @JsonKey(name: 'fx_stale')  bool fxStale, @JsonKey(name: 'total_usd')  double totalUsd)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<QuotationLine> lines, @JsonKey(name: 'subtotal_lkr')  double subtotalLkr, @JsonKey(name: 'margin_pct')  double marginPct, @JsonKey(name: 'margin_lkr')  double marginLkr, @JsonKey(name: 'total_lkr')  double totalLkr, @JsonKey(name: 'fx_rate')  double fxRate, @JsonKey(name: 'fx_as_of')  String fxAsOf, @JsonKey(name: 'fx_stale')  bool fxStale, @JsonKey(name: 'total_usd')  double totalUsd, @JsonKey(name: 'best_available_price')  bool bestAvailablePrice, @JsonKey(name: 'over_budget_usd')  double? overBudgetUsd, @JsonKey(name: 'budget_note')  String? budgetNote)?  $default,) {final _that = this;
 switch (_that) {
 case _Quotation() when $default != null:
-return $default(_that.lines,_that.subtotalLkr,_that.marginPct,_that.marginLkr,_that.totalLkr,_that.fxRate,_that.fxAsOf,_that.fxStale,_that.totalUsd);case _:
+return $default(_that.lines,_that.subtotalLkr,_that.marginPct,_that.marginLkr,_that.totalLkr,_that.fxRate,_that.fxAsOf,_that.fxStale,_that.totalUsd,_that.bestAvailablePrice,_that.overBudgetUsd,_that.budgetNote);case _:
   return null;
 
 }
@@ -223,7 +226,7 @@ return $default(_that.lines,_that.subtotalLkr,_that.marginPct,_that.marginLkr,_t
 @JsonSerializable()
 
 class _Quotation implements Quotation {
-  const _Quotation({ List<QuotationLine> lines = const <QuotationLine>[], @JsonKey(name: 'subtotal_lkr') required this.subtotalLkr, @JsonKey(name: 'margin_pct') required this.marginPct, @JsonKey(name: 'margin_lkr') required this.marginLkr, @JsonKey(name: 'total_lkr') required this.totalLkr, @JsonKey(name: 'fx_rate') required this.fxRate, @JsonKey(name: 'fx_as_of') required this.fxAsOf, @JsonKey(name: 'fx_stale') this.fxStale = false, @JsonKey(name: 'total_usd') required this.totalUsd}): _lines = lines;
+  const _Quotation({ List<QuotationLine> lines = const <QuotationLine>[], @JsonKey(name: 'subtotal_lkr') required this.subtotalLkr, @JsonKey(name: 'margin_pct') required this.marginPct, @JsonKey(name: 'margin_lkr') required this.marginLkr, @JsonKey(name: 'total_lkr') required this.totalLkr, @JsonKey(name: 'fx_rate') required this.fxRate, @JsonKey(name: 'fx_as_of') required this.fxAsOf, @JsonKey(name: 'fx_stale') this.fxStale = false, @JsonKey(name: 'total_usd') required this.totalUsd, @JsonKey(name: 'best_available_price') this.bestAvailablePrice = false, @JsonKey(name: 'over_budget_usd') this.overBudgetUsd, @JsonKey(name: 'budget_note') this.budgetNote}): _lines = lines;
   factory _Quotation.fromJson(Map<String, dynamic> json) => _$QuotationFromJson(json);
 
  final  List<QuotationLine> _lines;
@@ -241,6 +244,9 @@ class _Quotation implements Quotation {
 @override@JsonKey(name: 'fx_as_of') final  String fxAsOf;
 @override@JsonKey(name: 'fx_stale') final  bool fxStale;
 @override@JsonKey(name: 'total_usd') final  double totalUsd;
+@override@JsonKey(name: 'best_available_price') final  bool bestAvailablePrice;
+@override@JsonKey(name: 'over_budget_usd') final  double? overBudgetUsd;
+@override@JsonKey(name: 'budget_note') final  String? budgetNote;
 
 /// Create a copy of Quotation
 /// with the given fields replaced by the non-null parameter values.
@@ -255,18 +261,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Quotation&&const DeepCollectionEquality().equals(other.lines, _lines)&&(identical(other.subtotalLkr, subtotalLkr) || other.subtotalLkr == subtotalLkr)&&(identical(other.marginPct, marginPct) || other.marginPct == marginPct)&&(identical(other.marginLkr, marginLkr) || other.marginLkr == marginLkr)&&(identical(other.totalLkr, totalLkr) || other.totalLkr == totalLkr)&&(identical(other.fxRate, fxRate) || other.fxRate == fxRate)&&(identical(other.fxAsOf, fxAsOf) || other.fxAsOf == fxAsOf)&&(identical(other.fxStale, fxStale) || other.fxStale == fxStale)&&(identical(other.totalUsd, totalUsd) || other.totalUsd == totalUsd));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Quotation&&const DeepCollectionEquality().equals(other.lines, _lines)&&(identical(other.subtotalLkr, subtotalLkr) || other.subtotalLkr == subtotalLkr)&&(identical(other.marginPct, marginPct) || other.marginPct == marginPct)&&(identical(other.marginLkr, marginLkr) || other.marginLkr == marginLkr)&&(identical(other.totalLkr, totalLkr) || other.totalLkr == totalLkr)&&(identical(other.fxRate, fxRate) || other.fxRate == fxRate)&&(identical(other.fxAsOf, fxAsOf) || other.fxAsOf == fxAsOf)&&(identical(other.fxStale, fxStale) || other.fxStale == fxStale)&&(identical(other.totalUsd, totalUsd) || other.totalUsd == totalUsd)&&(identical(other.bestAvailablePrice, bestAvailablePrice) || other.bestAvailablePrice == bestAvailablePrice)&&(identical(other.overBudgetUsd, overBudgetUsd) || other.overBudgetUsd == overBudgetUsd)&&(identical(other.budgetNote, budgetNote) || other.budgetNote == budgetNote));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_lines),subtotalLkr,marginPct,marginLkr,totalLkr,fxRate,fxAsOf,fxStale,totalUsd);
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_lines),subtotalLkr,marginPct,marginLkr,totalLkr,fxRate,fxAsOf,fxStale,totalUsd,bestAvailablePrice,overBudgetUsd,budgetNote);
 }
 
 @override
 String toString() {
-    return 'Quotation(lines: $lines, subtotalLkr: $subtotalLkr, marginPct: $marginPct, marginLkr: $marginLkr, totalLkr: $totalLkr, fxRate: $fxRate, fxAsOf: $fxAsOf, fxStale: $fxStale, totalUsd: $totalUsd)';
+    return 'Quotation(lines: $lines, subtotalLkr: $subtotalLkr, marginPct: $marginPct, marginLkr: $marginLkr, totalLkr: $totalLkr, fxRate: $fxRate, fxAsOf: $fxAsOf, fxStale: $fxStale, totalUsd: $totalUsd, bestAvailablePrice: $bestAvailablePrice, overBudgetUsd: $overBudgetUsd, budgetNote: $budgetNote)';
 }
 
 
@@ -277,7 +283,7 @@ abstract mixin class _$QuotationCopyWith<$Res> implements $QuotationCopyWith<$Re
   factory _$QuotationCopyWith(_Quotation value, $Res Function(_Quotation) _then) = __$QuotationCopyWithImpl;
 @override @useResult
 $Res call({
- List<QuotationLine> lines,@JsonKey(name: 'subtotal_lkr') double subtotalLkr,@JsonKey(name: 'margin_pct') double marginPct,@JsonKey(name: 'margin_lkr') double marginLkr,@JsonKey(name: 'total_lkr') double totalLkr,@JsonKey(name: 'fx_rate') double fxRate,@JsonKey(name: 'fx_as_of') String fxAsOf,@JsonKey(name: 'fx_stale') bool fxStale,@JsonKey(name: 'total_usd') double totalUsd
+ List<QuotationLine> lines,@JsonKey(name: 'subtotal_lkr') double subtotalLkr,@JsonKey(name: 'margin_pct') double marginPct,@JsonKey(name: 'margin_lkr') double marginLkr,@JsonKey(name: 'total_lkr') double totalLkr,@JsonKey(name: 'fx_rate') double fxRate,@JsonKey(name: 'fx_as_of') String fxAsOf,@JsonKey(name: 'fx_stale') bool fxStale,@JsonKey(name: 'total_usd') double totalUsd,@JsonKey(name: 'best_available_price') bool bestAvailablePrice,@JsonKey(name: 'over_budget_usd') double? overBudgetUsd,@JsonKey(name: 'budget_note') String? budgetNote
 });
 
 
@@ -294,7 +300,7 @@ class __$QuotationCopyWithImpl<$Res>
 
 /// Create a copy of Quotation
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? lines = null,Object? subtotalLkr = null,Object? marginPct = null,Object? marginLkr = null,Object? totalLkr = null,Object? fxRate = null,Object? fxAsOf = null,Object? fxStale = null,Object? totalUsd = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? lines = null,Object? subtotalLkr = null,Object? marginPct = null,Object? marginLkr = null,Object? totalLkr = null,Object? fxRate = null,Object? fxAsOf = null,Object? fxStale = null,Object? totalUsd = null,Object? bestAvailablePrice = null,Object? overBudgetUsd = freezed,Object? budgetNote = freezed,}) {
   return _then(_Quotation(
 lines: null == lines ? _self._lines : lines // ignore: cast_nullable_to_non_nullable
 as List<QuotationLine>,subtotalLkr: null == subtotalLkr ? _self.subtotalLkr : subtotalLkr // ignore: cast_nullable_to_non_nullable
@@ -305,7 +311,10 @@ as double,fxRate: null == fxRate ? _self.fxRate : fxRate // ignore: cast_nullabl
 as double,fxAsOf: null == fxAsOf ? _self.fxAsOf : fxAsOf // ignore: cast_nullable_to_non_nullable
 as String,fxStale: null == fxStale ? _self.fxStale : fxStale // ignore: cast_nullable_to_non_nullable
 as bool,totalUsd: null == totalUsd ? _self.totalUsd : totalUsd // ignore: cast_nullable_to_non_nullable
-as double,
+as double,bestAvailablePrice: null == bestAvailablePrice ? _self.bestAvailablePrice : bestAvailablePrice // ignore: cast_nullable_to_non_nullable
+as bool,overBudgetUsd: freezed == overBudgetUsd ? _self.overBudgetUsd : overBudgetUsd // ignore: cast_nullable_to_non_nullable
+as double?,budgetNote: freezed == budgetNote ? _self.budgetNote : budgetNote // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -597,7 +606,7 @@ as double,
 /// @nodoc
 mixin _$QuotationView {
 
- String get tripStatus; String get workflowStatus; Quotation? get quotation; String? get quotationId; String? get quotationStatus; String? get acceptedAt;
+ String get tripStatus; String get workflowStatus; Quotation? get quotation; String? get quotationId; int? get version; String? get quotationStatus; String? get acceptedAt;
 /// Create a copy of QuotationView
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -609,20 +618,20 @@ $QuotationViewCopyWith<QuotationView> get copyWith => _$QuotationViewCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as QuotationView;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuotationView&&(identical(other.tripStatus, _this.tripStatus) || other.tripStatus == _this.tripStatus)&&(identical(other.workflowStatus, _this.workflowStatus) || other.workflowStatus == _this.workflowStatus)&&(identical(other.quotation, _this.quotation) || other.quotation == _this.quotation)&&(identical(other.quotationId, _this.quotationId) || other.quotationId == _this.quotationId)&&(identical(other.quotationStatus, _this.quotationStatus) || other.quotationStatus == _this.quotationStatus)&&(identical(other.acceptedAt, _this.acceptedAt) || other.acceptedAt == _this.acceptedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuotationView&&(identical(other.tripStatus, _this.tripStatus) || other.tripStatus == _this.tripStatus)&&(identical(other.workflowStatus, _this.workflowStatus) || other.workflowStatus == _this.workflowStatus)&&(identical(other.quotation, _this.quotation) || other.quotation == _this.quotation)&&(identical(other.quotationId, _this.quotationId) || other.quotationId == _this.quotationId)&&(identical(other.version, _this.version) || other.version == _this.version)&&(identical(other.quotationStatus, _this.quotationStatus) || other.quotationStatus == _this.quotationStatus)&&(identical(other.acceptedAt, _this.acceptedAt) || other.acceptedAt == _this.acceptedAt));
 }
 
 
 @override
 int get hashCode {
   final _this = this as QuotationView;
-  return Object.hash(runtimeType,_this.tripStatus,_this.workflowStatus,_this.quotation,_this.quotationId,_this.quotationStatus,_this.acceptedAt);
+  return Object.hash(runtimeType,_this.tripStatus,_this.workflowStatus,_this.quotation,_this.quotationId,_this.version,_this.quotationStatus,_this.acceptedAt);
 }
 
 @override
 String toString() {
   final _this = this as QuotationView;
-  return 'QuotationView(tripStatus: ${_this.tripStatus}, workflowStatus: ${_this.workflowStatus}, quotation: ${_this.quotation}, quotationId: ${_this.quotationId}, quotationStatus: ${_this.quotationStatus}, acceptedAt: ${_this.acceptedAt})';
+  return 'QuotationView(tripStatus: ${_this.tripStatus}, workflowStatus: ${_this.workflowStatus}, quotation: ${_this.quotation}, quotationId: ${_this.quotationId}, version: ${_this.version}, quotationStatus: ${_this.quotationStatus}, acceptedAt: ${_this.acceptedAt})';
 }
 
 
@@ -633,7 +642,7 @@ abstract mixin class $QuotationViewCopyWith<$Res>  {
   factory $QuotationViewCopyWith(QuotationView value, $Res Function(QuotationView) _then) = _$QuotationViewCopyWithImpl;
 @useResult
 $Res call({
- String tripStatus, String workflowStatus, Quotation? quotation, String? quotationId, String? quotationStatus, String? acceptedAt
+ String tripStatus, String workflowStatus, Quotation? quotation, String? quotationId, int? version, String? quotationStatus, String? acceptedAt
 });
 
 
@@ -650,13 +659,14 @@ class _$QuotationViewCopyWithImpl<$Res>
 
 /// Create a copy of QuotationView
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? tripStatus = null,Object? workflowStatus = null,Object? quotation = freezed,Object? quotationId = freezed,Object? quotationStatus = freezed,Object? acceptedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? tripStatus = null,Object? workflowStatus = null,Object? quotation = freezed,Object? quotationId = freezed,Object? version = freezed,Object? quotationStatus = freezed,Object? acceptedAt = freezed,}) {
   return _then(QuotationView(
 tripStatus: null == tripStatus ? _self.tripStatus : tripStatus // ignore: cast_nullable_to_non_nullable
 as String,workflowStatus: null == workflowStatus ? _self.workflowStatus : workflowStatus // ignore: cast_nullable_to_non_nullable
 as String,quotation: freezed == quotation ? _self.quotation : quotation // ignore: cast_nullable_to_non_nullable
 as Quotation?,quotationId: freezed == quotationId ? _self.quotationId : quotationId // ignore: cast_nullable_to_non_nullable
-as String?,quotationStatus: freezed == quotationStatus ? _self.quotationStatus : quotationStatus // ignore: cast_nullable_to_non_nullable
+as String?,version: freezed == version ? _self.version : version // ignore: cast_nullable_to_non_nullable
+as int?,quotationStatus: freezed == quotationStatus ? _self.quotationStatus : quotationStatus // ignore: cast_nullable_to_non_nullable
 as String?,acceptedAt: freezed == acceptedAt ? _self.acceptedAt : acceptedAt // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
@@ -755,10 +765,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String tripStatus,  String workflowStatus,  Quotation? quotation,  String? quotationId,  String? quotationStatus,  String? acceptedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String tripStatus,  String workflowStatus,  Quotation? quotation,  String? quotationId,  int? version,  String? quotationStatus,  String? acceptedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _QuotationView() when $default != null:
-return $default(_that.tripStatus,_that.workflowStatus,_that.quotation,_that.quotationId,_that.quotationStatus,_that.acceptedAt);case _:
+return $default(_that.tripStatus,_that.workflowStatus,_that.quotation,_that.quotationId,_that.version,_that.quotationStatus,_that.acceptedAt);case _:
   return orElse();
 
 }
@@ -776,10 +786,10 @@ return $default(_that.tripStatus,_that.workflowStatus,_that.quotation,_that.quot
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String tripStatus,  String workflowStatus,  Quotation? quotation,  String? quotationId,  String? quotationStatus,  String? acceptedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String tripStatus,  String workflowStatus,  Quotation? quotation,  String? quotationId,  int? version,  String? quotationStatus,  String? acceptedAt)  $default,) {final _that = this;
 switch (_that) {
 case _QuotationView():
-return $default(_that.tripStatus,_that.workflowStatus,_that.quotation,_that.quotationId,_that.quotationStatus,_that.acceptedAt);case _:
+return $default(_that.tripStatus,_that.workflowStatus,_that.quotation,_that.quotationId,_that.version,_that.quotationStatus,_that.acceptedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -796,10 +806,10 @@ return $default(_that.tripStatus,_that.workflowStatus,_that.quotation,_that.quot
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String tripStatus,  String workflowStatus,  Quotation? quotation,  String? quotationId,  String? quotationStatus,  String? acceptedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String tripStatus,  String workflowStatus,  Quotation? quotation,  String? quotationId,  int? version,  String? quotationStatus,  String? acceptedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _QuotationView() when $default != null:
-return $default(_that.tripStatus,_that.workflowStatus,_that.quotation,_that.quotationId,_that.quotationStatus,_that.acceptedAt);case _:
+return $default(_that.tripStatus,_that.workflowStatus,_that.quotation,_that.quotationId,_that.version,_that.quotationStatus,_that.acceptedAt);case _:
   return null;
 
 }
@@ -811,13 +821,14 @@ return $default(_that.tripStatus,_that.workflowStatus,_that.quotation,_that.quot
 
 
 class _QuotationView implements QuotationView {
-  const _QuotationView({required this.tripStatus, required this.workflowStatus, this.quotation, this.quotationId, this.quotationStatus, this.acceptedAt});
+  const _QuotationView({required this.tripStatus, required this.workflowStatus, this.quotation, this.quotationId, this.version, this.quotationStatus, this.acceptedAt});
   
 
 @override final  String tripStatus;
 @override final  String workflowStatus;
 @override final  Quotation? quotation;
 @override final  String? quotationId;
+@override final  int? version;
 @override final  String? quotationStatus;
 @override final  String? acceptedAt;
 
@@ -831,18 +842,18 @@ _$QuotationViewCopyWith<_QuotationView> get copyWith => __$QuotationViewCopyWith
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuotationView&&(identical(other.tripStatus, tripStatus) || other.tripStatus == tripStatus)&&(identical(other.workflowStatus, workflowStatus) || other.workflowStatus == workflowStatus)&&(identical(other.quotation, quotation) || other.quotation == quotation)&&(identical(other.quotationId, quotationId) || other.quotationId == quotationId)&&(identical(other.quotationStatus, quotationStatus) || other.quotationStatus == quotationStatus)&&(identical(other.acceptedAt, acceptedAt) || other.acceptedAt == acceptedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuotationView&&(identical(other.tripStatus, tripStatus) || other.tripStatus == tripStatus)&&(identical(other.workflowStatus, workflowStatus) || other.workflowStatus == workflowStatus)&&(identical(other.quotation, quotation) || other.quotation == quotation)&&(identical(other.quotationId, quotationId) || other.quotationId == quotationId)&&(identical(other.version, version) || other.version == version)&&(identical(other.quotationStatus, quotationStatus) || other.quotationStatus == quotationStatus)&&(identical(other.acceptedAt, acceptedAt) || other.acceptedAt == acceptedAt));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,tripStatus,workflowStatus,quotation,quotationId,quotationStatus,acceptedAt);
+    return Object.hash(runtimeType,tripStatus,workflowStatus,quotation,quotationId,version,quotationStatus,acceptedAt);
 }
 
 @override
 String toString() {
-    return 'QuotationView(tripStatus: $tripStatus, workflowStatus: $workflowStatus, quotation: $quotation, quotationId: $quotationId, quotationStatus: $quotationStatus, acceptedAt: $acceptedAt)';
+    return 'QuotationView(tripStatus: $tripStatus, workflowStatus: $workflowStatus, quotation: $quotation, quotationId: $quotationId, version: $version, quotationStatus: $quotationStatus, acceptedAt: $acceptedAt)';
 }
 
 
@@ -853,7 +864,7 @@ abstract mixin class _$QuotationViewCopyWith<$Res> implements $QuotationViewCopy
   factory _$QuotationViewCopyWith(_QuotationView value, $Res Function(_QuotationView) _then) = __$QuotationViewCopyWithImpl;
 @override @useResult
 $Res call({
- String tripStatus, String workflowStatus, Quotation? quotation, String? quotationId, String? quotationStatus, String? acceptedAt
+ String tripStatus, String workflowStatus, Quotation? quotation, String? quotationId, int? version, String? quotationStatus, String? acceptedAt
 });
 
 
@@ -870,13 +881,14 @@ class __$QuotationViewCopyWithImpl<$Res>
 
 /// Create a copy of QuotationView
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? tripStatus = null,Object? workflowStatus = null,Object? quotation = freezed,Object? quotationId = freezed,Object? quotationStatus = freezed,Object? acceptedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? tripStatus = null,Object? workflowStatus = null,Object? quotation = freezed,Object? quotationId = freezed,Object? version = freezed,Object? quotationStatus = freezed,Object? acceptedAt = freezed,}) {
   return _then(_QuotationView(
 tripStatus: null == tripStatus ? _self.tripStatus : tripStatus // ignore: cast_nullable_to_non_nullable
 as String,workflowStatus: null == workflowStatus ? _self.workflowStatus : workflowStatus // ignore: cast_nullable_to_non_nullable
 as String,quotation: freezed == quotation ? _self.quotation : quotation // ignore: cast_nullable_to_non_nullable
 as Quotation?,quotationId: freezed == quotationId ? _self.quotationId : quotationId // ignore: cast_nullable_to_non_nullable
-as String?,quotationStatus: freezed == quotationStatus ? _self.quotationStatus : quotationStatus // ignore: cast_nullable_to_non_nullable
+as String?,version: freezed == version ? _self.version : version // ignore: cast_nullable_to_non_nullable
+as int?,quotationStatus: freezed == quotationStatus ? _self.quotationStatus : quotationStatus // ignore: cast_nullable_to_non_nullable
 as String?,acceptedAt: freezed == acceptedAt ? _self.acceptedAt : acceptedAt // ignore: cast_nullable_to_non_nullable
 as String?,
   ));

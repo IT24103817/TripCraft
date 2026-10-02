@@ -107,6 +107,24 @@ def _build_days(output: ItineraryOutput, dates: list[date], cities: list[str],
     return days
 
 
+def fewer_paid_entries(days: list[ItineraryDay], attractions: dict[str, list[Attraction]]) -> list[ItineraryDay]:
+    """
+    Lowest-cost strategy, enforced in code: each paid stop is swapped for a free attraction of the same city that
+    the day does not visit yet. A paid stop stays when the city has no free alternative left.
+    """
+    for day in days:
+        used = {s.attraction_id for s in day.stops}
+        free = [a for a in attractions.get(day.city.lower(), []) if a.entry_fee_lkr == 0]
+        for index, stop in enumerate(day.stops):
+            if stop.entry_fee_lkr == 0:
+                continue
+            swap = next((a for a in free if a.id not in used), None)
+            if swap is not None:
+                day.stops[index] = Stop(attraction_id=swap.id, name=swap.name, entry_fee_lkr=swap.entry_fee_lkr)
+                used.add(swap.id)
+    return days
+
+
 async def itinerary_node(state: WorkflowState) -> dict[str, Any]:
     calls = start_recording()
     started = time.perf_counter()
@@ -140,6 +158,8 @@ async def itinerary_node(state: WorkflowState) -> dict[str, Any]:
         return failed_update(AGENT, str(ex), calls, started, failure_retries(ex), input_summary)
 
     days = _build_days(output, dates, constraints.cities, attractions, distances)
+    if constraints.cost_strategy == "lowest":
+        days = fewer_paid_entries(days, attractions)
 
     # Weather is advisory (PLAN.md section 9): a failed forecast is recorded but never stops the workflow.
     warnings: list[str] = []
@@ -152,7 +172,8 @@ async def itinerary_node(state: WorkflowState) -> dict[str, Any]:
 
     report = step_report(
         AGENT, calls, started, retries, "Succeeded", input_summary,
-        {"days": len(days), "stops": sum(len(d.stops) for d in days),
+        {"days": len(days), "stops": sum(len(d.stops) for d in days), "cost_strategy": constraints.cost_strategy,
+         "paid_stops": sum(1 for d in days for s in d.stops if s.entry_fee_lkr > 0),
          "max_driving_minutes": max(d.driving_minutes for d in days), "warnings": warnings},
         {"ok": True, "schema": "ItineraryOutput", "rules": ["1-3 stops/day", "<= 240 min driving/day"]})
     return {"days": [d.model_dump(mode="json") for d in days], "steps": [report]}

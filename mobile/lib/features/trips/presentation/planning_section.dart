@@ -12,7 +12,8 @@ import '../data/trip_models.dart';
 import '../data/trips_repository.dart';
 import 'trip_detail_rules.dart';
 
-/// "Planning": start or retry planning, a spinner while the agents work, then a link to the quotation.
+/// "Planning": start planning, a spinner while the agents work, then a link to the quotation.
+/// When the agents could not finish (NeedsOperator) the operator takes over; the tourist only waits.
 class PlanningSection extends ConsumerWidget {
   const PlanningSection({
     super.key,
@@ -31,9 +32,11 @@ class PlanningSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // A failed load (e.g. no connection) shows the error with Retry, never "not started".
     final current = workflow.hasError ? null : workflow.value;
+    // At NeedsOperator the workflow's "Planning failed" chip would only worry the tourist.
+    final showChip = current != null && trip.status != 'NeedsOperator';
     return SectionCard(
       title: 'Planning',
-      trailing: current == null ? null : StatusChip(status: current.status),
+      trailing: showChip ? StatusChip(status: current.status) : null,
       child: AsyncView<TripWorkflow?>(
         value: workflow,
         onRetry: () => ref.invalidate(tripWorkflowProvider(trip.id)),
@@ -44,19 +47,9 @@ class PlanningSection extends ConsumerWidget {
 
   Widget _body(BuildContext context, TripWorkflow? w) {
     final mayStart = canStartPlanningStatuses.contains(trip.status);
-    if (trip.status == 'FailedSafely' || w?.status == 'FailedSafely') {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Planning could not finish: ${w?.errorSummary ?? 'unknown reason'}.',
-          ),
-          // Only the tourist may start planning (API rule), so the retry lives here.
-          if (mayStart) ...[
-            const SizedBox(height: 8),
-            _StartPlanningButton(tripId: trip.id, label: 'Try again'),
-          ],
-        ],
+    if (trip.status == 'NeedsOperator') {
+      return const Text(
+        'The agents could not finish this plan, so our team is preparing your quote by hand.',
       );
     }
     if (w == null) {
@@ -82,9 +75,7 @@ class PlanningSection extends ConsumerWidget {
       );
     }
     if (!quotationVisibleStatuses.contains(trip.status)) {
-      return const Text(
-        'The agents have finished. The operator is reviewing your plan before sending you the quotation.',
-      );
+      return const Text('The agents have finished. Your quote is on its way.');
     }
     return Align(
       alignment: Alignment.centerLeft,

@@ -1,21 +1,8 @@
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type QueryClient,
-} from '@tanstack/react-query';
+import { keepPreviousData, useQuery, type QueryClient } from '@tanstack/react-query';
 import { http } from '@/shared/api/http';
 import { queryRoots } from '@/shared/api/queryKeys';
 import type { PagedResult } from '@/shared/api/types';
-import type {
-  AgentStepDto,
-  QuotationDecisionResponse,
-  TripSummary,
-  WorkflowDto,
-  WorkflowListQuery,
-  WorkflowSummaryDto,
-} from './types';
+import type { AgentStepDto, TripSummary, WorkflowDto, WorkflowListQuery, WorkflowSummaryDto } from './types';
 
 export const POLL_MS = 5000;
 
@@ -84,39 +71,11 @@ export function useTripSummary(tripId: string | undefined) {
   });
 }
 
-type Decision = 'approve' | 'reject' | 'request-revision';
-
-/** Everything a review decision can change: the workflow, the trip, its quotations, reports and notifications. */
-export function invalidateAfterDecision(client: QueryClient) {
+/** Everything a lifecycle step can change: the workflow, the trip, its quotations, reports and notifications. */
+export function invalidateTripLifecycle(client: QueryClient) {
   void client.invalidateQueries({ queryKey: [queryRoots.workflows] });
   void client.invalidateQueries({ queryKey: [queryRoots.trips] });
   void client.invalidateQueries({ queryKey: [queryRoots.reports] });
   void client.invalidateQueries({ queryKey: [queryRoots.quotations] });
   void client.invalidateQueries({ queryKey: [queryRoots.notifications] });
-}
-
-/**
- * The manager's review decision on the newest quotation version. "approve" is "Send to client" in v1.1
- * (PendingReview → QuotationSent; nothing is booked). Refreshes everything the decision changed.
- */
-export function useQuotationDecision() {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      quotationId,
-      decision,
-      comment,
-    }: {
-      quotationId: string;
-      decision: Decision;
-      comment?: string;
-    }) =>
-      (
-        await http.post<QuotationDecisionResponse>(
-          `/api/quotations/${quotationId}/${decision}`,
-          comment ? { comment } : {},
-        )
-      ).data,
-    onSuccess: () => invalidateAfterDecision(client),
-  });
 }

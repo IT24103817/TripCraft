@@ -97,6 +97,13 @@ def missing_resource_gaps(guides: list[GuideOption], vehicles: list[VehicleOptio
     return gaps
 
 
+def cheapest_vehicle(vehicles: list[VehicleOption], card: RateCard) -> VehicleOption | None:
+    """The available vehicle with the lowest km rate (they all have enough seats); ties broken by registration."""
+    if not vehicles:
+        return None
+    return min(vehicles, key=lambda v: (card.vehicle_km_rates.get(v.id, Decimal("Infinity")), v.registration_no))
+
+
 def suggest_rooms(room_options: dict[date, list[RoomOption]], pax: int, card: RateCard) -> list[RoomNight]:
     """
     Code's cheapest valid room plan: for each night, the room type that sleeps everyone for the least money
@@ -235,6 +242,12 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
     model_guide_id = output.guide_id
     guide = suggested
     output = output.model_copy(update={"guide_id": guide.id if guide else None})
+    # Lowest-cost strategy (a budget re-plan), enforced in code: the cheapest valid room plan and the cheapest
+    # eligible vehicle, whatever the model picked.
+    if constraints.cost_strategy == "lowest":
+        cheapest = cheapest_vehicle(vehicles, card)
+        output = output.model_copy(update={"rooms": suggest_rooms(room_options, pax, card),
+                                           "vehicle_id": cheapest.id if cheapest else output.vehicle_id})
     gaps = list(dict.fromkeys(consistent_gaps(output.gaps, output, set(room_options))
                               + missing_resource_gaps(guides, vehicles, room_options, language, pax)))
     vehicle = next((v for v in vehicles if v.id == output.vehicle_id), None)
@@ -246,7 +259,8 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
 
     report = step_report(
         AGENT, calls, started, retries, "Succeeded", input_summary,
-        {"guide_id": selection.guide_id, "guide_choice": guide_reason, "model_guide_id": model_guide_id,
+        {"guide_id": selection.guide_id, "guide_choice": guide_reason,
+         "cost_strategy": constraints.cost_strategy, "model_guide_id": model_guide_id,
          "guide_overridden": model_guide_id != selection.guide_id, "vehicle_id": selection.vehicle_id,
          "room_nights": len(selection.rooms), "gaps": gaps, "holds_created": 0,
          "room_nights_dropped": dropped[-1] if dropped else 0},

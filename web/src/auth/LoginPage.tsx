@@ -44,11 +44,11 @@ export default function LoginPage() {
         <Logo tone="light" className="text-xl" />
         <div>
           <p className="text-3xl font-semibold leading-tight tracking-tight">
-            Plan, approve and run custom Sri Lanka tours.
+            Plan, confirm and run custom Sri Lanka tours.
           </p>
           <p className="mt-4 max-w-md text-brand-100">
-            AI agents draft every itinerary and quotation; your team checks it and approves it before anything
-            is booked.
+            AI agents draft and check every itinerary and quotation; your team confirms it before anything is
+            booked.
           </p>
         </div>
         <p className="text-sm text-brand-200">Operations dashboard for staff</p>

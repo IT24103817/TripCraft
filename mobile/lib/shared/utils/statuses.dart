@@ -2,27 +2,28 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-/// Trip request statuses of the v1.1 lifecycle (TripRequestStatus in the API, docs/API-V11.md).
+/// Trip request statuses of the v1.1 lifecycle (TripRequestStatus in the API, docs/API-V11.md):
+/// the main path first, then the side states. Quotations go straight to the tourist (no operator review).
 const tripStatuses = [
   'Submitted',
   'Planning',
-  'PendingReview',
   'QuotationSent',
   'ClientAccepted',
   'Confirmed',
   'InProgress',
   'Completed',
-  'RevisionRequested',
-  'FailedSafely',
+  'ClientDeclined',
+  'NeedsOperator',
   'Cancelled',
 ];
 
 /// Colour for any trip, workflow or step status. Unknown statuses are neutral grey.
-/// PendingApproval, Approved and Rejected are agent workflow statuses (no longer trip statuses).
+/// PendingApproval, Approved, Rejected, RevisionRequested and FailedSafely are agent workflow statuses
+/// (no longer trip statuses), so they keep their colours for the workflow chip.
 Color statusColor(String status) => switch (status) {
   'Submitted' || 'Cancelled' => AppColors.neutral,
   'Planning' || 'InProgress' => AppColors.info,
-  'PendingReview' || 'PendingApproval' => AppColors.warning,
+  'NeedsOperator' || 'PendingApproval' => AppColors.warning,
   'QuotationSent' => AppColors.accent,
   'RevisionRequested' => AppColors.purple,
   'ClientAccepted' ||
@@ -30,17 +31,21 @@ Color statusColor(String status) => switch (status) {
   'Confirmed' ||
   'Completed' ||
   'Succeeded' => AppColors.success,
-  'Rejected' || 'FailedSafely' || 'Failed' => AppColors.danger,
+  'ClientDeclined' ||
+  'Rejected' ||
+  'FailedSafely' ||
+  'Failed' => AppColors.danger,
   _ => AppColors.neutral,
 };
 
 /// Labels that read better than the spaced-out status name.
 const _customLabels = {
   'ClientAccepted': 'Accepted',
+  'ClientDeclined': 'Declined',
   'FailedSafely': 'Planning failed',
 };
 
-/// "PendingReview" -> "Pending review"; "ClientAccepted" -> "Accepted".
+/// "QuotationSent" -> "Quotation sent"; "ClientAccepted" -> "Accepted"; "NeedsOperator" -> "Needs operator".
 String statusLabel(String status) {
   final custom = _customLabels[status];
   if (custom != null) return custom;

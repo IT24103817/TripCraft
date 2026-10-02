@@ -3,11 +3,12 @@ import { PageState } from '@/shared/components/PageState';
 import { StatusBadge } from '@/shared/components/StatusBadge';
 import type { TripRequestStatus } from '@/shared/statuses';
 import { formatDate, formatLkr, formatUsd } from '@/shared/utils/format';
+import { BudgetNote } from './BudgetNote';
 import { DecisionList } from './DecisionList';
 import { DepositPanel } from './DepositPanel';
 import { QuotationPanel } from './QuotationPanel';
 import { toPanelQuotation, useQuotation, useQuotationVersions } from './quotationsApi';
-import { QUOTATION_STATUS_LABELS } from './reviewRules';
+import { budgetNoteText, QUOTATION_STATUS_LABELS } from './reviewRules';
 
 interface Props {
   tripId: string;
@@ -15,8 +16,9 @@ interface Props {
 }
 
 /**
- * The Quotation tab of a trip: every priced version (newest last), and for the chosen one its lines, totals in
- * LKR and USD, the deposit with its paid state, and the decisions (sent, accepted, declined with the reason…).
+ * The Quotation tab of a trip: every priced version (newest last), and for the chosen one the best-price note
+ * (when it is over the budget), its lines, totals in LKR and USD, the deposit with its paid state, and the
+ * decisions (sent, accepted, declined with the reason…).
  */
 export function TripQuotationTab({ tripId, tripStatus }: Props) {
   const versions = useQuotationVersions(tripId);
@@ -76,7 +78,10 @@ export function TripQuotationTab({ tripId, tripStatus }: Props) {
                     <StatusBadge status={q.status} label={QUOTATION_STATUS_LABELS[q.status]} />
                   </td>
                   <td className="px-4 py-3 text-right">{formatLkr(q.totalLkr)}</td>
-                  <td className="px-4 py-3 text-right">{formatUsd(q.totalUsd)}</td>
+                  <td className="px-4 py-3 text-right">
+                    {formatUsd(q.totalUsd)}
+                    {budgetNoteText(q) && <span className="block text-xs text-amber-800">Best price</span>}
+                  </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={q.depositPaid ? 'Paid' : 'Unpaid'} />
                   </td>
@@ -112,6 +117,7 @@ export function TripQuotationTab({ tripId, tripStatus }: Props) {
                   label={QUOTATION_STATUS_LABELS[detail.data.status]}
                 />
               </h3>
+              <BudgetNote quotation={detail.data} />
               <QuotationPanel quotation={toPanelQuotation(detail.data)} />
               <DepositPanel
                 quotation={detail.data}

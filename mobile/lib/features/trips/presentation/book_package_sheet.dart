@@ -159,7 +159,7 @@ class _BookPackageSheetState extends ConsumerState<BookPackageSheet> {
         SnackBar(
           content: Text(
             result.planning.workflowStatus == 'FailedSafely'
-                ? 'Trip saved, but planning could not start. Try again from the trip.'
+                ? 'Trip saved. Our team will prepare your quote.'
                 : 'Planning started',
           ),
         ),

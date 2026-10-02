@@ -39,9 +39,9 @@ public class TripRequestService(
             ["status"] = t => t.Status
         };
 
-    /// <summary>Details can only change before planning starts or after planning failed safely.</summary>
+    /// <summary>Details can only change before planning starts or while the trip waits for the operator.</summary>
     private static readonly TripRequestStatus[] EditableStatuses =
-        [TripRequestStatus.Submitted, TripRequestStatus.FailedSafely];
+        [TripRequestStatus.Submitted, TripRequestStatus.NeedsOperator];
 
     public async Task<TripRequestDto> CreateAsync(CurrentUser user, CreateTripRequestRequest request, CancellationToken ct)
     {

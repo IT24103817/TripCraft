@@ -11,19 +11,28 @@ interface Tile {
   to: string;
 }
 
-/** The five kinds of work waiting for the manager, and where each one is done. */
+/**
+ * The five kinds of work waiting for the manager, and where each one is done. The first three open their tab
+ * in the "Trips that need you" list just below the tiles.
+ */
 const ACTION_TILES: Tile[] = [
   {
-    key: 'proposalsToReview',
-    label: 'Proposals to review',
-    hint: 'Send to the client, edit or ask for a revision',
-    to: '/approvals',
+    key: 'acceptedToConfirm',
+    label: 'Accepted — confirm',
+    hint: 'Confirm to book the trip',
+    to: '/dashboard?attention=ClientAccepted',
   },
   {
-    key: 'clientAcceptedToConfirm',
-    label: 'Accepted by the client',
-    hint: 'Confirm to book the trip',
-    to: '/trips?status=ClientAccepted',
+    key: 'declinedNeedsDecision',
+    label: 'Declined — needs a decision',
+    hint: 'Replan with a note, or cancel',
+    to: '/dashboard?attention=ClientDeclined',
+  },
+  {
+    key: 'needsOperator',
+    label: 'Needs operator',
+    hint: 'The agents could not finish',
+    to: '/dashboard?attention=NeedsOperator',
   },
   {
     key: 'guideChangeRequests',
@@ -36,12 +45,6 @@ const ACTION_TILES: Tile[] = [
     label: 'Cancellations (7 days)',
     hint: 'Trips cancelled this week',
     to: '/trips?status=Cancelled',
-  },
-  {
-    key: 'declinedQuotations',
-    label: 'Declined quotations',
-    hint: 'The client said no: revise and resend',
-    to: '/approvals',
   },
 ];
 

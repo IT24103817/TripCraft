@@ -42,7 +42,8 @@ public class FakeQuotationStore : IQuotationStore
         {
             Id = Guid.NewGuid(),
             Version = _state.Quotations.Count(q => q.Draft.TripRequestId == draft.TripRequestId) + 1,
-            Draft = draft
+            Draft = draft,
+            Status = draft.SendNow ? "Approved" : "Pending"
         };
         _pending.Add(() => _state.Quotations.Add(quotation));
         return Task.FromResult(quotation.Id);
@@ -72,6 +73,9 @@ public class FakeQuotationStore : IQuotationStore
         ? null
         : new QuotationSummary(q.Id, q.Draft.TripRequestId, q.Version, q.Status, q.Draft.TotalLkr, q.Draft.TotalUsd,
             q.AcceptedAt);
+
+    public Task<string?> GetDeclineReasonAsync(Guid quotationId, CancellationToken ct) =>
+        Task.FromResult(_state.Decisions.LastOrDefault(d => d.QuotationId == quotationId && d.Decision == QuotationDecision.Declined).Comment);
 
     public void RecordDecision(Guid quotationId, Guid decidedBy, QuotationDecision decision, string? comment) =>
         _pending.Add(() => _state.Decisions.Add((quotationId, decidedBy, decision, comment)));

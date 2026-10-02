@@ -45,7 +45,7 @@ public class TripRequestsController(
         return Ok(await tripRequests.GetAsync(User.GetCurrentUser(), id, ct));
     }
 
-    /// <summary>Edit details. 409 unless the request is Submitted or FailedSafely.</summary>
+    /// <summary>Edit details. 409 unless the request is Submitted or NeedsOperator.</summary>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -57,7 +57,8 @@ public class TripRequestsController(
     /// <summary>
     /// Business operation: validates passport/dates, builds the day-by-day skeleton, creates the
     /// agent workflow and hands it to the agent service. 202 because planning continues in the background.
-    /// Submitted, or FailedSafely ("Try again"). Tourist owner (checked in the service) or a manager; 409 otherwise.
+    /// Submitted, or NeedsOperator (the manager's "Retry planning"). Tourist owner (checked in the service) or a
+    /// manager; 409 otherwise.
     /// </summary>
     [HttpPost("{id:guid}/start-planning")]
     [ProducesResponseType(typeof(StartPlanningResponse), StatusCodes.Status202Accepted)]
@@ -88,8 +89,8 @@ public class TripRequestsController(
     }
 
     /// <summary>
-    /// The booking transaction at ClientAccepted: holds, saved itinerary, vouchers, Confirmed, audit, email.
-    /// 409 and nothing saved on any failure (e.g. a resource is no longer free).
+    /// The human approval gate (manager only): at ClientAccepted, holds, saved itinerary, vouchers, Confirmed, audit,
+    /// email in one transaction. 409 and nothing saved on any failure, or unless the newest version is the accepted one.
     /// </summary>
     [HttpPost("{id:guid}/confirm")]
     [Authorize(Roles = Roles.OperationsManager)]
@@ -101,16 +102,6 @@ public class TripRequestsController(
         return Ok(await confirmations.ConfirmAsync(User.GetCurrentUser(), id, ct));
     }
 
-    /// <summary>ClientAccepted → PendingReview with a reason, so the manager can change the trip and send a new version.</summary>
-    [HttpPost("{id:guid}/reopen-review")]
-    [Authorize(Roles = Roles.OperationsManager)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<QuotationDecisionResponse>> ReopenReview(Guid id, CancelTripRequest request,
-        [FromServices] ITripConfirmationService confirmations, CancellationToken ct)
-    {
-        return Ok(await confirmations.ReopenReviewAsync(User.GetCurrentUser(), id, request.Reason, ct));
-    }
 
     /// <summary>"Why this plan" for the review page: plain sentences about guide, vehicle, hotels, driving and budget.</summary>
     [HttpGet("{id:guid}/plan-explanation")]
@@ -121,7 +112,7 @@ public class TripRequestsController(
         return Ok(await explanations.ExplainAsync(id, ct));
     }
 
-    /// <summary>Edit directly (PendingReview): one day of the proposal, 1–3 attractions in that day's city.</summary>
+    /// <summary>Edit &amp; resend / send manually (ClientAccepted, NeedsOperator): one day, 1–3 attractions in its city.</summary>
     [HttpPut("{id:guid}/proposal/days/{dayNumber:int}")]
     [Authorize(Roles = Roles.OperationsManager)]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -132,7 +123,7 @@ public class TripRequestsController(
         return Ok(await editor.EditDayAsync(User.GetCurrentUser(), id, dayNumber, request, ct));
     }
 
-    /// <summary>Edit directly (PendingReview): swap the guide, vehicle or a city's room type for a free one.</summary>
+    /// <summary>Edit &amp; resend / send manually (ClientAccepted, NeedsOperator): swap guide, vehicle or a city's room type.</summary>
     [HttpPut("{id:guid}/proposal/resources")]
     [Authorize(Roles = Roles.OperationsManager)]
     [ProducesResponseType(StatusCodes.Status200OK)]

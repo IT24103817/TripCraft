@@ -88,6 +88,7 @@ async def planner_node(state: WorkflowState) -> dict[str, Any]:
     budget_replan = revision is not None and any(v.get("code") in BUDGET_CODES for v in revision["violations"])
     if budget_replan:
         output.constraints.hotel_tier = "budget"
+        output.constraints.cost_strategy = "lowest"
 
     plan = output.model_dump(mode="json")
     plan["dates"] = [d.isoformat() for d in dates.dates]

@@ -45,7 +45,7 @@ public class TripPlanningSafeFailureTests
         response.StatusCode.Should().Be(HttpStatusCode.Accepted);
         var result = await response.Content.ReadFromJsonAsync<StartPlanningResponse>(TestJson.Options);
         result!.WorkflowStatus.Should().Be("FailedSafely");
-        result.TripStatus.Should().Be("FailedSafely");
+        result.TripStatus.Should().Be("NeedsOperator");
         result.ErrorSummary.Should().Contain("connection refused");
 
         using var scope = app.Services.CreateScope();
@@ -53,11 +53,15 @@ public class TripPlanningSafeFailureTests
         var workflow = await db.AgentWorkflows.SingleAsync(w => w.Id == result.WorkflowId);
         workflow.Status.Should().Be(AgentWorkflowStatus.FailedSafely);
         workflow.FinishedAt.Should().NotBeNull();
-        (await db.TripRequests.SingleAsync(t => t.Id == trip.Id)).Status.Should().Be(TripRequestStatus.FailedSafely);
+        (await db.TripRequests.SingleAsync(t => t.Id == trip.Id)).Status.Should().Be(TripRequestStatus.NeedsOperator);
         (await db.AuditLogs.AnyAsync(a => a.Action == "AgentWorkflowFailedSafely")).Should().BeTrue();
 
-        // "Try again": a FailedSafely trip may start planning again (here the agent fails again, safely).
-        var retry = await tourist.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
+        // "Retry planning" is the operator's action: the tourist gets 409, a manager may retry (here it fails again).
+        var touristRetry = await tourist.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
+        touristRetry.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var manager = app.CreateClient();
+        manager.DefaultRequestHeaders.Authorization = new("Bearer", await TokenFor(app, "manager1@tripcraft.test"));
+        var retry = await manager.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
         retry.StatusCode.Should().Be(HttpStatusCode.Accepted);
         (await db.AgentWorkflows.CountAsync(w => w.TripRequestId == trip.Id)).Should().Be(2);
     }

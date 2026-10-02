@@ -11,7 +11,7 @@ interface Props {
 }
 
 /**
- * "Edit directly" for one day of the proposal under review: 1–3 attractions of the day's city
+ * Edit one day of the proposal (Edit & resend, Edit & send manually): 1–3 attractions of the day's city
  * (PUT /api/trip-requests/{id}/proposal/days/{n}). The proposal must then be re-priced before it is sent.
  * A proposal day has no notes, so the notes box is hidden.
  */

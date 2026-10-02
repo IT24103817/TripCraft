@@ -28,7 +28,7 @@ public class QuotationsEndpointsTests
         var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
 
         var page = await manager.GetFromJsonAsync<PagedResult<QuotationDto>>(
-            "/api/quotations?status=Pending&search=kandy&sort=-totalLkr", TestJson.Options);
+            "/api/quotations?status=Approved&search=kandy&sort=-totalLkr", TestJson.Options); // Approved = sent
         var listed = page!.Items.Should().ContainSingle(q => q.Id == outcome.QuotationId).Subject;
         listed.Version.Should().Be(1);
         listed.TotalLkr.Should().Be(TestProposals.GoldenTotalLkr);
@@ -48,7 +48,7 @@ public class QuotationsEndpointsTests
     public async Task Reprice_makes_version_2_with_named_lines_and_supersedes_version_1()
     {
         await using var factory = new RealComponentsFactory();
-        var (_, outcome) = await factory.RunToProposalAsync();
+        var (_, outcome) = await factory.RunToClientAcceptedAsync(); // Edit & resend is offered after acceptance
         var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
 
         var response = await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/calculate", null);
@@ -68,16 +68,16 @@ public class QuotationsEndpointsTests
         v1.ProposalSnapshot.Should().NotBeNull("the review page compares the versions side by side");
         v2.ProposalSnapshot!.Value.GetProperty("days").GetArrayLength().Should().Be(5);
         (await factory.QueryDbAsync(db => db.AuditLogs.AnyAsync(a => a.Action == "QuotationRepriced"))).Should().BeTrue();
-        // Only the newest version can be decided.
-        (await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/approve", null)).StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await manager.PostAsync($"/api/quotations/{result.QuotationId}/approve", null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        // Only the newest version can be sent.
+        (await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/send", null)).StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await manager.PostAsync($"/api/quotations/{result.QuotationId}/send", null)).StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
     public async Task The_quotations_tab_lists_the_newest_version_per_trip_with_the_trip_and_a_minimum_total()
     {
         await using var factory = new RealComponentsFactory();
-        var (trip, outcome) = await factory.RunToProposalAsync();
+        var (trip, outcome) = await factory.RunToClientAcceptedAsync();
         var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
         await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/calculate", null); // version 2
 
@@ -89,33 +89,27 @@ public class QuotationsEndpointsTests
         var row = latest!.Items.Should().ContainSingle().Subject;
         row.Version.Should().Be(2);
         row.TripObjective.Should().Be(trip.Objective);
-        row.TripStatus.Should().Be("PendingReview");
+        row.TripStatus.Should().Be("ClientAccepted");
         tooExpensive!.Items.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task Accept_is_only_possible_after_the_quotation_was_sent_and_only_once()
+    public async Task The_auto_sent_quotation_is_accepted_once_and_confirm_books_it()
     {
         await using var factory = new RealComponentsFactory();
-        var (trip, outcome) = await factory.RunToProposalAsync();
+        var (trip, outcome) = await factory.RunToProposalAsync(); // sent automatically
         var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
         var owner = await factory.CreateClientAsAsync(Tourist);
-
-        (await owner.PostAsync($"/api/quotations/{outcome.QuotationId}/accept", null)).StatusCode
-            .Should().Be(HttpStatusCode.Conflict, "the manager has not sent it yet");
-        (await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/approve", null)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         var accepted = await owner.PostAsync($"/api/quotations/{outcome.QuotationId}/accept", null);
         accepted.StatusCode.Should().Be(HttpStatusCode.OK);
         (await accepted.Content.ReadFromJsonAsync<QuotationDecisionResponse>(TestJson.Options))!.TripStatus.Should().Be("ClientAccepted");
         (await owner.PostAsync($"/api/quotations/{outcome.QuotationId}/accept", null)).StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/calculate", null)).StatusCode
-            .Should().Be(HttpStatusCode.Conflict, "an accepted trip is no longer in review");
 
         var detail = await manager.GetFromJsonAsync<QuotationDto>($"/api/quotations/{outcome.QuotationId}", TestJson.Options);
         detail!.Status.Should().Be(nameof(QuotationStatus.Approved));
         detail.AcceptedAt.Should().NotBeNull();
-        detail.Decisions.Select(d => d.Decision).Should().Equal("Approved", "Accepted");
+        detail.Decisions.Select(d => d.Decision).Should().Equal("Accepted"); // the send was automatic
 
         // Confirm with the real Resource Management: holds in resource_holds, vouchers issued.
         (await manager.PostAsync($"/api/trip-requests/{trip.Id}/confirm", null)).StatusCode.Should().Be(HttpStatusCode.OK);

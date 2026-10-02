@@ -15,18 +15,16 @@ String whatsNextLine(
   return switch (trip.status) {
     'Submitted' => 'Ready to plan',
     'Planning' => 'Our planner agents are building your trip',
-    'PendingReview' => 'Operator is reviewing your plan',
-    'RevisionRequested' =>
-      'Operator asked for changes; a new version is coming',
-    'QuotationSent' => 'Waiting for your acceptance',
+    'QuotationSent' => 'Your quote is ready — accept or decline',
     'ClientAccepted' => 'Operator is confirming',
+    'ClientDeclined' => 'The operator is reviewing your feedback',
+    'NeedsOperator' => 'Our team is preparing your quote',
     'Confirmed' =>
       guideName == null || guideName.trim().isEmpty
           ? 'Starts $starts'
           : 'Guide: ${firstName(guideName)}, starts $starts',
     'InProgress' => _onTour(trip, today),
     'Completed' => guideRated ? 'Completed' : 'Rate your guide',
-    'FailedSafely' => 'Planning failed — tap to try again',
     'Cancelled' => 'Cancelled',
     _ => 'We will let you know when something changes',
   };

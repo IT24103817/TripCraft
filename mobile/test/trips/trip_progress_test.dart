@@ -15,7 +15,7 @@ Future<void> pumpProgress(WidgetTester tester, String status) =>
     );
 
 void main() {
-  testWidgets('the timeline shows the eight steps of the lifecycle in order', (
+  testWidgets('the timeline shows the seven steps of the lifecycle in order', (
     tester,
   ) async {
     await pumpProgress(tester, 'QuotationSent');
@@ -23,21 +23,41 @@ void main() {
     const labels = [
       'Submitted',
       'Planning',
-      'Pending review',
       'Quotation sent',
       'Accepted',
       'Confirmed',
       'In progress',
       'Completed',
     ];
+    expect(tripTimelineSteps, hasLength(7));
     for (final label in labels) {
       expect(find.text(label), findsOneWidget);
     }
+    // No operator review step any more.
+    expect(find.text('Pending review'), findsNothing);
     // Each label sits below the one before it.
     final tops = [for (final l in labels) tester.getTopLeft(find.text(l)).dy];
     expect(tops, orderedEquals([...tops]..sort()));
+    expect(find.byKey(const ValueKey('step-Planning-done')), findsOneWidget);
     expect(
-      find.byKey(const ValueKey('step-PendingReview-done')),
+      find.byKey(const ValueKey('step-QuotationSent-current')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('step-ClientAccepted-todo')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('ClientDeclined stays on Quotation sent and says what happens', (
+    tester,
+  ) async {
+    await pumpProgress(tester, 'ClientDeclined');
+
+    expect(
+      find.text(
+        'You declined this quote — the operator will replan or contact you.',
+      ),
       findsOneWidget,
     );
     expect(
@@ -48,6 +68,23 @@ void main() {
       find.byKey(const ValueKey('step-ClientAccepted-todo')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('NeedsOperator stays on Planning and has no Try again', (
+    tester,
+  ) async {
+    await pumpProgress(tester, 'NeedsOperator');
+
+    expect(
+      find.text('Our team is looking at your trip and will send you a quote.'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('step-Planning-current')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('step-QuotationSent-todo')),
+      findsOneWidget,
+    );
+    expect(find.text('Try again'), findsNothing);
   });
 
   testWidgets('every status explains what happens next', (tester) async {
@@ -70,6 +107,12 @@ void main() {
       find.text('This trip was cancelled. Nothing else will happen.'),
       findsOneWidget,
     );
-    expect(find.text('Pending review'), findsNothing);
+    expect(find.text('Planning'), findsNothing);
+  });
+
+  test('side states sit on the step they came from', () {
+    expect(timelineStatus('ClientDeclined'), 'QuotationSent');
+    expect(timelineStatus('NeedsOperator'), 'Planning');
+    expect(timelineStatus('QuotationSent'), 'QuotationSent');
   });
 }

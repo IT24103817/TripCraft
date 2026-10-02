@@ -80,6 +80,9 @@ class PlannerConstraints(BaseModel):
     transport_preference: Literal["train", "road", "any"] = "any"
     hotel_tier: Literal["budget", "standard", "premium"] = "standard"
     max_stops_per_day: int = Field(default=3, ge=1, le=3)
+    # v1.1 budget rule: "lowest" on a budget re-plan (set in code, not by the model): cheapest rooms, cheapest
+    # eligible guide and vehicle, free stops instead of paid ones where the city has them.
+    cost_strategy: Literal["standard", "lowest"] = "standard"
 
 
 class PlannerOutput(BaseModel):
@@ -242,6 +245,9 @@ class Proposal(BaseModel):
     status: str
     replans: int
     error_summary: str | None = None
+    # True when the only problem left after the lowest-cost re-plans is the budget: the API still sends this quote
+    # to the client as the best price available (it re-checks every rule itself).
+    best_available_price: bool = False
 
 
 ReplanRequest.model_rebuild()  # resolves the forward reference to Violation

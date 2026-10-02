@@ -7,11 +7,11 @@ export const API = 'http://api.test';
 export const CITIES = ['Colombo', 'Ella', 'Galle', 'Kandy', 'Nuwara Eliya', 'Sigiriya'];
 
 export const DASHBOARD_ACTIONS = {
-  proposalsToReview: 0,
-  clientAcceptedToConfirm: 0,
+  acceptedToConfirm: 0,
+  declinedNeedsDecision: 0,
+  needsOperator: 0,
   guideChangeRequests: 0,
   recentCancellations: 0,
-  declinedQuotations: 0,
 };
 
 /** Defaults so pages that load extra data (e.g. the dashboard) do not fail. Tests override with server.use. */
@@ -31,7 +31,7 @@ export const server = setupServer(
   http.get(`${API}/api/guide-change-requests`, () => HttpResponse.json([])),
   // The trips list's city filter.
   http.get(`${API}/api/attractions/cities`, () => HttpResponse.json(CITIES)),
-  // A trip without an agent workflow (the trip page then has no "Open review" link).
+  // A trip without an agent workflow (the trip page then has no "Open review" link and no proposal to edit).
   http.get(`${API}/api/trip-requests/:id/workflow`, () =>
     HttpResponse.json({ title: 'Not found', status: 404 }, { status: 404 }),
   ),
@@ -42,4 +42,6 @@ export const server = setupServer(
   // The manager dashboard: nothing waiting and no trips today or tomorrow.
   http.get(`${API}/api/dashboard/actions`, () => HttpResponse.json(DASHBOARD_ACTIONS)),
   http.get(`${API}/api/dashboard/upcoming`, () => HttpResponse.json([])),
+  // No trip needs the manager (the dashboard list and the review queue).
+  http.get(`${API}/api/dashboard/attention`, () => HttpResponse.json([])),
 );

@@ -2,41 +2,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { http } from '@/shared/api/http';
 import { queryRoots } from '@/shared/api/queryKeys';
 import type { PagedResult } from '@/shared/api/types';
-import { invalidateAfterDecision } from './api';
 import type {
   AvailableOption,
   CityAttraction,
   EditableProposalDto,
   PlanExplanationDto,
-  QuotationDecisionResponse,
   SwapResourcesRequest,
 } from './types';
 
-// The v1.1 review calls that are not a quotation decision: Confirm, Reopen review and "Edit directly".
-
-/** POST /api/trip-requests/{id}/confirm (ClientAccepted): holds, itinerary, vouchers and email in one step. */
-export function useConfirmTrip(tripId: string) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: async () =>
-      (await http.post<QuotationDecisionResponse>(`/api/trip-requests/${tripId}/confirm`)).data,
-    onSuccess: () => invalidateAfterDecision(client),
-  });
-}
-
-/** POST /api/trip-requests/{id}/reopen-review {reason} (ClientAccepted → PendingReview). */
-export function useReopenReview(tripId: string) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: async (reason: string) =>
-      (
-        await http.post<QuotationDecisionResponse>(`/api/trip-requests/${tripId}/reopen-review`, {
-          reason,
-        })
-      ).data,
-    onSuccess: () => invalidateAfterDecision(client),
-  });
-}
+// The review and editing calls that are not a lifecycle step: "Edit" a day or the resources, the options to
+// swap to, and "Why this plan". (Confirm, Send, Replan and Retry planning are in tripActionsApi.ts.)
 
 /** PUT /api/trip-requests/{id}/proposal/days/{n}: 1–3 attractions of that day's city, in visiting order. */
 export function useEditProposalDay(tripId: string) {

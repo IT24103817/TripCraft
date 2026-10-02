@@ -3,6 +3,7 @@ using TripCraft.Application.Common;
 using TripCraft.Application.Common.Auditing;
 using TripCraft.Application.Common.Exceptions;
 using TripCraft.Application.Common.Notifications;
+using TripCraft.Application.Identity;
 using TripCraft.Application.Trips;
 using TripCraft.Application.Workflows.Dtos;
 using TripCraft.Application.Workflows.Ports;
@@ -10,14 +11,15 @@ using TripCraft.Application.Workflows.Ports;
 namespace TripCraft.Application.Workflows.Services;
 
 /// <summary>
-/// Receives the agents' final proposal (PLAN.md section 6, step 7–8). Steps:
+/// Receives the agents' final proposal (PLAN.md section 6, step 7–8) and, in v1.1, sends it straight to the client.
 /// 1. load the workflow and trip; only Planning or RevisionRequested workflows accept a proposal;
 /// 2. load the database facts and run the deterministic ProposalValidator;
-/// 3. workflow status: PendingApproval (valid), RevisionRequested (only Soft), FailedSafely (any Hard);
-///    trip status (v1.1, through TripStatusMachine): PendingReview, or FailedSafely;
-/// 4. unless FailedSafely, stage a new quotation version with a snapshot of what it priced;
-/// 5. store the validation result and proposal on the workflow, notify the managers, audit, save in one transaction.
-/// Nothing is held here — holds are created only when the manager confirms a trip the client accepted.
+/// 3. valid, or only over budget after the agents' lowest-cost re-plans: stage a quotation version marked sent
+///    (with the best-price flag when over budget), workflow Approved, trip Planning → QuotationSent, the tourist is
+///    notified and emailed. A quote that failed a Hard rule is never sent;
+/// 4. any Hard rule or an agent failure: workflow FailedSafely, trip → NeedsOperator, the managers are notified;
+/// 5. store the validation result and proposal, audit, save in one transaction; send the email after the commit.
+/// Nothing is held here — holds are created only by Confirm, the human approval gate.
 /// </summary>
 public class WorkflowProposalService(
     IAgentWorkflowRepository workflows,
@@ -26,6 +28,8 @@ public class WorkflowProposalService(
     IQuotationStore quotations,
     ProposalValidator validator,
     INotifier notifier,
+    IUserRepository users,
+    IEmailDispatcher emails,
     IAuditLogger audit,
     IUnitOfWork unitOfWork) : IWorkflowProposalService
 {
@@ -52,7 +56,7 @@ public class WorkflowProposalService(
             // The agents already failed safely (tool error, timeout, bad LLM output).
             var reason = proposal.ErrorSummary ?? "The agent service reported a safe failure.";
             validation = new ProposalValidationResult(false, [new("AGENT_FAILED", reason, ViolationSeverity.Hard)]);
-            FailSafely(workflow, trip, $"Agents failed safely: {reason}");
+            await FailSafelyAsync(workflow, trip, $"Agents failed safely: {reason}", ct);
         }
         else
         {
@@ -67,25 +71,17 @@ public class WorkflowProposalService(
                 {
                     var codes = string.Join(", ", validation.Violations.Where(v => v.Severity == ViolationSeverity.Hard)
                         .Select(v => v.Code).Distinct());
-                    FailSafely(workflow, trip, $"Deterministic validation failed: {codes}");
+                    await FailSafelyAsync(workflow, trip, $"Deterministic validation failed: {codes}", ct);
                 }
                 else
                 {
-                    workflow.Status = validation.HasSoft ? AgentWorkflowStatus.RevisionRequested : AgentWorkflowStatus.PendingApproval;
-                    workflow.CurrentStep = "awaiting-manager";
-                    quotationId = await quotations.AddVersionAsync(
-                        ToDraft(trip, workflow, proposal.Quotation!, facts, ProposalSnapshot.Serialize(stored)), ct);
-                    TripStatusMachine.Move(trip, TripRequestStatus.PendingReview, null,
-                        validation.HasSoft ? "Proposal ready for review with a warning (over budget)." : "Proposal ready for review.",
-                        audit);
-                    await notifier.NotifyManagersAsync("ReviewNeeded", "Trip ready for review",
-                        $"A new proposal for \"{Shorten(trip.Objective)}\" is waiting for your review.", trip.Id, ct);
+                    quotationId = await SendToClientAsync(workflow, trip, proposal.Quotation!, facts, stored, validation, ct);
                 }
             }
             catch (ComponentNotAvailableException ex)
             {
                 validation = new ProposalValidationResult(false, [new("COMPONENT_UNAVAILABLE", ex.Message, ViolationSeverity.Hard)]);
-                FailSafely(workflow, trip, ex.Message);
+                await FailSafelyAsync(workflow, trip, ex.Message, ct);
             }
         }
 
@@ -114,7 +110,52 @@ public class WorkflowProposalService(
             return await FailUnsavedProposalAsync(workflowId, ex, ct);
         }
 
+        if (quotationId is not null)
+            await SendEmailsAsync(ct);
         return new ProposalOutcomeResponse(workflow.Id, workflow.Status.ToString(), quotationId, validation);
+    }
+
+    /// <summary>
+    /// Auto-send (v1.1): the version is created already sent. Over budget (only possible after the agents' lowest-cost
+    /// re-plans, as the sole Soft rule) it is sent anyway as the best price available, with how much it is over.
+    /// </summary>
+    private async Task<Guid> SendToClientAsync(AgentWorkflow workflow, TripRequest trip, ProposalQuotation quotation,
+        ProposalFacts facts, StoredProposal stored, ProposalValidationResult validation, CancellationToken ct)
+    {
+        decimal? overBudgetUsd = validation.HasSoft ? Math.Max(0, Math.Round(quotation.TotalUsd - trip.BudgetUsd, 2)) : null;
+        var quotationId = await quotations.AddVersionAsync(
+            ToDraft(trip, workflow, quotation, facts, ProposalSnapshot.Serialize(stored)) with
+            {
+                OverBudgetUsd = overBudgetUsd,
+                SendNow = true
+            }, ct);
+        workflow.Status = AgentWorkflowStatus.Approved;
+        workflow.CurrentStep = "awaiting-client";
+        var note = Quotations.Dtos.QuotationDto.BudgetNoteFor(overBudgetUsd);
+        TripStatusMachine.Move(trip, TripRequestStatus.QuotationSent, null,
+            note is null ? "Quotation sent to the client automatically." : $"Quotation sent to the client automatically. {note}.",
+            audit);
+        notifier.NotifyTourist(trip, "QuotationSent", "Your quotation is ready",
+            $"USD {quotation.TotalUsd:N2}{(note is null ? "" : $" ({note})")}. Open the trip to accept or decline it.");
+        if (trip.Tourist is not null && await users.GetByIdAsync(trip.Tourist.UserId, ct) is { } tourist)
+            notifier.QueueEmail(tourist.Email, "Your TripCraft quotation is ready",
+                $"Dear {tourist.FullName},\n\nYour quotation for {trip.StartDate:dd MMM yyyy} – {trip.EndDate:dd MMM yyyy} is ready: " +
+                $"USD {quotation.TotalUsd:N2} (LKR {quotation.TotalLkr:N2}).{(note is null ? "" : $" {note}.")} " +
+                "Open the TripCraft app to accept or decline it.\n\nTripCraft", trip.Id);
+        return quotationId;
+    }
+
+    /// <summary>After the commit; a failed email stays in the outbox with its error and never undoes the quote.</summary>
+    private async Task SendEmailsAsync(CancellationToken ct)
+    {
+        try
+        {
+            await emails.DispatchPendingAsync(ct);
+        }
+        catch (Exception)
+        {
+            // The quotation is sent in the app either way; the outbox row keeps the failure.
+        }
     }
 
     /// <summary>Discards the rejected changes and records a safe failure instead (no quotation, no holds).</summary>
@@ -126,7 +167,7 @@ public class WorkflowProposalService(
         var trip = (await trips.GetByIdAsync(workflow.TripRequestId, ct))!;
         var reason = $"The proposal could not be saved ({ex.InnerException?.GetType().Name ?? ex.GetType().Name}).";
         var validation = new ProposalValidationResult(false, [new("PROPOSAL_NOT_SAVED", reason, ViolationSeverity.Hard)]);
-        FailSafely(workflow, trip, reason);
+        await FailSafelyAsync(workflow, trip, reason, ct);
         workflow.ValidationResult = WorkflowJson.Serialize(validation);
         audit.Record(null, "AgentWorkflowFailedSafely", nameof(AgentWorkflow), workflow.Id, null,
             new { Status = workflow.Status.ToString(), workflow.ErrorSummary });
@@ -134,14 +175,19 @@ public class WorkflowProposalService(
         return new ProposalOutcomeResponse(workflow.Id, workflow.Status.ToString(), null, validation);
     }
 
-    /// <summary>Workflow and trip become FailedSafely; the tourist or manager can start planning again.</summary>
-    private void FailSafely(AgentWorkflow workflow, TripRequest trip, string reason)
+    /// <summary>
+    /// Workflow FailedSafely, trip NeedsOperator: nothing is sent to the client. The managers are told; they retry
+    /// planning, edit and send by hand, or cancel.
+    /// </summary>
+    private async Task FailSafelyAsync(AgentWorkflow workflow, TripRequest trip, string reason, CancellationToken ct)
     {
         workflow.Status = AgentWorkflowStatus.FailedSafely;
         workflow.ErrorSummary = reason.Length > MaxErrorSummaryLength ? reason[..MaxErrorSummaryLength] : reason;
         workflow.FinishedAt = DateTime.UtcNow;
         workflow.CurrentStep = "failed";
-        TripStatusMachine.Move(trip, TripRequestStatus.FailedSafely, null, workflow.ErrorSummary, audit);
+        TripStatusMachine.Move(trip, TripRequestStatus.NeedsOperator, null, workflow.ErrorSummary, audit);
+        await notifier.NotifyManagersAsync("NeedsOperator", "A trip needs the operator",
+            $"\"{Shorten(trip.Objective)}\": {workflow.ErrorSummary}", trip.Id, ct);
     }
 
     private static string Shorten(string text) => text.Length <= 60 ? text : text[..57] + "...";

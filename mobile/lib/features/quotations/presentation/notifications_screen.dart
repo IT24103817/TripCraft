@@ -4,11 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_notifier.dart';
 import '../../../core/auth/profile_button.dart';
-import '../../../core/router/routes.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/utils/formatters.dart';
 import '../../../shared/utils/friendly_error.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../application/notification_target.dart';
 import '../application/notifications_poller.dart';
 import '../data/notification_models.dart';
 
@@ -34,10 +34,8 @@ class NotificationsScreen extends ConsumerWidget {
 
     Future<void> open(AppNotification item) async {
       if (!item.isRead) await run(() => poller.markRead(item.id));
-      final tripId = item.tripRequestId;
-      if (isTourist && tripId != null && context.mounted) {
-        context.push(Routes.trip(tripId));
-      }
+      final route = notificationRoute(item, isTourist: isTourist);
+      if (route != null && context.mounted) context.push(route);
     }
 
     return Scaffold(

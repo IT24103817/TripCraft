@@ -21,6 +21,20 @@ List<AppNotification> notificationsToShow(
     if (!item.isRead && !alreadyShown.contains(item.id)) item,
 ];
 
+/// The trips that got a notification since the previous poll (for example "Trip confirmed" or "Your quote was
+/// updated"), so the app can reload those trips instead of showing a stale status. Pure, so it is unit-tested.
+Set<String> tripsWithNewNotifications(
+  NotificationList previous,
+  NotificationList next,
+) {
+  final known = {for (final item in previous.items) item.id};
+  return {
+    for (final item in next.items)
+      if (!known.contains(item.id) && item.tripRequestId != null)
+        item.tripRequestId!,
+  };
+}
+
 /// Polls GET /api/notifications/mine every 30 s while the app is in the foreground (the shell starts and stops it)
 /// and shows a phone notification for every new unread item, once: the ids already shown are kept in storage.
 /// The state is the latest list, used by the Alerts screen and the unread badge.

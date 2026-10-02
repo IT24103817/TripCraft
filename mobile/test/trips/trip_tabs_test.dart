@@ -91,7 +91,7 @@ void main() {
     (tester) async {
       stubTrip(
         api,
-        'PendingReview',
+        'Planning',
         workflow: {
           'id': 'wf-1',
           'status': 'PendingApproval',
@@ -169,7 +169,7 @@ void main() {
   testWidgets('Vouchers before confirmation: a hint, and no API call', (
     tester,
   ) async {
-    stubTrip(api, 'PendingReview');
+    stubTrip(api, 'QuotationSent');
     await pumpTripDetail(tester, api);
     await openTab(tester, 'Vouchers');
 

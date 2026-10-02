@@ -68,7 +68,7 @@ void main() {
   for (final status in [
     'Submitted',
     'Planning',
-    'PendingReview',
+    'NeedsOperator',
     'Cancelled',
   ]) {
     testWidgets('$status has no PDF button', (tester) async {

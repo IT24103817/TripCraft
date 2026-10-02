@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tripcraft_mobile/features/quotations/application/notification_target.dart';
 import 'package:tripcraft_mobile/features/quotations/application/notifications_poller.dart';
 import 'package:tripcraft_mobile/features/quotations/data/notification_models.dart';
 import 'package:tripcraft_mobile/features/quotations/presentation/notifications_screen.dart';
@@ -104,5 +105,59 @@ void main() {
     expect(poller.markedAllRead, isTrue);
     expect(find.byKey(const ValueKey('unread-n1')), findsNothing);
     expect(find.text('Mark all read'), findsNothing);
+  });
+
+  group('tapping a notification', () {
+    AppNotification about(String type, {String? tripId = 'trip-1'}) =>
+        AppNotification(
+          id: 'n-$type',
+          type: type,
+          title: type,
+          body: 'body',
+          tripRequestId: tripId,
+          isRead: false,
+          createdAt: '2026-10-01T09:30:00Z',
+        );
+
+    test('QuotationSent and QuotationUpdated open the trip for a tourist', () {
+      expect(
+        notificationRoute(about('QuotationSent'), isTourist: true),
+        '/trips/trip-1',
+      );
+      expect(
+        notificationRoute(about('QuotationUpdated'), isTourist: true),
+        '/trips/trip-1',
+      );
+    });
+
+    test('the other lifecycle types open the trip too', () {
+      for (final type in [
+        'ClientAccepted',
+        'ClientDeclined',
+        'NeedsOperator',
+        'TripConfirmed',
+        'TripCancelled',
+      ]) {
+        expect(
+          notificationRoute(about(type), isTourist: true),
+          '/trips/trip-1',
+          reason: type,
+        );
+      }
+    });
+
+    test('nothing to open for a guide or without a trip', () {
+      expect(
+        notificationRoute(about('TripAssigned'), isTourist: false),
+        isNull,
+      );
+      expect(
+        notificationRoute(
+          about('QuotationUpdated', tripId: null),
+          isTourist: true,
+        ),
+        isNull,
+      );
+    });
   });
 }

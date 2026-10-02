@@ -30,7 +30,7 @@ const HISTORY = [
     entity: 'AgentWorkflow',
     actor: 'System',
     fromStatus: 'Planning',
-    toStatus: 'FailedSafely',
+    toStatus: 'NeedsOperator',
     reason: 'The agent service did not answer in time.',
   },
 ];
@@ -65,7 +65,7 @@ describe('TripDetailPage', () => {
     expect(screen.getByRole('list', { name: 'Status timeline' })).toHaveTextContent('Submitted');
   });
 
-  it.each(['Planning', 'PendingReview', 'Confirmed'])(
+  it.each(['Planning', 'NeedsOperator', 'Confirmed'])(
     'does not say it waits for the tourist when the trip is %s',
     async (status) => {
       givenTrip(status);
@@ -94,10 +94,48 @@ describe('TripDetailPage', () => {
     expect(await screen.findByText('Kandy, Ella')).toBeInTheDocument();
     expect(screen.getByText(/Waiting for the client to accept or decline/)).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Status timeline' })).toHaveTextContent('Quotation sent');
+    // Nothing for the manager to do while the client decides.
+    expect(screen.queryByRole('region', { name: /Next step/ })).not.toBeInTheDocument();
   });
 
-  it('links a trip in review to its review page', async () => {
-    givenTrip('PendingReview');
+  it('draws the main path Submitted → Completed in the status timeline', async () => {
+    givenTrip('ClientAccepted');
+    renderApp(`/trips/${ID}`);
+
+    const timeline = await screen.findByRole('list', { name: 'Status timeline' });
+    expect(
+      within(timeline)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent?.replace(/^[✓\d]+/, '')),
+    ).toEqual([
+      'Submitted',
+      'Planning',
+      'Quotation sent',
+      'Accepted',
+      'Confirmed',
+      'In progress',
+      'Completed',
+    ]);
+    expect(within(timeline).getByText('Accepted').closest('li')).toHaveAttribute('aria-current', 'step');
+  });
+
+  it.each([
+    ['NeedsOperator', ['Submitted', 'Planning', 'Needs operator']],
+    ['ClientDeclined', ['Submitted', 'Planning', 'Quotation sent', 'Declined']],
+  ])('shows the side state %s after the step it branches off from', async (status, steps) => {
+    givenTrip(status);
+    renderApp(`/trips/${ID}`);
+
+    const timeline = await screen.findByRole('list', { name: 'Status timeline' });
+    expect(
+      within(timeline)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent?.replace(/^[✓\d]+/, '')),
+    ).toEqual(steps);
+  });
+
+  it('links a trip with a proposal to its review page', async () => {
+    givenTrip('QuotationSent');
     server.use(
       http.get(`${API}/api/trip-requests/${ID}/workflow`, () => HttpResponse.json({ id: WORKFLOW_ID })),
     );
@@ -236,7 +274,7 @@ describe('TripDetailPage', () => {
       click.mockRestore();
     });
 
-    it.each(['Submitted', 'PendingReview', 'Cancelled'])(
+    it.each(['Submitted', 'NeedsOperator', 'ClientDeclined', 'Cancelled'])(
       'offers no itinerary PDF before a quotation is sent (%s)',
       async (status) => {
         givenTrip(status);

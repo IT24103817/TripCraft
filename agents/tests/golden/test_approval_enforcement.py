@@ -1,7 +1,8 @@
 """
-Golden case: the agents can only propose; a human approves (PLAN.md section 11, "approval enforced without
-manager role"). Checked through the mocked internal API: the run reaches PendingApproval and the only writes
-the agent service ever makes are its step reports and the proposal — never a hold, never an approval.
+Golden case: the agents can only propose (PLAN.md section 11, "approval enforced without manager role"). In v1.1 the
+API sends a valid quote to the client, but nothing is held until an Operations Manager presses Confirm (the human
+approval gate) after the client accepted. Checked through the mocked internal API: the only writes the agent service
+ever makes are its step reports and the proposal — never a hold, a quotation, an acceptance or a confirmation.
 """
 from app.graph import run_workflow
 from app.state import PENDING_APPROVAL

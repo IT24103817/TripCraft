@@ -2,13 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { http } from '@/shared/api/http';
 import { queryRoots } from '@/shared/api/queryKeys';
 
-/** GET /api/dashboard/actions (manager): how many things wait for the manager, per kind. */
+/** GET /api/dashboard/actions (manager): how many things wait for the manager, per kind (v1.1). */
 export interface DashboardActionsDto {
-  proposalsToReview: number;
-  clientAcceptedToConfirm: number;
+  acceptedToConfirm: number;
+  declinedNeedsDecision: number;
+  needsOperator: number;
   guideChangeRequests: number;
   recentCancellations: number;
-  declinedQuotations: number;
 }
 
 /** One trip running today or tomorrow (GET /api/dashboard/upcoming). */
@@ -27,7 +27,7 @@ export interface UpcomingTripDto {
   dayNumber: number;
 }
 
-// Under the trips root, so a review decision or a cancellation (which refreshes trips) refreshes these too.
+// Under the trips root, so a lifecycle step or a cancellation (which refreshes trips) refreshes these too.
 const DASHBOARD = [queryRoots.trips, 'dashboard'] as const;
 
 export function useDashboardActions() {

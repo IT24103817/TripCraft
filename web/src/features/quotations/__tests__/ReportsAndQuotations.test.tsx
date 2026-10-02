@@ -66,10 +66,10 @@ describe('Reports, quotations and re-pricing (Component C)', () => {
     renderApp('/reports');
 
     const revenue = await screen.findByRole('table', {
-      name: 'Quotations sent to clients per month, in USD',
+      name: 'Confirmed bookings per month, in USD',
     });
     expect(within(revenue).getByRole('rowheader', { name: '2026-08' })).toBeInTheDocument();
-    expect(screen.getByText(/from 1 quotations sent to clients/)).toBeInTheDocument();
+    expect(screen.getByText(/from 1 confirmed bookings/)).toBeInTheDocument();
     const utilisation = screen.getByRole('table', {
       name: 'Held days as a percentage of the days in the period',
     });
@@ -79,38 +79,21 @@ describe('Reports, quotations and re-pricing (Component C)', () => {
     ).toHaveTextContent('Completed');
   });
 
-  it('re-prices the stored quotation from the review page as a new version', async () => {
-    const workflow = pendingWorkflow();
+  it('shows the stored quotation on the review page, with the stale-rate warning', async () => {
+    const workflow = pendingWorkflow({ status: 'Approved' });
     workflow.finalOutcome!.proposal.quotationId = 'q1';
-    let recalculated = false;
     server.use(
       http.get(`${API}/api/workflows/${WORKFLOW_ID}`, () => HttpResponse.json(workflow)),
-      http.get(`${API}/api/quotations/q1`, () => HttpResponse.json(QUOTATION)),
-      http.get(`${API}/api/trip-requests/:id`, () => HttpResponse.json(trip({ status: 'PendingReview' }))),
-      http.post(`${API}/api/quotations/q1/calculate`, () => {
-        recalculated = true;
-        return HttpResponse.json({
-          quotationId: 'q2',
-          version: 2,
-          totalLkr: 181220,
-          totalUsd: 603.94,
-          previousTotalLkr: 187220,
-          previousTotalUsd: 624.07,
-          workflowStatus: 'PendingApproval',
-          validation: { isValid: true, violations: [], hasHard: false, hasSoft: false },
-        });
-      }),
+      http.get(`${API}/api/quotations/q1`, () => HttpResponse.json({ ...QUOTATION, status: 'Approved' })),
+      http.get(`${API}/api/trip-requests/:id`, () => HttpResponse.json(trip({ status: 'QuotationSent' }))),
     );
-    const { user } = renderApp(`/approvals/${WORKFLOW_ID}`);
+    renderApp(`/approvals/${WORKFLOW_ID}`);
 
-    expect(
-      await screen.findByRole('heading', { name: 'Quotation v1 (Waiting for review)' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Quotation v1 (Sent to client)' })).toBeInTheDocument();
     expect(screen.getByText(/Guide Nimal Perera, 5 days/)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Re-price' }));
-
-    expect(await screen.findByText(/Re-priced as version 2: .*624\.07.* → .*603\.94/)).toBeInTheDocument();
-    expect(recalculated).toBe(true);
+    expect(screen.getByText(/stale rate — the FX provider was unavailable/)).toBeInTheDocument();
+    // Re-pricing is part of Edit & resend on the trip page now, not of the review page.
+    expect(screen.queryByRole('button', { name: 'Re-price' })).not.toBeInTheDocument();
   });
 
   it("shows this month's revenue on the manager dashboard", async () => {

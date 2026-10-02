@@ -45,7 +45,7 @@ test('Operations Manager sees operations screens, not user admin; admin API is 4
   expect(await status(page, 'GET', '/api/admin/audit-logs')).toBe(403);
 });
 
-test('Admin sees users, audit log, settings and agent runs only; the review queue is 403', async ({ page }) => {
+test('Admin sees users, audit log, settings and agent runs only; the review queue and Confirm are 403', async ({ page }) => {
   await signIn(page, 'admin1@tripcraft.test');
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   for (const link of ['Dashboard', 'Agent runs', 'Users', 'Audit log', 'Settings']) {
@@ -56,16 +56,16 @@ test('Admin sees users, audit log, settings and agent runs only; the review queu
   }
   await page.goto('/approvals');
   await expect(page.getByText('You do not have access to this page')).toBeVisible();
-  expect(await status(page, 'POST', `/api/quotations/${crypto.randomUUID()}/approve`)).toBe(403);
+  expect(await status(page, 'POST', `/api/trip-requests/${crypto.randomUUID()}/confirm`)).toBe(403);
   expect(await status(page, 'GET', '/api/admin/audit-logs')).toBe(200);
 });
 
-test('Tourist is sent to the mobile app; staff pages and approve are 403', async ({ page }) => {
+test('Tourist is sent to the mobile app; staff pages and Confirm are 403', async ({ page }) => {
   await signIn(page, 'tourist1@tripcraft.test');
   await expect(page.getByRole('heading', { name: 'Please use the TripCraft mobile app' })).toBeVisible();
   await page.goto('/approvals');
   await expect(page.getByText('You do not have access to this page')).toBeVisible();
-  expect(await status(page, 'POST', `/api/quotations/${crypto.randomUUID()}/approve`)).toBe(403);
+  expect(await status(page, 'POST', `/api/trip-requests/${crypto.randomUUID()}/confirm`)).toBe(403);
   expect(await status(page, 'GET', '/api/workflows')).toBe(403);
 });
 

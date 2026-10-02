@@ -41,31 +41,25 @@ void main() {
     expect(find.widgetWithText(Tab, 'Vouchers'), findsOneWidget);
   });
 
-  testWidgets(
-    'PendingReview highlights that step and says the operator is checking',
-    (tester) async {
-      usePhoneSize(tester, phoneSizes.currentValue!);
-      stubTrip(api, 'PendingReview', workflow: kandyProposal);
-      await pumpTripDetail(tester, api);
+  testWidgets('Planning highlights that step; the quote is not visible yet', (
+    tester,
+  ) async {
+    usePhoneSize(tester, phoneSizes.currentValue!);
+    stubTrip(api, 'Planning', workflow: kandyProposal);
+    await pumpTripDetail(tester, api);
 
-      expect(find.text(whatHappensNext('PendingReview')), findsOneWidget);
-      expect(find.byKey(const ValueKey('step-Submitted-done')), findsOneWidget);
-      expect(find.byKey(const ValueKey('step-Planning-done')), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('step-PendingReview-current')),
-        findsOneWidget,
-      );
-      await scrollTo(tester, find.byKey(const ValueKey('step-Completed-todo')));
-      expect(
-        find.byKey(const ValueKey('step-QuotationSent-todo')),
-        findsOneWidget,
-      );
-      // The tourist cannot see the price or decide until the operator sends it.
-      expect(find.text('View quotation'), findsNothing);
-      expect(find.text('decision-panel-trip-1'), findsNothing);
-    },
-    variant: phoneSizes,
-  );
+    expect(find.text(whatHappensNext('Planning')), findsOneWidget);
+    expect(find.byKey(const ValueKey('step-Submitted-done')), findsOneWidget);
+    expect(find.byKey(const ValueKey('step-Planning-current')), findsOneWidget);
+    await scrollTo(tester, find.byKey(const ValueKey('step-Completed-todo')));
+    expect(
+      find.byKey(const ValueKey('step-QuotationSent-todo')),
+      findsOneWidget,
+    );
+    // The tourist cannot see the price or decide until the quote is sent.
+    expect(find.text('View quotation'), findsNothing);
+    expect(find.text('decision-panel-trip-1'), findsNothing);
+  }, variant: phoneSizes);
 
   testWidgets('Confirmed: earlier steps done, later steps still to come', (
     tester,
@@ -101,41 +95,36 @@ void main() {
   });
 
   testWidgets(
-    'a FailedSafely trip shows the reason, hides its days and offers Try again',
+    'a NeedsOperator trip waits for the team: no Try again, no failed days',
     (tester) async {
       stubTrip(
         api,
-        'FailedSafely',
+        'NeedsOperator',
         workflow: {
           ...kandyProposal,
           'status': 'FailedSafely',
           'errorSummary': 'Agents failed safely: resources: tool returned 503',
         },
       );
-      when(() => api.post('/api/trip-requests/trip-1/start-planning'))
-          .thenAnswer(
-            (_) async => {
-              'workflowId': 'wf-2',
-              'workflowStatus': 'Planning',
-              'tripStatus': 'Planning',
-            },
-          );
       await pumpTripDetail(tester, api);
 
-      expect(find.text(whatHappensNext('FailedSafely')), findsOneWidget);
-      // FailedSafely is still on the Planning step of the timeline.
+      expect(find.text(whatHappensNext('NeedsOperator')), findsOneWidget);
+      // NeedsOperator stays on the Planning step of the timeline.
       expect(
         find.byKey(const ValueKey('step-Planning-current')),
         findsOneWidget,
       );
-      await scrollTo(tester, find.text('Try again'));
-      expect(find.textContaining('Planning could not finish:'), findsOneWidget);
-
-      // Only the tourist may start planning, so Try again calls start-planning again.
-      await tester.tap(find.text('Try again'));
-      await tester.pumpAndSettle();
-      verify(() => api.post('/api/trip-requests/trip-1/start-planning'))
-          .called(1);
+      await scrollTo(tester, find.text('History'));
+      expect(
+        find.textContaining('our team is preparing your quote by hand'),
+        findsOneWidget,
+      );
+      // Retrying is the operator's action now; the tourist never sees the internal error.
+      expect(find.text('Try again'), findsNothing);
+      expect(find.text('Start planning'), findsNothing);
+      expect(find.textContaining('tool returned 503'), findsNothing);
+      expect(find.text('Planning failed'), findsNothing);
+      verifyNever(() => api.post('/api/trip-requests/trip-1/start-planning'));
 
       // The failed plan's days were never checked, so the Itinerary tab does not show them.
       await openTab(tester, 'Itinerary');
@@ -157,22 +146,28 @@ void main() {
     expect(find.textContaining('by the system'), findsOneWidget);
   });
 
-  testWidgets('RevisionRequested says a new version is coming', (tester) async {
+  testWidgets('ClientDeclined says the operator will replan or contact you', (
+    tester,
+  ) async {
     stubTrip(
       api,
-      'RevisionRequested',
-      workflow: {'id': 'wf-1', 'status': 'PendingApproval'},
+      'ClientDeclined',
+      workflow: {'id': 'wf-1', 'status': 'Approved'},
     );
     await pumpTripDetail(tester, api);
 
     expect(
-      find.text('The operator asked for changes; a new version is coming.'),
+      find.text(
+        'You declined this quote — the operator will replan or contact you.',
+      ),
       findsOneWidget,
     );
     expect(
-      find.byKey(const ValueKey('step-PendingReview-current')),
+      find.byKey(const ValueKey('step-QuotationSent-current')),
       findsOneWidget,
     );
+    // The decision is made: no Accept / Decline panel.
+    expect(find.text('decision-panel-trip-1'), findsNothing);
   });
 
   testWidgets(
@@ -224,10 +219,7 @@ void main() {
       await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(find.text('Retry'), findsNothing);
-      expect(
-        find.textContaining('The operator is reviewing your plan'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Your quote is on its way'), findsOneWidget);
     },
   );
 
@@ -240,11 +232,5 @@ void main() {
 
     expect(find.text('Something went wrong'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
-  });
-
-  test('side states sit on the step they came from', () {
-    expect(timelineStatus('RevisionRequested'), 'PendingReview');
-    expect(timelineStatus('FailedSafely'), 'Planning');
-    expect(timelineStatus('QuotationSent'), 'QuotationSent');
   });
 }

@@ -35,13 +35,13 @@ public class SwaggerDocumentationTests(TestWebApplicationFactory factory) : ICla
     }
 
     [Fact]
-    public async Task Approve_documents_its_real_error_codes_as_problem_details()
+    public async Task Send_documents_its_real_error_codes_as_problem_details()
     {
-        var approve = Operations(await SwaggerAsync()).Single(o => o.Name == "POST /api/quotations/{id}/approve").Operation;
-        var codes = approve.GetProperty("responses").EnumerateObject().Select(r => r.Name);
+        var send = Operations(await SwaggerAsync()).Single(o => o.Name == "POST /api/quotations/{id}/send").Operation;
+        var codes = send.GetProperty("responses").EnumerateObject().Select(r => r.Name);
 
-        codes.Should().Contain(["200", "401", "403", "404", "409", "500", "503"]);
-        approve.GetProperty("responses").GetProperty("409").GetProperty("content")
+        codes.Should().Contain(["200", "401", "403", "404", "409", "500"]);
+        send.GetProperty("responses").GetProperty("409").GetProperty("content")
             .TryGetProperty("application/problem+json", out _).Should().BeTrue();
     }
 

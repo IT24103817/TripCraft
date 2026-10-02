@@ -123,7 +123,7 @@ export interface WorkflowDecision {
 export interface WorkflowOutcome {
   proposal: StoredProposal;
   decision: WorkflowDecision | null;
-  /** True after the manager edited a day or swapped a resource: Re-price must run before "Send to client". */
+  /** True after the manager edited a day or swapped a resource: Re-price must run before Send or Confirm. */
   editedSinceQuotation?: boolean;
 }
 
@@ -198,8 +198,9 @@ export interface TripSummary {
 }
 
 /**
- * QuotationStatus in C#. Approved = sent to the client; Declined = the client said no (with a reason);
- * Superseded = replaced by a re-priced version.
+ * QuotationStatus in C#. Pending = priced but not sent yet (a manager's re-price); Approved = sent to the client;
+ * Declined = the client said no (with a reason); Superseded = replaced by a re-priced version. Rejected and
+ * RevisionRequested only exist on versions made before v1.1.
  */
 export type QuotationStatus =
   'Pending' | 'Approved' | 'Rejected' | 'RevisionRequested' | 'Declined' | 'Superseded';
@@ -227,7 +228,7 @@ export interface QuotationDto {
   fxStale: boolean;
   acceptedAt: string | null;
   lines: { lineType: string; description: string; qty: number; unitLkr: number; amountLkr: number }[];
-  /** RevisionRequested carries the manager's comment, Declined the client's reason. */
+  /** Declined carries the client's reason; Approved = sent by a manager; Accepted; Confirmed. */
   decisions: { decision: string; comment: string | null; decidedAt: string }[];
   /** Deposit asked for this version (docs/API-V11-WEB.md): the deposit setting when the version was made. */
   depositPct: number;
@@ -237,6 +238,15 @@ export interface QuotationDto {
   depositPaidAt: string | null;
   createdAt: string;
   proposalSnapshot?: ProposalSnapshot | null;
+  /**
+   * True when the agents could not get under the budget even with the lowest-cost re-plans, and the quotation
+   * was sent anyway as the best price (docs/API-V11.md "Auto-send and the budget rule").
+   */
+  bestAvailablePrice?: boolean;
+  /** How far over the budget the total is (null when within budget). */
+  overBudgetUsd?: number | null;
+  /** "Best price we can offer — USD X above your budget" (null when within budget). */
+  budgetNote?: string | null;
   /** The trip this version is for: its objective and current status (filled in by the list endpoint). */
   tripObjective?: string | null;
   tripStatus?: string | null;
@@ -260,7 +270,7 @@ export interface RepriceResponse {
   totalUsd: number;
   previousTotalLkr: number;
   previousTotalUsd: number;
-  /** PendingApproval (can be sent) or RevisionRequested (a warning such as over budget). */
+  /** The agent workflow's status after the re-price (unchanged values, e.g. PendingApproval). */
   workflowStatus: string;
   validation: ProposalValidationResult;
 }
@@ -299,8 +309,10 @@ export interface CityAttraction {
   durationMinutes: number;
 }
 
+/** One month of GET /api/reports/revenue: confirmed bookings, dated by the manager's Confirm. */
 export interface RevenueMonthDto {
   month: string;
+  /** How many bookings were confirmed in the month. */
   quotations: number;
   totalLkr: number;
   totalUsd: number;
@@ -329,4 +341,22 @@ export interface PlanExplanationItem {
 
 export interface PlanExplanationDto {
   items: PlanExplanationItem[];
+}
+
+/** The trip statuses that wait for the Operations Manager (GET /api/dashboard/attention?status=…). */
+export type AttentionStatus = 'ClientAccepted' | 'ClientDeclined' | 'NeedsOperator';
+
+/** One trip that needs the manager. `detail` is the decline reason, the error summary or "Version N accepted". */
+export interface AttentionItemDto {
+  tripRequestId: string;
+  objective: string;
+  status: AttentionStatus;
+  startDate: string;
+  endDate: string;
+  pax: number;
+  touristName: string;
+  detail: string | null;
+  since: string;
+  /** Total of the newest quotation version; null when nothing was priced (e.g. the agents failed safely). */
+  totalUsd: number | null;
 }

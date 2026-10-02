@@ -18,7 +18,7 @@ function recordWorkflowRequests(rows = [workflowSummary()]) {
   return requests;
 }
 
-describe('Agent runs and the review queue lists', () => {
+describe('Agent runs list', () => {
   beforeEach(() => signInAs('OperationsManager'));
 
   it('shows the trip objective and sends the default sort, search and status to the API', async () => {
@@ -73,35 +73,5 @@ describe('Agent runs and the review queue lists', () => {
     );
     const detail = renderApp('/workflows/abc');
     await waitFor(() => expect(detail.location()).toBe('/agent-runs/abc'));
-  });
-
-  it('searches the approval inbox and keeps the tab status and the search together', async () => {
-    const requests = recordWorkflowRequests();
-    const { user } = renderApp('/approvals');
-
-    const table = await screen.findByRole('table', { name: 'Workflows waiting for a decision' });
-    expect(within(table).getByText(workflowSummary().objective)).toBeInTheDocument();
-    expect(requests[0]?.get('status')).toBe('PendingApproval');
-
-    await user.type(screen.getByRole('searchbox'), 'Kandy');
-    await waitFor(() => expect(requests.at(-1)?.get('search')).toBe('Kandy'));
-
-    await user.click(screen.getByRole('tab', { name: 'Revision requested' }));
-    await waitFor(() => expect(requests.at(-1)?.get('status')).toBe('RevisionRequested'));
-    expect(requests.at(-1)?.get('search')).toBe('Kandy');
-
-    await user.click(screen.getByRole('button', { name: 'Sort by Started' }));
-    await waitFor(() => expect(requests.at(-1)?.get('sort')).toBe('startedAt'));
-  });
-
-  it('shows the error state with Retry and an empty state for a search with no match', async () => {
-    server.use(http.get(`${API}/api/workflows`, () => HttpResponse.json({ title: 'Boom' }, { status: 500 })));
-    const failing = renderApp('/approvals');
-    expect(await screen.findByRole('button', { name: 'Retry' })).toBeInTheDocument();
-    failing.unmount();
-
-    recordWorkflowRequests();
-    renderApp('/approvals?search=nothing');
-    expect(await screen.findByText('No proposals match your search')).toBeInTheDocument();
   });
 });

@@ -26,7 +26,9 @@ public class QuotationStore(IQuotationRepository quotations, TripSettings settin
             FxStale = draft.FxStale,
             ProposalSnapshot = draft.ProposalSnapshot,
             DepositPct = settings.DepositPct,
-            Status = QuotationStatus.Pending
+            OverBudgetUsd = draft.OverBudgetUsd is > 0 ? draft.OverBudgetUsd : null,
+            BestAvailablePrice = draft.OverBudgetUsd is > 0,
+            Status = draft.SendNow ? QuotationStatus.Approved : QuotationStatus.Pending
         };
         quotation.Lines = draft.Lines.Select(l => new QuotationLine
         {
@@ -62,6 +64,10 @@ public class QuotationStore(IQuotationRepository quotations, TripSettings settin
             case QuotationDecision.Confirmed: break; // the approval_decisions row is the record
         }
     }
+
+    public async Task<string?> GetDeclineReasonAsync(Guid quotationId, CancellationToken ct) =>
+        await quotations.Decisions().Where(d => d.QuotationId == quotationId && d.Decision == QuotationDecision.Declined)
+            .OrderByDescending(d => d.DecidedAt).Select(d => d.Comment).FirstOrDefaultAsync(ct);
 
     private static QuotationSummary Summary(Quotation q) =>
         new(q.Id, q.TripRequestId, q.Version, q.Status.ToString(), q.TotalLkr, q.TotalUsd, q.AcceptedAt);

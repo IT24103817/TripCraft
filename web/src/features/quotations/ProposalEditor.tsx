@@ -11,8 +11,8 @@ interface Props {
 }
 
 /**
- * "Edit directly" (trip PendingReview): change a day's stops or swap the guide, vehicle or hotel. After any
- * edit "Send to client" stays disabled until Re-price has made a new version.
+ * Edit the proposal (trip ClientAccepted or NeedsOperator): change a day's stops or swap the guide, vehicle or
+ * hotel. After any edit "Send to client" and Confirm stay disabled until Re-price has made a new version.
  */
 export function ProposalEditor({ trip, days, resources, names }: Props) {
   const [editingDay, setEditingDay] = useState<ProposalDay | null>(null);

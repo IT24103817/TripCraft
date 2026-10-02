@@ -119,6 +119,28 @@ void main() {
     },
   );
 
+  test('only trips with a notification that is new since the last poll are reloaded', () {
+    AppNotification item(String id, String? tripId) => AppNotification.fromJson(
+      {...notificationJson(id), 'tripRequestId': tripId},
+    );
+    final before = NotificationList(
+      unreadCount: 1,
+      items: [item('n1', 'trip-1')],
+    );
+    final after = NotificationList(
+      unreadCount: 4,
+      items: [
+        item('n3', 'trip-2'), // "Trip confirmed"
+        item('n4', null), // not about a trip
+        item('n2', 'trip-2'),
+        item('n1', 'trip-1'), // seen in the last poll
+      ],
+    );
+
+    expect(tripsWithNewNotifications(before, after), {'trip-2'});
+    expect(tripsWithNewNotifications(after, after), isEmpty);
+  });
+
   test('read notifications are never shown', () async {
     serverHas([notificationJson('n1', isRead: true)]);
 

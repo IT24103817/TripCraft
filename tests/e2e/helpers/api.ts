@@ -66,15 +66,28 @@ export async function createTripAndStartPlanning(request: APIRequestContext, tok
   return { tripId: trip.id as string, workflowId: planning.workflowId as string };
 }
 
-/** Polls GET /api/workflows/{id} every 5 s until it leaves Planning (max 3 minutes). */
-export async function waitForWorkflow(request: APIRequestContext, token: string, workflowId: string) {
-  const deadline = Date.now() + 3 * 60_000;
+/** Statuses after which a trip never moves without a person: waiting for them longer is pointless. */
+const STOP_WAITING = ['NeedsOperator', 'Cancelled'];
+
+/**
+ * Polls GET /api/trip-requests/{id} every 5 s until the trip reaches one of `targets` (for example QuotationSent:
+ * the agents' proposal passed the checks and was sent automatically). Returns the status it stopped at, which is
+ * not a target when the trip needs the operator or was cancelled. Throws after `timeoutMs`.
+ */
+export async function waitForTripStatus(
+  request: APIRequestContext,
+  token: string,
+  tripId: string,
+  targets: string[],
+  timeoutMs = 5 * 60_000,
+): Promise<string> {
+  const deadline = Date.now() + timeoutMs;
   for (;;) {
-    const response = await request.get(`${API_URL}/api/workflows/${workflowId}`, { headers: auth(token) });
-    expect(response.status()).toBe(200);
-    const workflow = await response.json();
-    if (workflow.status !== 'Planning') return workflow;
-    if (Date.now() > deadline) throw new Error(`Workflow ${workflowId} still Planning after 3 minutes`);
+    const status = await tripStatus(request, token, tripId);
+    if (targets.includes(status) || STOP_WAITING.includes(status)) return status;
+    if (Date.now() > deadline) {
+      throw new Error(`Trip ${tripId} is still ${status} after ${Math.round(timeoutMs / 1000)} s`);
+    }
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 }
@@ -93,9 +106,18 @@ export async function tripWorkflow(request: APIRequestContext, token: string, tr
 }
 
 /**
- * The tourist accepts the quotation that was sent (QuotationSent -> ClientAccepted), like the Flutter app does:
- * the quotation id is finalOutcome.proposal.quotationId of the trip's workflow.
+ * The quotation that was sent to the client (GET /api/quotations/{id}), found like the Flutter app does: the id is
+ * finalOutcome.proposal.quotationId of the trip's workflow. Includes bestAvailablePrice and budgetNote.
  */
+export async function sentQuotation(request: APIRequestContext, token: string, tripId: string) {
+  const workflow = await tripWorkflow(request, token, tripId);
+  const quotationId = workflow.finalOutcome.proposal.quotationId as string;
+  const response = await request.get(`${API_URL}/api/quotations/${quotationId}`, { headers: auth(token) });
+  expect(response.status(), await response.text()).toBe(200);
+  return response.json();
+}
+
+/** The tourist accepts the quotation that was sent (QuotationSent -> ClientAccepted), like the Flutter app does. */
 export async function acceptQuotation(request: APIRequestContext, token: string, tripId: string) {
   const workflow = await tripWorkflow(request, token, tripId);
   const quotationId = workflow.finalOutcome.proposal.quotationId as string;

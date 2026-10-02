@@ -18,8 +18,8 @@ describe('LandingPage', () => {
     expect(steps.map((s) => s.querySelector('h3')?.textContent)).toEqual([
       'Tell us your trip',
       'We plan it for you',
-      'Our team checks it',
-      'You confirm on your phone',
+      'Checked and sent to you',
+      'You accept, we confirm',
     ]);
     const audiences = within(screen.getByRole('region', { name: 'Who it’s for' })).getAllByRole('heading', {
       level: 3,

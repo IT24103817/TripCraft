@@ -14,11 +14,11 @@ namespace TripCraft.Tests.Workflows;
 public class ProposalEndpointTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {
     [Fact]
-    public async Task Golden_proposal_puts_the_trip_in_review_with_a_quotation_and_notifies_managers()
+    public async Task Golden_proposal_is_sent_to_the_client_with_a_quotation_and_the_tourist_is_notified()
     {
         var (trip, outcome) = await factory.RunToProposalAsync();
 
-        outcome.Status.Should().Be("PendingApproval");
+        outcome.Status.Should().Be("Approved"); // the agent workflow: quotation sent
         outcome.Validation.IsValid.Should().BeTrue();
         // Approval gate (PLAN.md section 5): a valid proposal holds nothing; holds come only with Confirm.
         factory.State<FakeResourcesState>().Holds.Should().NotContain(h => h.TripRequestId == trip.Id);
@@ -31,8 +31,8 @@ public class ProposalEndpointTests(TestWebApplicationFactory factory) : IClassFi
             await db.AgentWorkflows.SingleAsync(w => w.Id == outcome.WorkflowId),
             (await db.TripRequests.SingleAsync(t => t.Id == trip.Id)).Status,
             await db.AuditLogs.AnyAsync(a => a.EntityId == outcome.WorkflowId && a.Action == "AgentProposalReceived")));
-        tripStatus.Should().Be(TripRequestStatus.PendingReview);
-        (await factory.QueryDbAsync(db => db.Notifications.AnyAsync(n => n.Type == "ReviewNeeded" && n.TripRequestId == trip.Id)))
+        tripStatus.Should().Be(TripRequestStatus.QuotationSent);
+        (await factory.QueryDbAsync(db => db.Notifications.AnyAsync(n => n.Type == "QuotationSent" && n.TripRequestId == trip.Id)))
             .Should().BeTrue();
         workflow.ValidationResult.Should().Contain("\"isValid\":true");
         workflow.Plan.Should().Contain("Kandy");
@@ -41,19 +41,22 @@ public class ProposalEndpointTests(TestWebApplicationFactory factory) : IClassFi
     }
 
     [Fact]
-    public async Task Over_budget_proposal_is_in_review_with_a_warning_and_a_quotation()
+    public async Task Over_budget_proposal_is_sent_anyway_as_the_best_available_price()
     {
         var (trip, outcome) = await factory.RunToProposalAsync(budgetUsd: 400);
 
-        outcome.Status.Should().Be("RevisionRequested");
+        outcome.Status.Should().Be("Approved");
         outcome.Validation.Violations.Should().ContainSingle(v => v.Code == "OVER_BUDGET" && v.Severity == ViolationSeverity.Soft);
         outcome.QuotationId.Should().NotBeNull();
         (await factory.QueryDbAsync(db => db.TripRequests.SingleAsync(t => t.Id == trip.Id))).Status
-            .Should().Be(TripRequestStatus.PendingReview);
+            .Should().Be(TripRequestStatus.QuotationSent);
+        var quotation = factory.State<FakeQuotationsState>().Quotations.Single(q => q.Id == outcome.QuotationId);
+        quotation.Status.Should().Be("Approved");
+        quotation.Draft.OverBudgetUsd.Should().BeGreaterThan(0);
     }
 
     [Fact]
-    public async Task Hard_violation_fails_safely_without_a_quotation_and_frees_the_trip()
+    public async Task Hard_violation_fails_safely_without_a_quotation_and_the_trip_needs_the_operator()
     {
         var (trip, workflowId) = await factory.StartPlanningAsync();
         var a = await factory.SeededAttractionsAsync();
@@ -74,7 +77,7 @@ public class ProposalEndpointTests(TestWebApplicationFactory factory) : IClassFi
             (await db.TripRequests.SingleAsync(t => t.Id == trip.Id)).Status));
         workflow.ErrorSummary.Should().Contain("DAY_STOPS");
         workflow.FinishedAt.Should().NotBeNull();
-        tripStatus.Should().Be(TripRequestStatus.FailedSafely); // "Try again" plans it again
+        tripStatus.Should().Be(TripRequestStatus.NeedsOperator); // never sent to the client
     }
 
     [Fact]
@@ -95,9 +98,9 @@ public class ProposalEndpointTests(TestWebApplicationFactory factory) : IClassFi
     [Fact]
     public async Task Every_trip_status_change_from_a_proposal_is_audited()
     {
-        // Golden: Planning -> PendingReview.
+        // Golden: Planning -> QuotationSent (auto-sent).
         var (golden, _) = await factory.RunToProposalAsync();
-        // Agent failure: Planning -> FailedSafely (so the tourist can try again).
+        // Agent failure: Planning -> NeedsOperator (the operator retries, sends by hand or cancels).
         var (failedTrip, workflowId) = await factory.StartPlanningAsync();
         await factory.PostProposalAsync(workflowId, new AgentProposalRequest(null, [], null, null, [], "FailedSafely", 0,
             "resources: GET /api/internal/availability/guides returned 503"));
@@ -107,8 +110,8 @@ public class ProposalEndpointTests(TestWebApplicationFactory factory) : IClassFi
             .Select(a => new { a.EntityId, a.After })
             .ToListAsync());
 
-        changes.Should().Contain(c => c.EntityId == golden.Id && c.After!.Contains("PendingReview"));
-        changes.Should().Contain(c => c.EntityId == failedTrip.Id && c.After!.Contains("FailedSafely") && c.After.Contains("resources: GET"));
+        changes.Should().Contain(c => c.EntityId == golden.Id && c.After!.Contains("QuotationSent"));
+        changes.Should().Contain(c => c.EntityId == failedTrip.Id && c.After!.Contains("NeedsOperator") && c.After.Contains("resources: GET"));
     }
 
     [Fact]

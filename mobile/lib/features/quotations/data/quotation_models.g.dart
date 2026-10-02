@@ -20,6 +20,9 @@ _Quotation _$QuotationFromJson(Map<String, dynamic> json) => _Quotation(
   fxAsOf: json['fx_as_of'] as String,
   fxStale: json['fx_stale'] as bool? ?? false,
   totalUsd: (json['total_usd'] as num).toDouble(),
+  bestAvailablePrice: json['best_available_price'] as bool? ?? false,
+  overBudgetUsd: (json['over_budget_usd'] as num?)?.toDouble(),
+  budgetNote: json['budget_note'] as String?,
 );
 
 Map<String, dynamic> _$QuotationToJson(_Quotation instance) =>
@@ -33,6 +36,9 @@ Map<String, dynamic> _$QuotationToJson(_Quotation instance) =>
       'fx_as_of': instance.fxAsOf,
       'fx_stale': instance.fxStale,
       'total_usd': instance.totalUsd,
+      'best_available_price': instance.bestAvailablePrice,
+      'over_budget_usd': instance.overBudgetUsd,
+      'budget_note': instance.budgetNote,
     };
 
 _QuotationLine _$QuotationLineFromJson(Map<String, dynamic> json) =>

@@ -187,7 +187,7 @@ describe('Itinerary editor', () => {
   it.each([
     'Submitted',
     'Planning',
-    'PendingReview',
+    'NeedsOperator',
     'QuotationSent',
     'ClientAccepted',
     'InProgress',

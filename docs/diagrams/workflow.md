@@ -1,41 +1,44 @@
 # The assessed workflow (PLAN.md section 6, v1.1 lifecycle)
 
-The journey from the tourist's request to the finished tour. There are two human gates: the manager reviews the
-proposal, and the tourist accepts the price. Nothing is held until the manager confirms an accepted quotation.
+The journey from the tourist's request to the finished tour. Quotations go straight to the client: no operator sits
+between the agents and the tourist. **The human approval gate is Confirm.** An Operations Manager confirms a
+quotation the client accepted, and only then are guide, vehicle and rooms held. Confirm is a manager-only action in
+React.
 
 ## Trip statuses
 
 One C# class, `TripStatusMachine` (backend/src/TripCraft.Application/Trips/TripStatusMachine.cs), lists every
 allowed move. Every endpoint changes a status through it, and an illegal move returns 409. Each change is written to
-the trip history (audit_logs) with the actor and a reason.
+the trip history (audit_logs) with the actor and a reason. The automatic send is recorded with the actor `System`.
 
 ```mermaid
 stateDiagram-v2
     [*] --> Submitted
     Submitted --> Planning: start planning
-    Planning --> PendingReview: proposal valid (or only over budget)
-    Planning --> FailedSafely: agent error / Hard rule
-    FailedSafely --> Planning: Try again
-    PendingReview --> QuotationSent: manager Send to client
-    PendingReview --> RevisionRequested: manager Request revision (comment)
-    RevisionRequested --> PendingReview: re-planned, new version
-    RevisionRequested --> FailedSafely: re-plan failed
+    Planning --> QuotationSent: proposal passed validation (auto-send)
+    Planning --> NeedsOperator: agents failed safely / Hard rule
+    NeedsOperator --> Planning: manager Retry planning
+    NeedsOperator --> QuotationSent: manager Edit & send manually
     QuotationSent --> ClientAccepted: tourist Accept
-    QuotationSent --> PendingReview: tourist Decline (reason)
+    QuotationSent --> ClientDeclined: tourist Decline (reason)
+    ClientDeclined --> Planning: manager Replan with note
     ClientAccepted --> Confirmed: manager Confirm (holds, vouchers, email)
-    ClientAccepted --> PendingReview: manager reopens review
+    ClientAccepted --> QuotationSent: manager Edit & resend (new version)
     Confirmed --> InProgress: first check-in (voucher scan or GPS)
     InProgress --> Completed: last stop checked in
     Submitted --> Cancelled
-    FailedSafely --> Cancelled
-    PendingReview --> Cancelled: reject / cancel
-    RevisionRequested --> Cancelled
+    NeedsOperator --> Cancelled
     QuotationSent --> Cancelled
     ClientAccepted --> Cancelled
+    ClientDeclined --> Cancelled
     Confirmed --> Cancelled: holds released
     Completed --> [*]
     Cancelled --> [*]
 ```
+
+The tourist's timeline in the app shows the main path: Submitted, Planning, Quotation sent, Accepted, Confirmed,
+In progress, Completed. ClientDeclined, NeedsOperator and Cancelled are shown as side states with a "what's next"
+line.
 
 A tourist may cancel until `CANCELLATION_CUTOFF_DAYS` (default 3) days before the start. After that, the app says
 why cancellation is closed and offers the operator contact. A manager can cancel at any time.
@@ -63,24 +66,28 @@ sequenceDiagram
     end
     AG->>API: POST /api/internal/workflows/{id}/proposal
     API->>API: ProposalValidator (deterministic rules)
-    API->>DB: quotation v1 + snapshot, trip PendingReview, notify managers
-
-    Note over OM: Review page: Send · Request revision · Edit directly · Reject
-    alt Request revision (comment)
-        OM->>API: POST /api/quotations/{id}/request-revision
-        API->>AG: POST /replan (comment, violations)
-        AG->>API: proposal → quotation v2, trip PendingReview (v1 and v2 side by side)
-    else Edit directly
-        OM->>API: PUT …/proposal/days/{n}, PUT …/proposal/resources (from GET /api/availability)
-        OM->>API: POST /api/quotations/{id}/calculate (Re-price → new version)
+    alt valid, or only over budget after the lowest-cost re-plans
+        API->>DB: quotation v1 (sent, bestAvailablePrice if still over budget), trip QuotationSent (actor System)
+        API->>T: notification "Your quotation is ready" + email
+    else Hard rule or agent error
+        API->>DB: workflow FailedSafely, trip NeedsOperator, notify managers
+        Note over OM: Needs operator tile: Retry planning · Edit & send manually · Cancel
     end
-    OM->>API: POST /api/quotations/{id}/approve (Send to client)
-    API->>DB: quotation Approved, trip QuotationSent, notify tourist
     T->>API: GET /api/notifications/mine (polling) → local notification
     alt Accept
         T->>API: POST /api/quotations/{id}/accept → trip ClientAccepted, notify managers
     else Decline (reason)
-        T->>API: POST /api/quotations/{id}/decline → trip PendingReview, reason shown to the manager
+        T->>API: POST /api/quotations/{id}/decline → trip ClientDeclined, reason on the dashboard
+        OM->>API: POST /api/trip-requests/{id}/replan {note} → Planning
+        API->>AG: POST /replan (note + the client's reason)
+        AG->>API: proposal → quotation v2, auto-sent, trip QuotationSent
+    end
+    Note over OM: Accepted — confirm tile: Confirm · Edit & resend
+    opt Edit & resend
+        OM->>API: PUT …/proposal/days/{n}, PUT …/proposal/resources (from GET /api/availability)
+        OM->>API: POST /api/quotations/{id}/calculate (Re-price → new version, not sent)
+        OM->>API: POST /api/quotations/{id}/send → trip QuotationSent, tourist "Your quote was updated, please review"
+        T->>API: POST /api/quotations/{v2}/accept (Confirm stays disabled until the newest version is accepted)
     end
     OM->>API: POST /api/trip-requests/{id}/confirm
     rect rgba(120, 160, 255, 0.15)
@@ -94,7 +101,10 @@ sequenceDiagram
     API->>DB: check-in, trip InProgress … Completed after the last stop
 ```
 
-**Safe-failure path:** with budget USD 400, Validation finds `OVER_BUDGET`. That is a Soft rule, so the trip is in
-PendingReview with a warning, and "Send to client" stays disabled. The manager then requests a revision (the
-Planner re-plans with the budget hotel tier) or edits and re-prices. A Hard rule or an agent error ends the trip in
-`FailedSafely`, and the tourist can press "Try again".
+**Budget rule:** with budget USD 400, Validation finds `OVER_BUDGET` (a Soft rule). The Planner re-plans with the
+`lowest` cost strategy (budget rooms, the cheapest eligible guide and vehicle, fewer paid entries) up to
+`MAX_REPLANS`. If the total is still over the budget, the quotation is sent anyway with
+`bestAvailablePrice = true` and the sentence "Best price we can offer — USD X above your budget".
+
+**Safe-failure path:** a Hard rule or an agent error never sends a quote. The trip becomes `NeedsOperator`, the
+error summary is shown on the dashboard, and a manager chooses Retry planning, Edit & send manually, or Cancel.

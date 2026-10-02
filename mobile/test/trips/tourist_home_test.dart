@@ -134,7 +134,7 @@ void main() {
       return tester.widget<Text>(finder).data!;
     }
 
-    expect(await line('t-quote'), 'Waiting for your acceptance');
+    expect(await line('t-quote'), 'Your quote is ready — accept or decline');
     expect(await line('t-conf'), 'Guide: Nimal, starts 10 Oct');
     expect(await line('t-tour'), 'On tour — day 2 of 5');
     expect(await line('t-done'), 'Rate your guide');

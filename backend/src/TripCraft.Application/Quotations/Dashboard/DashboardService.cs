@@ -3,6 +3,7 @@ using TripCraft.Application.Common.Settings;
 using TripCraft.Application.Identity;
 using TripCraft.Application.Resources;
 using TripCraft.Application.Trips;
+using TripCraft.Application.Workflows;
 using TripCraft.Application.Workflows.Ports;
 
 namespace TripCraft.Application.Quotations.Dashboard;
@@ -10,35 +11,66 @@ namespace TripCraft.Application.Quotations.Dashboard;
 public interface IDashboardService
 {
     Task<DashboardActionsDto> GetActionsAsync(CancellationToken ct);
+    Task<IReadOnlyList<AttentionItemDto>> GetAttentionAsync(TripRequestStatus? status, CancellationToken ct);
     Task<IReadOnlyList<UpcomingTripDto>> GetUpcomingAsync(CancellationToken ct);
 }
 
-/// <summary>The manager's dashboard (v1.1): what needs action now, and the trips running today and tomorrow.</summary>
+/// <summary>
+/// The manager's dashboard (v1.1): trips waiting for the operator (accepted → Confirm, declined → decide, needs
+/// operator), and the trips running today and tomorrow.
+/// </summary>
 public class DashboardService(
     ITripRequestRepository trips,
     IQuotationRepository quotations,
     IResourceRepository resources,
     IUserRepository users,
+    IAgentWorkflowRepository workflows,
     TripSettings settings) : IDashboardService
 {
     public const int CancellationWindowDays = 7;
 
     public async Task<DashboardActionsDto> GetActionsAsync(CancellationToken ct)
     {
-        // Trips in review, split by the newest quotation: still Pending (a new proposal) or Declined by the client.
-        var inReview = await trips.Query().Where(t => t.Status == TripRequestStatus.PendingReview).Select(t => t.Id).ToListAsync(ct);
-        var newestStatus = await quotations.Query().Where(q => inReview.Contains(q.TripRequestId))
-            .GroupBy(q => q.TripRequestId)
-            .Select(g => g.OrderByDescending(q => q.Version).Select(q => q.Status).First())
-            .ToListAsync(ct);
-
         var since = DateTime.UtcNow.AddDays(-CancellationWindowDays);
         return new DashboardActionsDto(
-            ProposalsToReview: newestStatus.Count(s => s == QuotationStatus.Pending),
-            ClientAcceptedToConfirm: await trips.Query().CountAsync(t => t.Status == TripRequestStatus.ClientAccepted, ct),
+            AcceptedToConfirm: await trips.Query().CountAsync(t => t.Status == TripRequestStatus.ClientAccepted, ct),
+            DeclinedNeedsDecision: await trips.Query().CountAsync(t => t.Status == TripRequestStatus.ClientDeclined, ct),
+            NeedsOperator: await trips.Query().CountAsync(t => t.Status == TripRequestStatus.NeedsOperator, ct),
             GuideChangeRequests: await resources.GuideChangeRequests().CountAsync(r => r.Status == GuideChangeRequestStatus.Open, ct),
-            RecentCancellations: await trips.Query().CountAsync(t => t.Status == TripRequestStatus.Cancelled && t.UpdatedAt >= since, ct),
-            DeclinedQuotations: newestStatus.Count(s => s == QuotationStatus.Declined));
+            RecentCancellations: await trips.Query().CountAsync(t => t.Status == TripRequestStatus.Cancelled && t.UpdatedAt >= since, ct));
+    }
+
+    public async Task<IReadOnlyList<AttentionItemDto>> GetAttentionAsync(TripRequestStatus? status, CancellationToken ct)
+    {
+        TripRequestStatus[] wanted = status is { } one
+            ? [one]
+            : [TripRequestStatus.ClientAccepted, TripRequestStatus.ClientDeclined, TripRequestStatus.NeedsOperator];
+        var waiting = await trips.Query().Where(t => wanted.Contains(t.Status)).OrderBy(t => t.UpdatedAt).ToListAsync(ct);
+        var ids = waiting.Select(t => t.Id).ToList();
+
+        var newest = (await quotations.Query().Where(q => ids.Contains(q.TripRequestId)).ToListAsync(ct))
+            .GroupBy(q => q.TripRequestId).ToDictionary(g => g.Key, g => g.OrderByDescending(q => q.Version).First());
+        var newestIds = newest.Values.Select(q => q.Id).ToList();
+        var declineReasons = (await quotations.Decisions()
+                .Where(d => newestIds.Contains(d.QuotationId) && d.Decision == QuotationDecision.Declined).ToListAsync(ct))
+            .GroupBy(d => d.QuotationId).ToDictionary(g => g.Key, g => g.OrderByDescending(d => d.DecidedAt).First().Comment);
+        var errors = (await workflows.Query().Where(w => ids.Contains(w.TripRequestId)).ToListAsync(ct))
+            .GroupBy(w => w.TripRequestId).ToDictionary(g => g.Key, g => g.OrderByDescending(w => w.StartedAt).First().ErrorSummary);
+        var names = (await users.ListAsync(ct)).ToDictionary(u => u.Id, u => u.FullName);
+
+        return waiting.Select(t =>
+        {
+            var quotation = newest.GetValueOrDefault(t.Id);
+            var detail = t.Status switch
+            {
+                TripRequestStatus.ClientDeclined => declineReasons.GetValueOrDefault(quotation?.Id ?? Guid.Empty) ?? "Declined without a reason.",
+                TripRequestStatus.NeedsOperator => errors.GetValueOrDefault(t.Id) ?? "Planning stopped; see the agent run.",
+                _ => quotation is null ? "Accepted" : $"Version {quotation.Version} accepted"
+            };
+            return new AttentionItemDto(t.Id, t.Objective, t.Status.ToString(), t.StartDate, t.EndDate, t.Pax,
+                t.Tourist is { } tourist ? names.GetValueOrDefault(tourist.UserId, "Tourist") : "Tourist", detail, t.UpdatedAt,
+                quotation?.TotalUsd);
+        }).ToList();
     }
 
     public async Task<IReadOnlyList<UpcomingTripDto>> GetUpcomingAsync(CancellationToken ct)

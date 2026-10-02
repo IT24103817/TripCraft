@@ -18,7 +18,7 @@ public class RealResourcesPostgresFactory(string connectionString) : PostgresWeb
 }
 
 /// <summary>
-/// Spec checklist "conflicting hold on approve → 409 and no partial rows", with B's real hold service:
+/// Spec checklist "conflicting hold on approve → 409 and no partial rows" (v1.1: on Confirm), with B's real hold service:
 /// two trips for the same dates were both accepted by the client; the first Confirm holds the guide,
 /// the second is refused and leaves nothing behind.
 /// </summary>
@@ -31,8 +31,8 @@ public class ApprovalWithRealResourcesPostgresTests(PostgresFixture postgres)
         await using var factory = new RealResourcesPostgresFactory(await postgres.CreateMigratedDatabaseAsync());
         var (tripA, outcomeA) = await factory.RunToClientAcceptedAsync();
         var (tripB, outcomeB) = await factory.RunToClientAcceptedAsync();
-        outcomeA.Status.Should().Be("PendingApproval");
-        outcomeB.Status.Should().Be("PendingApproval");
+        outcomeA.Status.Should().Be("Approved"); // both sent to the client automatically
+        outcomeB.Status.Should().Be("Approved");
         var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
 
         (await manager.PostAsync($"/api/trip-requests/{tripA.Id}/confirm", null)).StatusCode.Should().Be(HttpStatusCode.OK);
@@ -57,8 +57,8 @@ public class ApprovalWithRealResourcesPostgresTests(PostgresFixture postgres)
             (await db.Quotations.SingleAsync(q => q.Id == outcomeB.QuotationId)).Status,
             await db.ApprovalDecisions.CountAsync(d => d.QuotationId == outcomeB.QuotationId)));
         statusA.Should().Be(Application.Quotations.QuotationStatus.Approved);
-        decisionsA.Should().Be(3);
+        decisionsA.Should().Be(2); // Accepted, Confirmed (the send was automatic)
         quotationB.Should().Be(Application.Quotations.QuotationStatus.Approved);
-        decisionsB.Should().Be(2);
+        decisionsB.Should().Be(1); // Accepted
     }
 }

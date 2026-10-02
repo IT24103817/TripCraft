@@ -4,9 +4,9 @@ import { StatusBadge } from '@/shared/components';
 
 describe('StatusBadge', () => {
   it('shows the readable status with a decorative dot', () => {
-    const { container } = render(<StatusBadge status="PendingReview" />);
+    const { container } = render(<StatusBadge status="NeedsOperator" />);
 
-    expect(screen.getByText('Pending review')).toBeInTheDocument();
+    expect(screen.getByText('Needs operator')).toBeInTheDocument();
     expect(container.querySelector('[aria-hidden="true"]')).toHaveClass('bg-current');
   });
 

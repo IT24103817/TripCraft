@@ -11,12 +11,12 @@ const STEPS = [
     text: 'Our planning assistant builds a day-by-day itinerary with a guide, a vehicle and hotels, and prices it in LKR and US dollars.',
   },
   {
-    title: 'Our team checks it',
-    text: 'A TripCraft operations manager reviews every plan and price, then sends you the quotation. Nothing is booked yet.',
+    title: 'Checked and sent to you',
+    text: 'Every plan is checked against our rules (opening hours, driving time, free rooms and your budget), then the quotation goes straight to your app. Nothing is booked yet.',
   },
   {
-    title: 'You confirm on your phone',
-    text: 'You get the quotation in the app and accept or decline it. Once you accept, we book the guide, vehicle and hotels and send your vouchers.',
+    title: 'You accept, we confirm',
+    text: 'Accept or decline the quotation on your phone. Once you accept, a TripCraft operations manager confirms it, books the guide, vehicle and hotels and sends your vouchers.',
   },
 ];
 
@@ -31,7 +31,7 @@ const AUDIENCES = [
   },
   {
     title: 'Operations',
-    text: 'Manage guides, vehicles and hotels, review AI-drafted plans with their checks and timings, send quotations, confirm bookings and follow the reports.',
+    text: 'Manage guides, vehicles and hotels, see why each AI-drafted plan was chosen, confirm accepted quotations, step in when the agents need help and follow the reports.',
   },
 ];
 

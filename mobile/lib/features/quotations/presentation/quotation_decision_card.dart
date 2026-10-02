@@ -9,9 +9,11 @@ import '../../../shared/widgets/section_card.dart';
 import '../application/quotation_providers.dart';
 import '../data/quotation_models.dart';
 import 'quotation_actions.dart';
+import 'quote_notes.dart';
 
-/// On the trip's Overview at QuotationSent: the total, Accept, Decline (with a reason) and a link to the
-/// full quotation. [onDecided] reloads the trip once the tourist has decided.
+/// On the trip's Overview at QuotationSent: the total (with the budget note when it is the best price we can
+/// offer), Accept, Decline (with a reason) and a link to the full quotation. After the operator resent an edited
+/// quote it says "Updated quote (version N)". [onDecided] reloads the trip once the tourist has decided.
 class QuotationDecisionCard extends ConsumerWidget {
   const QuotationDecisionCard({
     super.key,
@@ -42,6 +44,7 @@ class QuotationDecisionCard extends ConsumerWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              UpdatedQuoteLabel(version: v.version),
               Row(
                 children: [
                   Expanded(
@@ -57,6 +60,10 @@ class QuotationDecisionCard extends ConsumerWidget {
                   ),
                 ],
               ),
+              if (v.quotation!.bestAvailablePrice) ...[
+                const SizedBox(height: 8),
+                BestPriceNote(quotation: v.quotation!),
+              ],
               const SizedBox(height: 8),
               const Text(
                 'Accept to go ahead, or decline and tell the operator what to change.',

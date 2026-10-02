@@ -41,18 +41,23 @@ resource-based rules).
 |------|--------|--------|-----------|
 | Tourist | Flutter | Register, submit trip requests with a passport photo, start planning, see own trips, itinerary, workflow status and quotation, get status notifications | See other tourists' trips, resources or cost breakdowns; approve anything |
 | Guide | Flutter | View schedule, GPS check-in (500 m rule), scan hotel vouchers | Create trips, edit resources, see pricing |
-| Operations Manager | React | Trip requests, attractions CRUD, approvals (approve / reject / request revision), workflow monitor, reports | Manage users and roles |
-| Admin | React | Manage users (create, deactivate), read workflows | Approve quotations (separation of duties) |
+| Operations Manager | React | Trip requests, attractions CRUD, **Confirm** accepted quotations (the human approval gate), edit & resend, replan declined quotes, workflow monitor, reports | Manage users and roles |
+| Admin | React | Manage users (create, deactivate), read workflows | Confirm trips (separation of duties) |
 
-Examples enforced in code: a Tourist calling `POST /api/quotations/{id}/approve` gets **403**; a Tourist reading
+Examples enforced in code: a Tourist calling `POST /api/trip-requests/{id}/confirm` gets **403**; a Tourist reading
 another tourist's trip gets **403** (checked in `TripRequestService.EnsureCanAccess`); an Admin opening the
 approval inbox gets **403**.
 
 ## What's new in v1.1
 
-- **One trip lifecycle** in `TripStatusMachine`: Submitted → Planning → PendingReview → QuotationSent → ClientAccepted
-  → Confirmed → InProgress → Completed, plus Cancelled, RevisionRequested and FailedSafely. An illegal move returns
-  409, and every change goes into the trip history with its actor and reason. See
+- **One trip lifecycle** in `TripStatusMachine`: Submitted → Planning → QuotationSent → ClientAccepted → Confirmed →
+  InProgress → Completed, plus ClientDeclined, NeedsOperator and Cancelled. An illegal move returns 409, and every
+  change goes into the trip history with its actor and reason.
+- **Quotations go straight to the client.** A proposal that passes the deterministic validation becomes a sent
+  quotation automatically (push + email to the tourist). If it is still over budget after the lowest-cost re-plans,
+  it is sent with "Best price we can offer — USD X above your budget". A Hard rule never sends; the trip goes to
+  NeedsOperator. **The human approval gate is Confirm**: a manager confirms the accepted quotation, and only then are
+  guide, vehicle and rooms held. See
   [docs/diagrams/workflow.md](docs/diagrams/workflow.md) and [docs/API-V11.md](docs/API-V11.md).
 - **Tourist app:**
   - a home screen with five mood packages (`trip_templates`, priced from today's rate cards), with "Book as is" or
@@ -160,13 +165,13 @@ The end-to-end sequence of PLAN.md section 6, including the approval pause:
 ## Agentic AI architecture
 
 Four agents in a fixed LangGraph graph, with a budget re-plan loop (at most 3). The LLM only proposes; every rule
-that matters is enforced in code and again by the C# `ProposalValidator`; a human approves before anything is
-held. Full diagram: [docs/diagrams/agents.md](docs/diagrams/agents.md).
+that matters is enforced in code and again by the C# `ProposalValidator`; a manager confirms (the human approval
+gate) before anything is held. Full diagram: [docs/diagrams/agents.md](docs/diagrams/agents.md).
 
 ```mermaid
 flowchart LR
     P["Planner"] --> I["Itinerary Analysis"] --> R["Resource & Action"] --> V["Validation & Safety"]
-    V -- "only over budget,<br/>re-plans < 3" --> P
+    V -- "only over budget,<br/>re-plans < 3 (lowest cost)" --> P
     V -- "valid" --> PA(["PendingApproval"])
     V -- "other violations" --> RR(["RevisionRequested"])
     P & I & R & V -. "error / timeout" .-> F(["FailedSafely"])
@@ -254,7 +259,7 @@ Full table: [docs/diagrams/er.md → Seed data](docs/diagrams/er.md#seed-data).
 ### Startup order
 
 **PostgreSQL → Ollama → agent service → API → web → mobile.** The API only calls the agents when planning
-starts; a request made while the agents are down ends `FailedSafely` and can be retried.
+starts; a request made while the agents are down fails safely (trip NeedsOperator) and a manager can retry it.
 
 ### Environment variables (names only — never commit values)
 
@@ -374,8 +379,8 @@ Swagger UI: `http://localhost:5080/swagger` locally, `https://<api>/swagger` whe
 | | `GET /api/admin/audit-logs?entity=&action=&from=&to=&search=&sort=&page=&pageSize=` | Admin | who changed what, before/after |
 | Trips (A) | `POST /api/trip-requests` | Tourist | 201 |
 | | `GET /api/trip-requests?status=&from=&to=&search=&sort=&page=&pageSize=` | Tourist (own), Manager | paged `{items, page, pageSize, total}` |
-| | `GET /api/trip-requests/{id}`, `PUT /api/trip-requests/{id}` | Tourist (owner), Manager | PUT only while Submitted / RevisionRequested (409) |
-| | `POST /api/trip-requests/{id}/start-planning` | Tourist (owner) | 202; 409 if a workflow is running |
+| | `GET /api/trip-requests/{id}`, `PUT /api/trip-requests/{id}` | Tourist (owner), Manager | PUT only while Submitted / NeedsOperator (409) |
+| | `POST /api/trip-requests/{id}/start-planning` | Tourist (owner, while Submitted), Manager (Retry planning at NeedsOperator) | 202; 409 if a workflow is running |
 | | `POST /api/trip-requests/{id}/cancel` | Tourist (owner), Manager | Submitted → Cancelled; 409 otherwise |
 | | `GET /api/trip-requests/{id}/history` | Tourist (owner), Manager | audited events of the trip and its workflows |
 | | `POST /api/trip-requests/{id}/passport-photo` | Tourist (owner) | multipart `file`, JPEG/PNG ≤ 5 MB |
@@ -393,11 +398,13 @@ Swagger UI: `http://localhost:5080/swagger` locally, `https://<api>/swagger` whe
 | | `GET /api/workflows/{id}`, `GET /api/workflows/{id}/steps` | Tourist (owner), Manager, Admin | status, plan, validation, outcome, timings; steps in order |
 | Quotations (C) | `GET /api/quotations?status=&from=&to=&minTotalUsd=&search=&sort=&page=&pageSize=` | Manager | every version; search the trip objective |
 | | `GET /api/quotations/{id}` | Manager, Tourist (owner) | lines, LKR/USD, FX, decisions |
-| | `POST /api/quotations/{id}/calculate` | Manager | business op: re-price a Pending quotation with today's rates and FX |
-| | `POST /api/quotations/{id}/accept` | Tourist (owner) | accept an Approved price once |
+| | `POST /api/quotations/{id}/calculate`, `POST /api/trip-requests/{id}/proposal/reprice` | Manager | business op: re-price after an edit (ClientAccepted / NeedsOperator) → a new version, not sent yet |
+| | `POST /api/quotations/{id}/accept`, `POST /api/quotations/{id}/decline` `{reason}` | Tourist (owner) | the newest sent version only; → ClientAccepted / ClientDeclined |
 | Reports (C) | `GET /api/reports/revenue`, `/utilisation`, `/trips-by-status` `?from=&to=` | Manager | at most one year |
-| Approval (C) | `POST /api/quotations/{id}/approve` | Manager | one transaction; 409 + rollback on any failure |
-| | `POST /api/quotations/{id}/reject`, `POST /api/quotations/{id}/request-revision` | Manager | revision needs a comment and calls the agents' `/replan` |
+| Confirm (C) — the approval gate | `POST /api/trip-requests/{id}/confirm` | Manager | ClientAccepted only, newest version accepted, not edited since; one transaction; 409 + rollback on any failure |
+| | `POST /api/quotations/{id}/send` `{comment?}` | Manager | Edit & resend / Edit & send manually → QuotationSent; refused for a Hard rule |
+| | `POST /api/trip-requests/{id}/replan` `{note}` | Manager | ClientDeclined → Planning; note + client's reason go to the agents' `/replan`; the new version is auto-sent |
+| | `GET /api/dashboard/actions`, `GET /api/dashboard/attention?status=` | Manager | Accepted — confirm, Declined — needs a decision, Needs operator |
 | Internal (agents only) | `GET /api/internal/attractions`, `distance`, `weather`, `availability/guides`, `availability/vehicles`, `availability/rooms`, `rates` (alias `rate-card`), `fx-rate` | `X-Internal-Key` | no JWT |
 | | `POST /api/internal/workflows/{id}/steps`, `POST /api/internal/workflows/{id}/proposal` | `X-Internal-Key` | |
 
@@ -408,11 +415,11 @@ Agent service (internal, `http://127.0.0.1:8001`): `POST /run-workflow`, `POST /
 
 | Layer | Command | Count (latest run) |
 |-------|---------|--------------------|
-| Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 464 passed |
-| Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 62 passed |
-| React | `cd web && npm run lint && npm test && npm run build` | 159 passed (30 files) |
-| Flutter | `cd mobile && flutter analyze && flutter test` | 162 passed |
-| End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 6 passed (4 roles, over-budget → review with warning, demo → reviewed → sent → accepted → Confirmed) |
+| Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 467 passed |
+| Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 64 passed |
+| React | `cd web && npm run lint && npm test && npm run build` | 203 passed (36 files) |
+| Flutter | `cd mobile && flutter analyze && flutter test` | 186 passed |
+| End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 6 passed (4 roles, over-budget → sent at the best price, demo → auto-sent → accepted → Confirmed) |
 | Performance | `k6 run tests/perf/list-load.js` (and `auth-load.js`, `agent-latency.js`) from the repo root | `list-load.js`: 610,814 requests, p95 9.56 ms, 0 % errors; others in [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md) |
 
 Latest run: 2 Oct 2026 on `feat/v1.1-web` (v1.1), with real Ollama agents for the e2e; evidence in

@@ -16,10 +16,10 @@ namespace TripCraft.Application.Trips.Services;
 /// <summary>
 /// Component A business operation. Steps:
 /// 1. load the trip and check the caller may use it;
-/// 2. check the status allows planning (TripStatusMachine: Submitted or FailedSafely → Planning; 409 otherwise);
+/// 2. check the status allows planning (TripStatusMachine: Submitted or NeedsOperator → Planning; 409 otherwise);
 /// 3. run the pure passport/date rules and build the day-by-day skeleton (400 on failure);
 /// 4. save the agent_workflows row + trip status + audit rows in one SaveChanges (one transaction);
-/// 5. call the agent service. If it fails, the trip becomes FailedSafely and "Try again" starts planning again.
+/// 5. call the agent service. If it fails, the trip becomes NeedsOperator and the operator retries planning.
 /// </summary>
 public class TripPlanningService(
     ITripRequestRepository trips,
@@ -40,6 +40,9 @@ public class TripPlanningService(
 
         // 2. Status must allow planning.
         TripStatusMachine.EnsureCanMove(trip.Status, TripRequestStatus.Planning);
+        // After a safe failure the operator decides (retry, send by hand or cancel); the tourist only starts planning.
+        if (user.IsTourist && trip.Status != TripRequestStatus.Submitted)
+            throw new ConflictException("Our team is preparing your quote; they will start planning again if needed.");
         if (await workflows.HasActiveForTripAsync(trip.Id, ct))
             throw new ConflictException("An agent workflow is already running for this trip request.");
 
@@ -97,14 +100,14 @@ public class TripPlanningService(
 
     /// <summary>
     /// PLAN.md section 5 safe failure: the agent client already set the workflow to FailedSafely with a
-    /// summary; the trip becomes FailedSafely too (it can be edited and planned again), and both are audited.
+    /// summary; the trip becomes NeedsOperator (the operator retries, sends by hand or cancels); both are audited.
     /// </summary>
     private async Task RecordSafeFailureAsync(CurrentUser user, TripRequest trip, AgentWorkflow workflow, CancellationToken ct)
     {
         audit.Record(user.Id, "AgentWorkflowFailedSafely", nameof(AgentWorkflow), workflow.Id,
             new { Status = AgentWorkflowStatus.Planning.ToString() },
             new { Status = workflow.Status.ToString(), workflow.ErrorSummary });
-        TripStatusMachine.Move(trip, TripRequestStatus.FailedSafely, user.Id,
+        TripStatusMachine.Move(trip, TripRequestStatus.NeedsOperator, user.Id,
             workflow.ErrorSummary ?? "The agent service could not be reached.", audit);
         await unitOfWork.SaveChangesAsync(ct);
     }

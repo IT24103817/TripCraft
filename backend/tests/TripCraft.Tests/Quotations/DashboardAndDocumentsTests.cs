@@ -19,21 +19,25 @@ public class DashboardAndDocumentsTests
     {
         await using var factory = new RealComponentsFactory();
         var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
-        var (_, first) = await factory.RunToProposalAsync();                 // a proposal to review
+        var (sent, _) = await factory.RunToProposalAsync();                  // auto-sent: nothing for the operator
         var (accepted, _) = await factory.RunToClientAcceptedAsync();        // a trip to confirm
         var (declinedTrip, declined) = await factory.RunToProposalAsync();   // sent, then declined
-        await factory.SendToClientAsync(declined.QuotationId!.Value);
         var tourist = await factory.CreateClientAsAsync(WorkflowFlow.Tourist);
         await tourist.PostAsJsonAsync($"/api/quotations/{declined.QuotationId}/decline", new DeclineQuotationRequest("Too long"));
 
         var actions = await manager.GetFromJsonAsync<DashboardActionsDto>("/api/dashboard/actions", TestJson.Options);
+        var attention = await manager.GetFromJsonAsync<List<AttentionItemDto>>("/api/dashboard/attention", TestJson.Options);
 
-        actions!.ProposalsToReview.Should().Be(1);
-        actions.ClientAcceptedToConfirm.Should().Be(1);
-        actions.DeclinedQuotations.Should().Be(1);
+        actions!.AcceptedToConfirm.Should().Be(1);
+        actions.DeclinedNeedsDecision.Should().Be(1);
+        actions.NeedsOperator.Should().Be(0);
         actions.GuideChangeRequests.Should().Be(0);
-        first.QuotationId.Should().NotBeNull();
-        accepted.Id.Should().NotBe(declinedTrip.Id);
+        attention!.Select(a => (a.TripRequestId, a.Status, a.Detail)).Should().BeEquivalentTo(new[]
+        {
+            (accepted.Id, "ClientAccepted", "Version 1 accepted"),
+            (declinedTrip.Id, "ClientDeclined", "Too long")
+        });
+        attention.Should().NotContain(a => a.TripRequestId == sent.Id);
     }
 
     [Fact]
@@ -90,7 +94,6 @@ public class DashboardAndDocumentsTests
         var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
 
         var tooEarly = await manager.PostAsJsonAsync($"/api/quotations/{outcome.QuotationId}/payment", new SetPaymentRequest(true));
-        await factory.SendToClientAsync(outcome.QuotationId!.Value);
         var tourist = await factory.CreateClientAsAsync(WorkflowFlow.Tourist);
         await tourist.PostAsync($"/api/quotations/{outcome.QuotationId}/accept", null);
         var paid = await manager.PostAsJsonAsync($"/api/quotations/{outcome.QuotationId}/payment", new SetPaymentRequest(true));
@@ -110,12 +113,13 @@ public class DashboardAndDocumentsTests
     public async Task The_itinerary_pdf_is_available_once_a_quotation_was_sent_to_its_owner_and_managers()
     {
         await using var factory = new RealComponentsFactory();
-        var (trip, outcome) = await factory.RunToProposalAsync();
+        var (trip, workflowId) = await factory.StartPlanningAsync();
         var owner = await factory.CreateClientAsAsync(WorkflowFlow.Tourist);
         var other = await factory.CreateClientAsAsync(WorkflowFlow.OtherTourist);
 
-        var tooEarly = await owner.GetAsync($"/api/trips/{trip.Id}/itinerary.pdf");
-        await factory.SendToClientAsync(outcome.QuotationId!.Value);
+        var tooEarly = await owner.GetAsync($"/api/trips/{trip.Id}/itinerary.pdf"); // still planning
+        (await factory.PostProposalAsync(workflowId, TestProposals.Golden(trip.StartDate, await factory.SeededAttractionsAsync())))
+            .EnsureSuccessStatusCode(); // auto-sent
         var pdf = await owner.GetAsync($"/api/trips/{trip.Id}/itinerary.pdf");
 
         tooEarly.StatusCode.Should().Be(HttpStatusCode.Conflict);

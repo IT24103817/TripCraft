@@ -5,10 +5,10 @@ import '../../../shared/widgets/section_card.dart';
 import '../../../shared/widgets/status_timeline.dart';
 
 /// The main path of a trip in the v1.1 lifecycle (docs/API-V11.md), as the tourist sees it.
+/// The quotation goes straight to the tourist: there is no operator review step.
 const tripTimelineSteps = [
   'Submitted',
   'Planning',
-  'PendingReview',
   'QuotationSent',
   'ClientAccepted',
   'Confirmed',
@@ -16,26 +16,28 @@ const tripTimelineSteps = [
   'Completed',
 ];
 
+/// The side states: off the main path, waiting for the operator.
+const tripSideStates = {'ClientDeclined', 'NeedsOperator'};
+
 /// Where a trip status sits on the timeline. The side states stay on the step they came from:
-/// RevisionRequested is still with the operator (Pending review), FailedSafely is still Planning.
+/// ClientDeclined on Quotation sent (the tourist declined it), NeedsOperator on Planning (the agents could not finish).
 String timelineStatus(String tripStatus) => switch (tripStatus) {
-  'RevisionRequested' => 'PendingReview',
-  'FailedSafely' => 'Planning',
+  'ClientDeclined' => 'QuotationSent',
+  'NeedsOperator' => 'Planning',
   _ => tripStatus,
 };
 
 /// One short sentence per status: what happens next.
 String whatHappensNext(String tripStatus) => switch (tripStatus) {
   'Submitted' => 'We have your request. Our AI agents start planning it next.',
-  'Planning' => 'Our AI agents are drafting your itinerary and price. This takes a minute or two.',
-  'FailedSafely' =>
-    'Planning could not finish. Tap Try again to plan your trip again.',
-  'PendingReview' => 'An operator is checking your itinerary and price. We will notify you when your quotation is ready.',
-  'RevisionRequested' =>
-    'The operator asked for changes; a new version is coming.',
+  'Planning' => 'Our AI agents are drafting your itinerary and price. Your quote is sent to you as soon as it is ready.',
   'QuotationSent' =>
-    'Your quotation is ready. Review it, then accept or decline it.',
-  'ClientAccepted' => 'You accepted the quotation. The operator is now booking your guide, vehicle and hotels.',
+    'Your quote is ready. Review it, then accept or decline it.',
+  'ClientAccepted' => 'You accepted the quote. The operator is now confirming your guide, vehicle and hotels.',
+  'ClientDeclined' =>
+    'You declined this quote — the operator will replan or contact you.',
+  'NeedsOperator' =>
+    'Our team is looking at your trip and will send you a quote.',
   'Confirmed' => 'Your trip is booked. Show your trip voucher to your guide on the first day.',
   'InProgress' => 'Enjoy your trip! Your guide checks you in at each stop.',
   'Completed' =>
@@ -52,7 +54,7 @@ class TripProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sideState = status == 'RevisionRequested' || status == 'FailedSafely';
+    final sideState = tripSideStates.contains(status);
     return SectionCard(
       title: 'Progress',
       child: Column(

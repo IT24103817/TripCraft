@@ -17,8 +17,8 @@ public class WorkflowsEndpointsTests(TestWebApplicationFactory factory) : IClass
 
         var workflow = await tourist.GetFromJsonAsync<WorkflowDto>($"/api/workflows/{outcome.WorkflowId}", TestJson.Options);
 
-        workflow!.Status.Should().Be("PendingApproval");
-        workflow.CurrentStep.Should().Be("awaiting-manager");
+        workflow!.Status.Should().Be("Approved"); // quotation sent to the client
+        workflow.CurrentStep.Should().Be("awaiting-client"); // auto-sent
         workflow.ValidationResult!.Value.GetProperty("isValid").GetBoolean().Should().BeTrue();
         workflow.Plan.GetProperty("constraints").GetProperty("cities")[0].GetString().Should().Be("Kandy");
         workflow.ElapsedMs.Should().BeGreaterThanOrEqualTo(0);
@@ -74,9 +74,9 @@ public class WorkflowsEndpointsTests(TestWebApplicationFactory factory) : IClass
         var tourist = await factory.CreateClientAsAsync(WorkflowFlow.Tourist);
 
         var page = await admin.GetFromJsonAsync<PagedResult<WorkflowSummaryDto>>(
-            "/api/workflows?status=PendingApproval&page=1&pageSize=5", TestJson.Options);
+            "/api/workflows?status=Approved&page=1&pageSize=5", TestJson.Options);
 
-        page!.Items.Should().NotBeEmpty().And.OnlyContain(w => w.Status == "PendingApproval");
+        page!.Items.Should().NotBeEmpty().And.OnlyContain(w => w.Status == "Approved");
         (await tourist.GetAsync("/api/workflows")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
         (await admin.GetAsync("/api/workflows?pageSize=500")).StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

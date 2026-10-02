@@ -4,7 +4,8 @@ using TripCraft.Application.Common.Exceptions;
 namespace TripCraft.Application.Trips;
 
 /// <summary>
-/// The only place that knows which trip status may follow which (v1.1 lifecycle). Every service changes a trip's
+/// The only place that knows which trip status may follow which (v1.1 lifecycle: quotations go straight to the
+/// client; the human approval gate is Confirm). Every service changes a trip's
 /// status through <see cref="Move"/>: an illegal move is a 409, a legal one is written to the trip history
 /// (audit_logs, action TripRequestStatusChanged) with the actor and the reason.
 /// </summary>
@@ -13,20 +14,20 @@ public static class TripStatusMachine
     private static readonly Dictionary<TripRequestStatus, TripRequestStatus[]> Allowed = new()
     {
         [TripRequestStatus.Submitted] = [TripRequestStatus.Planning, TripRequestStatus.Cancelled],
-        // Planning ends with a proposal for review, or a safe failure. The tourist cannot cancel while agents run.
-        [TripRequestStatus.Planning] = [TripRequestStatus.PendingReview, TripRequestStatus.FailedSafely],
-        [TripRequestStatus.FailedSafely] = [TripRequestStatus.Planning, TripRequestStatus.Cancelled],
-        // The manager sends the quotation, asks the agents to re-plan, or the trip is rejected/cancelled.
-        [TripRequestStatus.PendingReview] =
-            [TripRequestStatus.QuotationSent, TripRequestStatus.RevisionRequested, TripRequestStatus.Cancelled],
-        [TripRequestStatus.RevisionRequested] =
-            [TripRequestStatus.PendingReview, TripRequestStatus.FailedSafely, TripRequestStatus.Cancelled],
-        // The tourist accepts or declines (declined goes back to the manager's review).
+        // Planning ends with an auto-sent quotation (validation passed, or only over budget after the re-plans),
+        // or NeedsOperator (agents failed safely or a Hard rule failed). The tourist cannot cancel while agents run.
+        [TripRequestStatus.Planning] = [TripRequestStatus.QuotationSent, TripRequestStatus.NeedsOperator],
+        // The operator retries planning, edits and sends a quotation by hand, or cancels.
+        [TripRequestStatus.NeedsOperator] =
+            [TripRequestStatus.Planning, TripRequestStatus.QuotationSent, TripRequestStatus.Cancelled],
+        // The tourist accepts or declines (with a reason).
         [TripRequestStatus.QuotationSent] =
-            [TripRequestStatus.ClientAccepted, TripRequestStatus.PendingReview, TripRequestStatus.Cancelled],
-        // The manager confirms (holds, vouchers), or reopens the review when a resource is no longer free.
+            [TripRequestStatus.ClientAccepted, TripRequestStatus.ClientDeclined, TripRequestStatus.Cancelled],
+        // The manager confirms (the approval gate: holds, vouchers), or edits and resends (the tourist accepts again).
         [TripRequestStatus.ClientAccepted] =
-            [TripRequestStatus.Confirmed, TripRequestStatus.PendingReview, TripRequestStatus.Cancelled],
+            [TripRequestStatus.Confirmed, TripRequestStatus.QuotationSent, TripRequestStatus.Cancelled],
+        // The manager replans with a note (the agents get the note and the client's reason), or cancels.
+        [TripRequestStatus.ClientDeclined] = [TripRequestStatus.Planning, TripRequestStatus.Cancelled],
         [TripRequestStatus.Confirmed] = [TripRequestStatus.InProgress, TripRequestStatus.Cancelled],
         [TripRequestStatus.InProgress] = [TripRequestStatus.Completed],
         [TripRequestStatus.Completed] = [],

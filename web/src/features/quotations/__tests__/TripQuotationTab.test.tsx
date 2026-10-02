@@ -85,6 +85,29 @@ describe('Trip detail: Quotation tab', () => {
     expect(screen.getByText('Only the newest version can be marked paid.')).toBeInTheDocument();
   });
 
+  it('shows the best-price note, in warning tone, on a version sent over the budget', async () => {
+    const best = {
+      ...V2,
+      bestAvailablePrice: true,
+      overBudgetUsd: 132,
+      budgetNote: 'Best price we can offer — USD 132.00 above your budget',
+    };
+    givenQuotations('QuotationSent', best);
+    const { user } = renderApp(`/trips/${ID}?tab=quotation`);
+
+    const newest = await screen.findByRole('article', { name: 'Quotation version 2' });
+    const note = within(newest).getByText('Best price we can offer — USD 132.00 above your budget');
+    expect(note).toHaveClass('bg-amber-50', 'text-amber-900');
+    const versions = screen.getByRole('table', { name: 'Quotation versions' });
+    expect(within(versions).getByRole('row', { name: /v2/ })).toHaveTextContent('Best price');
+    expect(within(versions).getByRole('row', { name: /v2/ })).toHaveTextContent('Sent to client');
+
+    // Version 1 was within budget: no note.
+    await user.click(screen.getByRole('button', { name: 'Show v1' }));
+    const older = await screen.findByRole('article', { name: 'Quotation version 1' });
+    expect(within(older).queryByText(/Best price we can offer/)).not.toBeInTheDocument();
+  });
+
   it('says when the trip has no quotation yet, and switches back to the overview', async () => {
     server.use(
       http.get(`${API}/api/trip-requests/${ID}`, () => HttpResponse.json(trip({ status: 'Planning' }))),

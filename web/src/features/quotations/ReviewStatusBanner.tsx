@@ -1,6 +1,6 @@
+import { Link } from 'react-router-dom';
 import type { TripRequestStatus } from '@/shared/statuses';
-import { ClientAcceptedActions } from './ClientAcceptedActions';
-import { declineReason, TRIP_STATUS_BANNERS } from './reviewRules';
+import { ACTION_STATUSES, declineReason, NEXT_STEP_BANNERS } from './reviewRules';
 import type { QuotationDto } from './types';
 
 interface Props {
@@ -11,12 +11,12 @@ interface Props {
 }
 
 /**
- * The status banner at the top of the review page: what the trip's status means and what happens next.
- * At ClientAccepted it holds the Confirm and Reopen review buttons; after a decline it shows the client's reason.
+ * The status banner at the top of the review page: what the trip's status means and what happens next. The
+ * actions themselves (Confirm, Edit & resend, Replan…) are on the trip page, which the banner links to.
  */
 export function ReviewStatusBanner({ tripId, tripStatus, quotation }: Props) {
-  const banner = TRIP_STATUS_BANNERS[tripStatus];
-  const declined = tripStatus === 'PendingReview' ? declineReason(quotation) : null;
+  const banner = NEXT_STEP_BANNERS[tripStatus];
+  const declined = tripStatus === 'ClientDeclined' ? declineReason(quotation) : null;
   if (!banner) return null;
 
   return (
@@ -28,7 +28,11 @@ export function ReviewStatusBanner({ tripId, tripStatus, quotation }: Props) {
           The client declined version {quotation?.version}: {declined}
         </p>
       )}
-      {tripStatus === 'ClientAccepted' && <ClientAcceptedActions tripId={tripId} />}
+      {ACTION_STATUSES.includes(tripStatus) && (
+        <Link to={`/trips/${tripId}`} className="btn-primary">
+          Open the trip to act
+        </Link>
+      )}
     </section>
   );
 }

@@ -4,6 +4,8 @@ part 'quotation_models.freezed.dart';
 part 'quotation_models.g.dart';
 
 /// The quotation inside the agents' proposal (finalOutcome.proposal.quotation), snake_case from the agent.
+/// [bestAvailablePrice] is true when the agents could not get under the budget even with the cheapest plan:
+/// the quote is sent anyway, [overBudgetUsd] says by how much and [budgetNote] is the sentence to show.
 @freezed
 abstract class Quotation with _$Quotation {
   const factory Quotation({
@@ -16,6 +18,11 @@ abstract class Quotation with _$Quotation {
     @JsonKey(name: 'fx_as_of') required String fxAsOf,
     @JsonKey(name: 'fx_stale') @Default(false) bool fxStale,
     @JsonKey(name: 'total_usd') required double totalUsd,
+    @JsonKey(name: 'best_available_price')
+    @Default(false)
+    bool bestAvailablePrice,
+    @JsonKey(name: 'over_budget_usd') double? overBudgetUsd,
+    @JsonKey(name: 'budget_note') String? budgetNote,
   }) = _Quotation;
 
   factory Quotation.fromJson(Map<String, dynamic> json) =>
@@ -37,7 +44,8 @@ abstract class QuotationLine with _$QuotationLine {
 }
 
 /// What the tourist sees: the quotation plus the trip and workflow status it belongs to, and (once the quotation
-/// is stored by the API) its id, status (Pending, Approved = sent, Declined, ...) and when the tourist accepted it.
+/// is stored by the API) its id, version (2 or more after the operator edited and resent it), status
+/// (Pending, Approved = sent, Declined, ...) and when the tourist accepted it.
 @freezed
 abstract class QuotationView with _$QuotationView {
   const factory QuotationView({
@@ -45,6 +53,7 @@ abstract class QuotationView with _$QuotationView {
     required String workflowStatus,
     Quotation? quotation,
     String? quotationId,
+    int? version,
     String? quotationStatus,
     String? acceptedAt,
   }) = _QuotationView;

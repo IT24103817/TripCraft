@@ -17,10 +17,8 @@ export function ValidationChecklist({ result }: { result: ProposalValidationResu
         ) : (
           <span className="text-red-700">
             {result.violations.length} check{result.violations.length === 1 ? '' : 's'} failed
-            {result.hasHard
-              ? ' (hard: cannot be approved)'
-              : ' (soft: needs a revision or a manager decision)'}
-            .{notChecked && ' The agents stopped before a proposal existed, so no rule was checked.'}
+            {result.hasHard ? ' (hard: cannot be sent)' : ' (soft: needs a revision or a manager decision)'}.
+            {notChecked && ' The agents stopped before a proposal existed, so no rule was checked.'}
           </span>
         )}
       </p>

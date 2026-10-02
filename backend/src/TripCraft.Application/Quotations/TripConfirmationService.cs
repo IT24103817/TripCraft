@@ -15,14 +15,14 @@ namespace TripCraft.Application.Quotations;
 public interface ITripConfirmationService
 {
     Task<QuotationDecisionResponse> ConfirmAsync(CurrentUser user, Guid tripRequestId, CancellationToken ct);
-    Task<QuotationDecisionResponse> ReopenReviewAsync(CurrentUser user, Guid tripRequestId, string reason, CancellationToken ct);
 }
 
 /// <summary>
 /// Confirm (manager, trip ClientAccepted) is the single booking transaction (PLAN.md section 6 step 10–11, v1.1):
 /// holds → saved itinerary → vouchers → decision → trip Confirmed → workflow Completed → notifications → outbox
 /// email → audit → commit. Any failure rolls everything back and returns 409; the trip stays ClientAccepted.
-/// The email is sent after the commit, so a mail problem never undoes a booking.
+/// The email is sent after the commit, so a mail problem never undoes a booking. This is the human approval gate
+/// (Operations Manager only): quotations reach the client without a manager, but nothing is held before Confirm.
 /// </summary>
 public class TripConfirmationService(
     IQuotationStore quotations,
@@ -44,11 +44,14 @@ public class TripConfirmationService(
         TripStatusMachine.EnsureCanMove(trip.Status, TripRequestStatus.Confirmed);
         var quotation = await quotations.GetLatestForTripAsync(trip.Id, ct);
         if (quotation is not { Status: "Approved", AcceptedAt: not null })
-            throw new ConflictException("The client has not accepted the newest quotation.");
+            throw new ConflictException("The client has not accepted the newest quotation version; Confirm is available once they do.");
         var workflow = await workflows.GetLatestForTripAsync(trip.Id, ct)
                        ?? throw new ConflictException("The trip request has no agent workflow.");
         var outcome = WorkflowJson.Deserialize<WorkflowOutcome>(workflow.FinalOutcome)
                       ?? throw new ConflictException("The workflow has no proposal to confirm.");
+        // The holds are built from the proposal: it must still be the one the client accepted.
+        if (outcome.EditedSinceQuotation)
+            throw new ConflictException("The trip was edited after the client accepted. Re-price and resend it; the client must accept again.");
         var holdRequests = BuildHolds(outcome.Proposal, trip);
         var tripVouchers = VoucherBuilder.Build(trip, outcome.Proposal, signer);
         var tourist = trip.Tourist is null ? null : await users.GetByIdAsync(trip.Tourist.UserId, ct);
@@ -112,30 +115,7 @@ public class TripConfirmationService(
         }
 
         await SendEmailsAsync(ct);
-        return QuotationApprovalService.Response(quotation.Id, trip, workflow, "Confirmed", holdRequests.Count);
-    }
-
-    /// <summary>
-    /// ClientAccepted → PendingReview, e.g. when Confirm failed because a resource is no longer free:
-    /// the manager swaps it, re-prices and sends the new version.
-    /// </summary>
-    public async Task<QuotationDecisionResponse> ReopenReviewAsync(CurrentUser user, Guid tripRequestId, string reason,
-        CancellationToken ct)
-    {
-        var trip = await trips.GetByIdAsync(tripRequestId, ct) ?? throw new NotFoundException("Trip request not found.");
-        if (trip.Status != TripRequestStatus.ClientAccepted)
-            throw new ConflictException($"Only an accepted trip can go back to review; this one is {TripStatusMachine.Describe(trip.Status)}.");
-        var workflow = await workflows.GetLatestForTripAsync(trip.Id, ct)
-                       ?? throw new ConflictException("The trip request has no agent workflow.");
-        var quotation = await quotations.GetLatestForTripAsync(trip.Id, ct);
-
-        workflow.Status = AgentWorkflowStatus.PendingApproval;
-        workflow.CurrentStep = "awaiting-manager";
-        TripStatusMachine.Move(trip, TripRequestStatus.PendingReview, user.Id, $"Review reopened: {reason.Trim()}", audit);
-        notifier.NotifyTourist(trip, "ReviewReopened", "Your quotation is being updated",
-            "The operator needs to change your trip before booking it. You will get a new quotation.");
-        await unitOfWork.SaveChangesAsync(ct);
-        return QuotationApprovalService.Response(quotation?.Id ?? Guid.Empty, trip, workflow, "Reopened", 0);
+        return QuotationDecisionResponse.From(quotation.Id, trip, workflow, "Confirmed", holdRequests.Count);
     }
 
     private async Task SendEmailsAsync(CancellationToken ct)

@@ -13,21 +13,21 @@ public class NotificationsEndpointsTests
     public async Task Each_user_sees_only_their_notifications_and_can_mark_them_read()
     {
         await using var factory = new TestWebApplicationFactory();
-        await factory.RunToProposalAsync(); // the managers get "ReviewNeeded"
+        await factory.RunToProposalAsync(); // auto-sent: the tourist gets "QuotationSent"
         var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
         var tourist = await factory.CreateClientAsAsync(WorkflowFlow.Tourist);
 
-        var mine = (await manager.GetFromJsonAsync<NotificationListDto>("/api/notifications/mine", TestJson.Options))!;
-        var touristList = (await tourist.GetFromJsonAsync<NotificationListDto>("/api/notifications/mine", TestJson.Options))!;
+        var mine = (await tourist.GetFromJsonAsync<NotificationListDto>("/api/notifications/mine", TestJson.Options))!;
+        var managerList = (await manager.GetFromJsonAsync<NotificationListDto>("/api/notifications/mine", TestJson.Options))!;
 
         mine.UnreadCount.Should().Be(1);
-        var item = mine.Items.Should().ContainSingle(n => n.Type == "ReviewNeeded").Subject;
+        var item = mine.Items.Should().ContainSingle(n => n.Type == "QuotationSent").Subject;
         item.IsRead.Should().BeFalse();
-        touristList.Items.Should().BeEmpty();
+        managerList.Items.Should().BeEmpty("no manager action is needed before the client answers");
 
-        (await tourist.PostAsync($"/api/notifications/{item.Id}/read", null)).StatusCode.Should().Be(HttpStatusCode.NotFound);
-        (await manager.PostAsync($"/api/notifications/{item.Id}/read", null)).StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await manager.GetFromJsonAsync<NotificationListDto>("/api/notifications/mine", TestJson.Options))!.UnreadCount.Should().Be(0);
+        (await manager.PostAsync($"/api/notifications/{item.Id}/read", null)).StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await tourist.PostAsync($"/api/notifications/{item.Id}/read", null)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await tourist.GetFromJsonAsync<NotificationListDto>("/api/notifications/mine", TestJson.Options))!.UnreadCount.Should().Be(0);
     }
 
     [Fact]

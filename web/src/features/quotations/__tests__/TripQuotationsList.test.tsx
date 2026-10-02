@@ -15,6 +15,9 @@ const SENT = quotation({
   depositPaid: true,
   tripObjective: 'Honeymoon in Ella',
   tripStatus: 'ClientAccepted',
+  bestAvailablePrice: true,
+  overBudgetUsd: 103.94,
+  budgetNote: 'Best price we can offer — USD 103.94 above your budget',
 });
 const WAITING = quotation({
   id: 'q-waiting',
@@ -22,7 +25,7 @@ const WAITING = quotation({
   version: 1,
   status: 'Pending',
   tripObjective: 'Cultural triangle for 4',
-  tripStatus: 'PendingReview',
+  tripStatus: 'NeedsOperator',
 });
 
 describe('Trips page: Quotations tab', () => {
@@ -51,14 +54,20 @@ describe('Trips page: Quotations tab', () => {
     expect(sent.getByText('Honeymoon in Ella')).toBeInTheDocument();
     expect(sent.getByText('v2')).toBeInTheDocument();
     expect(sent.getByText('Sent to client')).toBeInTheDocument();
-    expect(sent.getByText('Client accepted')).toBeInTheDocument();
+    expect(sent.getByText('Accepted')).toBeInTheDocument();
     expect(sent.getByText('USD 1,603.94')).toBeInTheDocument();
+    // Sent over budget after the agents' lowest-cost re-plans: the best-price sentence is shown in warning tone.
+    expect(sent.getByText('Best price we can offer — USD 103.94 above your budget')).toHaveClass(
+      'text-amber-800',
+    );
     expect(sent.getByText('LKR 481,182.00')).toBeInTheDocument();
     expect(sent.getByText('Paid')).toBeInTheDocument();
 
     const waiting = within(waitingRow!);
-    expect(waiting.getByText('Waiting for review')).toBeInTheDocument();
+    expect(waiting.getByText('Not sent yet')).toBeInTheDocument();
+    expect(waiting.getByText('Needs operator')).toBeInTheDocument();
     expect(waiting.getByText('Unpaid')).toBeInTheDocument();
+    expect(waiting.queryByText(/Best price/)).not.toBeInTheDocument();
 
     expect(requests.at(-1)?.searchParams.get('latestOnly')).toBe('true');
     expect(requests.at(-1)?.searchParams.get('sort')).toBe('-createdAt');

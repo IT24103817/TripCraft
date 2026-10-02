@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tripcraft_mobile/core/api/user_facing_exception.dart';
+import 'package:tripcraft_mobile/features/quotations/data/quotation_models.dart';
 import 'package:tripcraft_mobile/features/quotations/data/quotations_repository.dart';
 import 'package:tripcraft_mobile/features/quotations/presentation/quotation_screen.dart';
+import 'package:tripcraft_mobile/features/quotations/presentation/quote_notes.dart';
 import 'package:tripcraft_mobile/shared/theme/app_theme.dart';
 
 import '../helpers.dart';
@@ -11,9 +13,15 @@ import 'quotation_fakes.dart';
 
 Future<FakeQuotationsRepository> pumpQuotation(
   WidgetTester tester,
-  String tripStatus,
-) async {
-  final repository = FakeQuotationsRepository(tripStatus);
+  String tripStatus, {
+  Quotation? served,
+  int version = 1,
+}) async {
+  final repository = FakeQuotationsRepository(
+    tripStatus,
+    served: served,
+    version: version,
+  );
   await pumpScreen(
     tester,
     const QuotationScreen(tripId: 'trip-1'),
@@ -50,7 +58,7 @@ void main() {
           home: Scaffold(
             body: QuotationBody(
               quotation: quotation,
-              tripStatus: 'PendingReview',
+              tripStatus: 'ClientAccepted',
             ),
           ),
         ),
@@ -67,7 +75,7 @@ void main() {
         find.textContaining('1 USD = 300.00 LKR · as of 1 Oct 2026'),
         findsOneWidget,
       );
-      // Before the operator sends it, the tourist cannot decide.
+      // Once the trip has moved on from QuotationSent, the tourist cannot decide again.
       await scrollTo(tester, 'Decline');
       expect(buttonWithText(tester, 'Accept quotation').onPressed, isNull);
       expect(buttonWithText(tester, 'Decline').onPressed, isNull);
@@ -133,6 +141,59 @@ void main() {
     );
   });
 
+  testWidgets('a quote within budget shows no budget note and no version', (
+    tester,
+  ) async {
+    await pumpQuotation(tester, 'QuotationSent');
+
+    expect(find.byKey(const ValueKey('best-price-note')), findsNothing);
+    expect(find.textContaining('Best price we can offer'), findsNothing);
+    expect(find.textContaining('Updated quote'), findsNothing);
+  });
+
+  testWidgets('the best available price shows the budget note', (tester) async {
+    await pumpQuotation(tester, 'QuotationSent', served: overBudgetQuotation);
+    await scrollTo(
+      tester,
+      'Best price we can offer — USD 120 above your budget',
+    );
+
+    expect(
+      find.text('Best price we can offer — USD 120 above your budget'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a resent quote says "Updated quote (version 2)"', (
+    tester,
+  ) async {
+    await pumpQuotation(tester, 'QuotationSent', version: 2);
+
+    expect(find.text('Updated quote (version 2)'), findsOneWidget);
+  });
+
+  test('the budget note and version label follow the flag and version', () {
+    expect(bestPriceNote(quotation), isNull);
+    // The flag decides, not the note: a stray note on an in-budget quote is not shown.
+    expect(
+      bestPriceNote(quotation.copyWith(budgetNote: 'Best price we can offer')),
+      isNull,
+    );
+    expect(
+      bestPriceNote(overBudgetQuotation),
+      'Best price we can offer — USD 120 above your budget',
+    );
+    expect(
+      bestPriceNote(
+        quotation.copyWith(bestAvailablePrice: true, overBudgetUsd: 85.5),
+      ),
+      'Best price we can offer — USD 85.50 above your budget',
+    );
+    expect(updatedQuoteLabel(null), isNull);
+    expect(updatedQuoteLabel(1), isNull);
+    expect(updatedQuoteLabel(3), 'Updated quote (version 3)');
+  });
+
   testWidgets('a 409 from accept shows the API message', (tester) async {
     final repository = await pumpQuotation(tester, 'QuotationSent');
     repository.error = const UserFacingException(
@@ -169,6 +230,7 @@ void main() {
       when(() => api.get('/api/quotations/q1')).thenAnswer(
         (_) async => {
           'id': 'q1',
+          'version': 2,
           'status': 'Approved',
           'acceptedAt': null,
           'lines': [
@@ -188,6 +250,9 @@ void main() {
           'fxAsOf': '2026-10-01T00:00:00Z',
           'fxStale': false,
           'totalUsd': 115,
+          'bestAvailablePrice': true,
+          'overBudgetUsd': 120,
+          'budgetNote': 'Best price we can offer — USD 120 above your budget',
         },
       );
       when(
@@ -198,8 +263,8 @@ void main() {
           'tripRequestId': 'trip-1',
           'workflowId': 'wf-1',
           'decision': 'Declined',
-          'tripStatus': 'PendingReview',
-          'workflowStatus': 'PendingApproval',
+          'tripStatus': 'ClientDeclined',
+          'workflowStatus': 'Approved',
           'holdsCreated': 0,
         },
       );
@@ -214,7 +279,14 @@ void main() {
         view.quotation?.lines.single.description,
         'Guide Nimal Perera, 5 days',
       );
-      expect(decision.tripStatus, 'PendingReview');
+      expect(decision.tripStatus, 'ClientDeclined');
+      expect(view.version, 2);
+      expect(view.quotation?.bestAvailablePrice, isTrue);
+      expect(view.quotation?.overBudgetUsd, 120);
+      expect(
+        view.quotation?.budgetNote,
+        'Best price we can offer — USD 120 above your budget',
+      );
       verify(
         () => api.post(
           '/api/quotations/q1/decline',

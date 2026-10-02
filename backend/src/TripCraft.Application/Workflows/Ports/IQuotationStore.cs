@@ -6,7 +6,10 @@ namespace TripCraft.Application.Workflows.Ports;
 /// </summary>
 public interface IQuotationStore
 {
-    /// <summary>Stages a new quotation version for the trip (version = previous + 1) with its lines.</summary>
+    /// <summary>
+    /// Stages a new quotation version for the trip (version = previous + 1) with its lines. SendNow = it goes to the
+    /// client at once (status Approved = sent); otherwise it waits as Pending until a manager sends it.
+    /// </summary>
     Task<Guid> AddVersionAsync(QuotationDraft draft, CancellationToken ct);
 
     Task<QuotationSummary?> GetAsync(Guid quotationId, CancellationToken ct);
@@ -21,6 +24,9 @@ public interface IQuotationStore
     Task SetStatusAsync(Guid quotationId, QuotationDecision status, CancellationToken ct);
 
     void RecordDecision(Guid quotationId, Guid decidedBy, QuotationDecision decision, string? comment);
+
+    /// <summary>The client's reason from the newest Declined decision on this quotation, or null.</summary>
+    Task<string?> GetDeclineReasonAsync(Guid quotationId, CancellationToken ct);
 }
 
 /// <summary>Decisions recorded in approval_decisions: the manager's and, since v1.1, the tourist's.</summary>
@@ -48,7 +54,9 @@ public record QuotationDraft(
     DateTime FxAsOf,
     bool FxStale,
     IReadOnlyList<QuotationDraftLine> Lines,
-    string? ProposalSnapshot = null);
+    string? ProposalSnapshot = null,
+    decimal? OverBudgetUsd = null,
+    bool SendNow = false);
 
 /// <summary>LineType is guide, vehicle, room or entry (quotation_lines.line_type).</summary>
 public record QuotationDraftLine(string LineType, string Description, decimal Qty, decimal UnitLkr, decimal AmountLkr);

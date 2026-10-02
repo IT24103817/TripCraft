@@ -6,19 +6,21 @@ This adds to [API-V11.md](API-V11.md). All JSON is camelCase, errors are Problem
 ## Dashboard (manager)
 
 - `GET /api/dashboard/actions` →
-  `{proposalsToReview, clientAcceptedToConfirm, guideChangeRequests, recentCancellations, declinedQuotations}`.
+  `{acceptedToConfirm, declinedNeedsDecision, needsOperator, guideChangeRequests, recentCancellations}`.
   Each value is an integer:
-  - `proposalsToReview`: trips in PendingReview whose newest quotation is Pending.
-  - `clientAcceptedToConfirm`: trips in ClientAccepted.
+  - `acceptedToConfirm`: trips in ClientAccepted (tile "Accepted — confirm").
+  - `declinedNeedsDecision`: trips in ClientDeclined (tile "Declined — needs a decision").
+  - `needsOperator`: trips in NeedsOperator (tile "Needs operator").
   - `guideChangeRequests`: open requests.
   - `recentCancellations`: trips cancelled in the last 7 days.
-  - `declinedQuotations`: trips in PendingReview whose newest quotation is Declined.
+- `GET /api/dashboard/attention?status=` → the trips behind the first three tiles, with `detail` (the client's
+  decline reason, the error summary, or "Version N accepted"). See [API-V11.md](API-V11.md).
 - `GET /api/dashboard/upcoming` → trips running today or tomorrow (Confirmed or InProgress), in the operator's time
   zone. Each item is
   `{tripRequestId, objective, startDate, endDate, pax, status, touristName, guideName, vehicleRegistrationNo,
   vehicleType, day: "today"|"tomorrow", dayNumber}`.
 
-Link targets for the web: trips list filtered by status (`/trips?status=PendingReview`), the review queue, and the
+Link targets for the web: trips list filtered by status (`/trips?status=ClientAccepted`), the review queue (Accepted / Declined / Needs operator tabs), and the
 dashboard's guide-change panel.
 
 ## Why this plan (review page)

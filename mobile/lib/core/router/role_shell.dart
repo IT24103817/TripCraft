@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/quotations/application/notifications_poller.dart';
+import '../../features/quotations/application/quotation_providers.dart';
+import '../../features/trips/application/trips_providers.dart';
 import '../auth/auth_notifier.dart';
 import 'routes.dart';
 
@@ -59,8 +61,22 @@ class _RoleShellState extends ConsumerState<RoleShell> {
     super.dispose();
   }
 
+  /// A new notification about a trip means its status, quote or vouchers changed on the server: reload them.
+  void _reloadTrip(String tripId) {
+    ref.invalidate(tripDetailProvider(tripId));
+    ref.invalidate(tripWorkflowProvider(tripId));
+    ref.invalidate(tripHistoryProvider(tripId));
+    ref.invalidate(tripVouchersProvider(tripId));
+    ref.invalidate(quotationViewProvider(tripId));
+    ref.invalidate(myTripsProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen(notificationsPollerProvider, (previous, next) {
+      if (previous == null) return;
+      tripsWithNewNotifications(previous, next).forEach(_reloadTrip);
+    });
     final role = ref.watch(authNotifierProvider).value?.role;
     final unread = ref.watch(
       notificationsPollerProvider.select((list) => list.unreadCount),

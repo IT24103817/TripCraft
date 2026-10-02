@@ -12,6 +12,7 @@ const ACTION_LABELS: Record<string, string> = {
   AgentWorkflowFailedSafely: 'Agents could not start',
   AgentProposalReceived: 'Agents returned a proposal',
   QuotationApproved: 'Quotation sent to the client',
+  QuotationSent: 'Quotation sent to the client',
   QuotationRejected: 'Trip rejected by the operator',
   QuotationRevisionRequested: 'Revision requested',
   QuotationRepriced: 'Quotation re-priced (new version)',

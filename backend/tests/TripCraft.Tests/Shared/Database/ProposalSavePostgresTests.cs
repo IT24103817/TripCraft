@@ -42,7 +42,7 @@ public class ProposalSavePostgresTests(PostgresFixture postgres)
 
         response.EnsureSuccessStatusCode();
         (await response.Content.ReadFromJsonAsync<ProposalOutcomeResponse>(TestJson.Options))!.Status
-            .Should().Be("PendingApproval");
+            .Should().Be("Approved"); // sent to the client
         var lines = await factory.QueryDbAsync(db => db.QuotationLines
             .Where(l => db.Quotations.Any(q => q.Id == l.QuotationId && q.TripRequestId == trip.Id)).ToListAsync());
         lines.Should().NotBeEmpty().And.OnlyContain(l => l.Qty > 0);
@@ -72,7 +72,7 @@ public class ProposalSavePostgresTests(PostgresFixture postgres)
             (await db.TripRequests.SingleAsync(t => t.Id == trip.Id)).Status,
             await db.Quotations.CountAsync(q => q.TripRequestId == trip.Id)));
         workflow.Status.Should().Be(AgentWorkflowStatus.FailedSafely);
-        tripStatus.Should().Be(TripRequestStatus.FailedSafely); // the tourist can try again
+        tripStatus.Should().Be(TripRequestStatus.NeedsOperator); // the operator retries, sends by hand or cancels
         quotations.Should().Be(0);
     }
 }

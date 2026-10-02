@@ -350,6 +350,10 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("accepted_at");
 
+                    b.Property<bool>("BestAvailablePrice")
+                        .HasColumnType("boolean")
+                        .HasColumnName("best_available_price");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -382,6 +386,11 @@ namespace TripCraft.Infrastructure.Persistence.Migrations
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)")
                         .HasColumnName("margin_pct");
+
+                    b.Property<decimal?>("OverBudgetUsd")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("over_budget_usd");
 
                     b.Property<string>("ProposalSnapshot")
                         .HasColumnType("jsonb")

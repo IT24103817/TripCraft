@@ -1,12 +1,10 @@
-import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { PageState } from '@/shared/components/PageState';
 import { StatusBadge } from '@/shared/components/StatusBadge';
 import { formatDate, formatUsd } from '@/shared/utils/format';
 import { useTripSummary, useWorkflow } from './api';
-import { DecisionActions } from './DecisionActions';
-import { ProposalEditor } from './ProposalEditor';
+import { BudgetNote } from './BudgetNote';
 import { ProposedItinerary, ProposedResources } from './ProposalDetails';
 import { QuotationPanel } from './QuotationPanel';
 import { QuotationVersions } from './QuotationVersions';
@@ -17,9 +15,10 @@ import { ValidationChecklist } from './ValidationChecklist';
 import { WhyThisPlan } from './WhyThisPlan';
 
 /**
- * The manager's review of one trip (PLAN.md section 6, step 9; v1.1 lifecycle). :id is the workflow id.
- * A status banner says what the trip's status means; in PendingReview the manager sends, edits, re-prices,
- * asks for a revision or rejects; at ClientAccepted they confirm or reopen the review.
+ * The review of one trip's proposal (v1.1 lifecycle). :id is the workflow id. It explains the plan: why this
+ * plan, the deterministic checks, the itinerary, the resources, the quotation and the versions side by side.
+ * Quotations go to the client automatically, so there is no decision here: the banner links to the trip page,
+ * where the manager confirms, edits and resends, replans or cancels.
  */
 export default function ApprovalReviewPage() {
   const { id = '' } = useParams();
@@ -28,9 +27,7 @@ export default function ApprovalReviewPage() {
   const proposal = workflow.data?.finalOutcome?.proposal;
   // The stored quotation (the newest version) once it exists; the agent's proposal before that.
   const stored = useQuotation(proposal?.quotationId);
-  const [editing, setEditing] = useState(false);
   const names = workflow.data?.resourceNames ?? {};
-  const inReview = trip.data?.status === 'PendingReview';
 
   return (
     <PageState
@@ -100,45 +97,11 @@ export default function ApprovalReviewPage() {
                   <p className="text-sm text-slate-600">Not validated yet.</p>
                 )}
               </div>
-              {inReview && (
-                <div className="card space-y-3">
-                  <h2 className="font-semibold text-slate-900">Decision</h2>
-                  <DecisionActions workflow={workflow.data} quotation={stored.data} />
-                </div>
-              )}
-              {inReview && trip.data && (
-                <div className="card space-y-3 lg:col-span-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h2 className="font-semibold text-slate-900">Edit directly</h2>
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      aria-expanded={editing}
-                      onClick={() => setEditing((open) => !open)}
-                    >
-                      {editing ? 'Close editor' : 'Edit directly'}
-                    </button>
-                  </div>
-                  {workflow.data.finalOutcome?.editedSinceQuotation && (
-                    <p className="text-sm text-amber-900">
-                      Edited since the last price: re-price before sending it to the client.
-                    </p>
-                  )}
-                  {editing && (
-                    <ProposalEditor
-                      trip={trip.data}
-                      days={proposal?.days ?? []}
-                      resources={proposal?.resources ?? null}
-                      names={names}
-                    />
-                  )}
-                </div>
-              )}
               <div className="card">
                 <h2 className="mb-3 font-semibold text-slate-900">Itinerary</h2>
                 <ProposedItinerary days={proposal?.days ?? []} />
               </div>
-              <div className="card">
+              <div className="card lg:col-span-2">
                 <h2 className="mb-3 font-semibold text-slate-900">Proposed guide, vehicle and rooms</h2>
                 {proposal?.resources ? (
                   <ProposedResources resources={proposal.resources} names={names} />
@@ -154,7 +117,10 @@ export default function ApprovalReviewPage() {
                     : ''}
                 </h2>
                 {stored.data ? (
-                  <QuotationPanel quotation={toPanelQuotation(stored.data)} />
+                  <div className="space-y-3">
+                    <BudgetNote quotation={stored.data} />
+                    <QuotationPanel quotation={toPanelQuotation(stored.data)} />
+                  </div>
                 ) : proposal?.quotation ? (
                   <QuotationPanel quotation={proposal.quotation} />
                 ) : (

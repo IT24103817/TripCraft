@@ -6,7 +6,7 @@ import '../../../shared/widgets/section_card.dart';
 import '../data/pdf_sharer.dart';
 import '../data/trips_repository.dart';
 
-/// The PDF exists once the operator has sent the quotation (the API answers 409 before that).
+/// The PDF exists once the quotation was sent to the tourist (the API answers 409 before that).
 const itineraryPdfStatuses = {
   'QuotationSent',
   'ClientAccepted',

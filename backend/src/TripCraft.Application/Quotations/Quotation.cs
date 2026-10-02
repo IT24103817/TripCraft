@@ -38,11 +38,20 @@ public class Quotation : BaseEntity
     /// <summary>Set by the manager once the client paid the deposit (after accepting); null = unpaid.</summary>
     public DateTime? DepositPaidAt { get; set; }
 
+    /// <summary>
+    /// v1.1 budget rule: the agents re-planned at lowest cost and the total is still over the tourist's budget, so
+    /// the quotation was sent anyway as the best price available. OverBudgetUsd says by how much.
+    /// </summary>
+    public bool BestAvailablePrice { get; set; }
+
+    public decimal? OverBudgetUsd { get; set; }
+
     public List<QuotationLine> Lines { get; set; } = [];
 }
 
 /// <summary>
-/// Pending = waiting for the manager; Approved = sent to the tourist; Declined = the tourist said no;
+/// Pending = made but not sent yet (a manager re-priced it); Approved = sent to the tourist (automatically or by a
+/// manager); Declined = the tourist said no;
 /// RevisionRequested / Superseded = replaced by a newer version; Rejected = the operator turned the trip down.
 /// </summary>
 public enum QuotationStatus

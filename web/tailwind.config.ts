@@ -20,6 +20,7 @@ const LIGHT_NEUTRALS = {
   '--slate-900': '15 23 42',
   '--slate-950': '2 6 23',
   '--surface': '255 255 255',
+  '--danger': '185 28 28', // red-700: 6.5:1 on white
 };
 
 const DARK_NEUTRALS = {
@@ -35,6 +36,7 @@ const DARK_NEUTRALS = {
   '--slate-900': '248 250 252',
   '--slate-950': '255 255 255',
   '--surface': '15 23 42',
+  '--danger': '248 113 113', // red-400: readable on the dark surface
 };
 
 const fromVariable = (name: string) => `rgb(var(${name}) / <alpha-value>)`;
@@ -68,6 +70,8 @@ export default {
         slate: Object.fromEntries(SLATE_STEPS.map((step) => [step, fromVariable(`--slate-${step}`)])),
         /** Cards, inputs, dialogs: white in light mode, deep slate in dark mode. */
         surface: fromVariable('--surface'),
+        /** Errors (e.g. an invalid field's border): red-700 in light mode, a lighter red in dark mode. */
+        danger: fromVariable('--danger'),
         /** Backdrops behind dialogs and the mobile menu: always dark, in both themes. */
         ink: '#0F172A',
       },

@@ -477,7 +477,7 @@ feature folders, free tooling only, and every line must be explainable at the vi
 - `web/src/app/queryClient.ts` — stale time and retry policy
 - `web/src/shared/api/queryKeys.ts` — root keys shared across features
 - `web/src/features/trips/api.ts`, `web/src/features/quotations/api.ts` — queries and mutations (`useQuotationDecision` invalidates `trips` and `workflows`)
-- `web/src/shared/components/PageState.tsx` — the four page states
+- `web/src/shared/components/PageState/PageState.tsx` — the four page states
 - `web/eslint.config.js` — `import/no-restricted-paths` feature boundaries
 
 

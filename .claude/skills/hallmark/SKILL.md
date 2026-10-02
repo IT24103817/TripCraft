@@ -76,11 +76,13 @@ Numbers in tables and money use tabular figures (`tabular-nums`).
 
 | Component | React | Flutter | Rules |
 |-----------|-------|---------|-------|
+| Button | `Button` (`variant` primary / secondary / danger, `size`, `isLoading` + `loadingText`, forwards its ref); a `Link` styled as a button uses the same `.btn-*` class | `FilledButton` / `OutlinedButton` | `type` defaults to `button`; while loading it is disabled and `aria-busy` |
 | Primary button | `.btn-primary` (brand-700, white text, 40 px high, `rounded-md`) | `FilledButton` (theme: brand, 48 dp, radius 10) | one per view region; verb label ("Approve", "Submit trip request") |
 | Secondary button | `.btn-secondary` (white, slate-300 border) | `OutlinedButton` | |
 | Danger button | `.btn-danger` (red-700) | `FilledButton` with `danger` background | only for destructive actions, always behind a confirmation |
 | Input | `.input` (40 px, `rounded-md`, brand focus ring) + `FormField` label/hint/error | `AppTextField` (filled surface, radius 10, label above value) | label always visible; error text in danger below the field |
-| Card | `.card` (white, `rounded-lg`, border, `shadow-card`, p-5) | `SectionCard` (`Card` from the theme) | title row: card title left, status badge right |
+| Card | `Card` (`title` → h2 on the left, `actions` on the right) or `.card` on a semantic element (`section`, `form`) | `SectionCard` | |
+| Card (class) | `.card` (white, `rounded-lg`, border, `shadow-card`, p-5) | `SectionCard` (`Card` from the theme) | title row: card title left, status badge right |
 | Status badge | `StatusBadge` (pill, tone background 50, text 700, ring 300) | `StatusChip` | text label always present |
 | Data table | `DataTable` (header on `slate-50`, `text-xs` uppercase subtle headers, row hover `brand-50/40`) | `ListTile`s in cards | sortable headers show ▲/▼; pagination bottom right |
 | Page header | `PageHeader` (title + description left, actions right) | `AppBar` (large title, no centre) | |
@@ -88,6 +90,18 @@ Numbers in tables and money use tabular figures (`tabular-nums`).
 | Timeline | `StepTimeline` / `StatusTimeline`: 24 px dots, done = success, current = brand, todo = slate-300 | `StatusTimeline` widget, same tones | |
 | Toast / snackbar | `Toast` (success = green, error = red) | `SnackBar` (floating, ink background) | |
 | States | `PageState`: skeleton, empty (title + description + action), error (message + Retry) | `AsyncView`, `EmptyState` | never a blank screen |
+
+## React component files
+
+Every shared component lives in its own folder under `web/src/shared/components/<Name>/`:
+
+- `<Name>.tsx` — the component: an arrow function, a named export, props typed with its interface.
+- `<Name>.types.ts` — `interface <Name>Props` (and any related types); every component accepts `className`.
+- `index.ts` — re-exports the component and its types. `web/src/shared/components/index.ts` re-exports every folder.
+
+Components that wrap one native element (`Button`, `Card`) use `forwardRef`. Styling is Tailwind only: tokens from
+`tailwind.config.ts` and the component classes in `index.css`, joined with `cn()`. Tests live in
+`web/src/shared/components/__tests__/`.
 
 ## Accessibility rules
 

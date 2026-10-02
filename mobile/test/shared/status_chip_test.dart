@@ -23,7 +23,11 @@ void main() {
     expect(statusColor('PendingApproval'), AppColors.warning);
     expect(statusColor('Approved'), AppColors.success);
     expect(statusColor('Rejected'), AppColors.danger);
-    expect(statusColor('RevisionRequested'), AppColors.purple);
+    expect(
+      statusColor('RevisionRequested'),
+      AppColors.neutral,
+      reason: 'retired in v1.1, so it is an unknown status',
+    );
     expect(statusColor('FailedSafely'), AppColors.danger);
   });
 

@@ -12,7 +12,7 @@ namespace TripCraft.Application.Workflows.Services;
 
 /// <summary>
 /// Receives the agents' final proposal (PLAN.md section 6, step 7–8) and, in v1.1, sends it straight to the client.
-/// 1. load the workflow and trip; only Planning or RevisionRequested workflows accept a proposal;
+/// 1. load the workflow and trip; only a Planning workflow accepts a proposal (also after Replan with note);
 /// 2. load the database facts and run the deterministic ProposalValidator;
 /// 3. valid, or only over budget after the agents' lowest-cost re-plans: stage a quotation version marked sent
 ///    (with the best-price flag when over budget), workflow Approved, trip Planning → QuotationSent, the tourist is
@@ -40,7 +40,7 @@ public class WorkflowProposalService(
         // 1. Load.
         var workflow = await workflows.GetByIdAsync(workflowId, ct)
                        ?? throw new NotFoundException("Workflow not found.");
-        if (workflow.Status is not (AgentWorkflowStatus.Planning or AgentWorkflowStatus.RevisionRequested))
+        if (workflow.Status != AgentWorkflowStatus.Planning)
             throw new ConflictException($"Workflow is {workflow.Status}; it no longer accepts proposals.");
         var trip = await trips.GetByIdAsync(workflow.TripRequestId, ct)
                    ?? throw new NotFoundException("Trip request not found.");

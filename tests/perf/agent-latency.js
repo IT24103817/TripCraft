@@ -1,12 +1,13 @@
 // PLAN.md section 11: agent workflow latency over 5 runs. Each run creates the section 6 demo request,
-// starts planning and polls GET /api/workflows/{id} until it leaves Planning. The time to PendingApproval
-// is the metric; any other final status fails the check and is counted per status.
+// starts planning and polls GET /api/workflows/{id} until it leaves Planning. In v1.1 a valid proposal is sent to
+// the client automatically (workflow Approved), so the time until the quotation is sent is the metric; any other
+// final status fails the check and is counted per status.
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter, Trend } from 'k6/metrics';
 import { API_URL, authHeaders, login, summaryTo } from './common.js';
 
-const timeToPendingApproval = new Trend('time_to_pending_approval', true);
+const timeToQuotationSent = new Trend('time_to_quotation_sent', true);
 const timeToFinalStatus = new Trend('time_to_final_status', true);
 const finalStatus = new Counter('final_status');
 
@@ -19,11 +20,20 @@ export function setup() {
   return { token: login(__ENV.EMAIL || 'tourist1@tripcraft.test') };
 }
 
+/** yyyy-MM-dd, `days` after today (each run gets its own week, so runs do not compete for the same guide). */
+function dayFromToday(days) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 export default function ({ token }) {
   const params = authHeaders(token);
+  const offset = 60 + __ITER * 7;
   const trip = http.post(`${API_URL}/api/trip-requests`, JSON.stringify({
-    objective: '5 days for 4 people, 10-14 October, Kandy and Ella, prefer the hill-country train, English-speaking guide.',
-    startDate: '2026-10-10', endDate: '2026-10-14', pax: 4, budgetUsd: 1500,
+    objective: '5 days for 4 people, Kandy and Ella, prefer the hill-country train, English-speaking guide.',
+    startDate: dayFromToday(offset), endDate: dayFromToday(offset + 4), pax: 4, budgetUsd: 1500,
+    cities: ['Kandy', 'Ella'],
     preferences: { transport: 'train', language: 'en' }, nationality: 'United Kingdom', passportNumber: 'N1234567',
   }), params);
   check(trip, { 'trip created': (r) => r.status === 201 });
@@ -44,8 +54,8 @@ export default function ({ token }) {
   const elapsed = Date.now() - started;
   timeToFinalStatus.add(elapsed, { status });
   finalStatus.add(1, { status });
-  if (status === 'PendingApproval') timeToPendingApproval.add(elapsed);
-  check(status, { 'reached PendingApproval': (s) => s === 'PendingApproval' });
+  if (status === 'Approved') timeToQuotationSent.add(elapsed);
+  check(status, { 'quotation sent to the client (workflow Approved)': (s) => s === 'Approved' });
   console.log(`run ${__ITER + 1}: ${status} after ${(elapsed / 1000).toFixed(1)} s` +
     (workflow && workflow.json('errorSummary') ? ` — ${workflow.json('errorSummary')}` : ''));
 }

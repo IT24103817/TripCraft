@@ -57,7 +57,6 @@ public class QuotationStore(IQuotationRepository quotations, TripSettings settin
         {
             case QuotationDecision.Approved: quotation.Status = QuotationStatus.Approved; break;
             case QuotationDecision.Rejected: quotation.Status = QuotationStatus.Rejected; break;
-            case QuotationDecision.RevisionRequested: quotation.Status = QuotationStatus.RevisionRequested; break;
             case QuotationDecision.Declined: quotation.Status = QuotationStatus.Declined; break;
             case QuotationDecision.Superseded: quotation.Status = QuotationStatus.Superseded; break;
             case QuotationDecision.Accepted: quotation.AcceptedAt = DateTime.UtcNow; break; // stays Approved

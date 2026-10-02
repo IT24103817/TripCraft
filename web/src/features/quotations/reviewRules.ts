@@ -7,7 +7,6 @@ export const QUOTATION_STATUS_LABELS: Record<QuotationStatus, string> = {
   Pending: 'Not sent yet',
   Approved: 'Sent to client',
   Declined: 'Declined by client',
-  RevisionRequested: 'Revision requested',
   Superseded: 'Replaced by a newer version',
   Rejected: 'Rejected',
 };
@@ -18,7 +17,7 @@ export const DECISION_LABELS: Record<string, string> = {
   Accepted: 'Client accepted',
   Declined: 'Client declined',
   Confirmed: 'Confirmed by the operator',
-  RevisionRequested: 'Manager asked for a revision',
+  RevisionRequested: 'Manager asked for a revision (before v1.1)',
   Rejected: 'Rejected by the operator',
   Superseded: 'Replaced by a re-priced version',
 };

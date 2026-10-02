@@ -18,14 +18,13 @@ const tripStatuses = [
 ];
 
 /// Colour for any trip, workflow or step status. Unknown statuses are neutral grey.
-/// PendingApproval, Approved, Rejected, RevisionRequested and FailedSafely are agent workflow statuses
-/// (no longer trip statuses), so they keep their colours for the workflow chip.
+/// PendingApproval, Approved, Rejected and FailedSafely are agent workflow statuses (not trip statuses), so they
+/// keep their colours for the workflow chip. RevisionRequested was retired in v1.1.
 Color statusColor(String status) => switch (status) {
   'Submitted' || 'Cancelled' => AppColors.neutral,
   'Planning' || 'InProgress' => AppColors.info,
   'NeedsOperator' || 'PendingApproval' => AppColors.warning,
   'QuotationSent' => AppColors.accent,
-  'RevisionRequested' => AppColors.purple,
   'ClientAccepted' ||
   'Approved' ||
   'Confirmed' ||

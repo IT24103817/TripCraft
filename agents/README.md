@@ -30,6 +30,7 @@ cp .env.example .env        # then fill in the values
 | `LLM_PROVIDER` | `ollama` | `ollama` or `groq`. |
 | `OLLAMA_MODEL` | `llama3.1:8b` | Model used with Ollama. |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Where Ollama listens (from Docker: `http://host.docker.internal:11434`). |
+| `OLLAMA_NUM_PREDICT` | `1536` | Most tokens one Ollama answer may use. Normal answers stay under about 1,000; a runaway JSON answer is cut off and repaired instead of hitting the node timeout. |
 | `GROQ_API_KEY` | _(none)_ | Only needed when `LLM_PROVIDER=groq`. |
 | `GROQ_MODEL` | `llama-3.1-8b-instant` | Model used with Groq. |
 | `NODE_TIMEOUT_SECONDS` | `30` | Timeout per agent node. |
@@ -137,7 +138,10 @@ Callbacks the service POSTs (snake_case JSON, with `X-Internal-Key`):
   `{agent_name, tool_calls[], input_summary, output_summary, validation_result, duration_ms, retries, status}`
 - `POST {callback_base_url}/api/internal/workflows/{workflow_id}/proposal`: once at the end
   `{plan, days, resources, quotation, violations, status, replans, error_summary}`.
-  `status` is `PendingApproval` (valid), `RevisionRequested` (violations remain) or `FailedSafely`.
+  `status` is the agents' verdict code from PLAN.md section 10: `PendingApproval` (valid), `RevisionRequested`
+  (violations remain) or `FailedSafely`. It is not a trip status. The API decides: a valid proposal, or one that is
+  only over budget after the lowest-cost re-plans, is sent to the client (trip QuotationSent); anything else makes
+  the trip NeedsOperator.
 
 ## Quotation formula (mirror in the C# calculator)
 

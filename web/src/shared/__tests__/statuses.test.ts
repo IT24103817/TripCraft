@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { statusLabel, toneFor, TRIP_STATUSES } from '../statuses';
+import { statusLabel, toneFor, TRIP_STATUSES, WORKFLOW_STATUSES } from '../statuses';
 
 describe('trip statuses (v1.1 lifecycle)', () => {
   it('lists the v1.1 trip statuses and none of the removed ones', () => {
@@ -18,6 +18,10 @@ describe('trip statuses (v1.1 lifecycle)', () => {
     for (const removed of ['PendingReview', 'RevisionRequested', 'FailedSafely', 'PendingApproval']) {
       expect(TRIP_STATUSES).not.toContain(removed);
     }
+  });
+
+  it('no longer has RevisionRequested as an agent workflow status', () => {
+    expect(WORKFLOW_STATUSES).not.toContain('RevisionRequested');
   });
 
   it.each([

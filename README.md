@@ -172,9 +172,9 @@ gate) before anything is held. Full diagram: [docs/diagrams/agents.md](docs/diag
 flowchart LR
     P["Planner"] --> I["Itinerary Analysis"] --> R["Resource & Action"] --> V["Validation & Safety"]
     V -- "only over budget,<br/>re-plans < 3 (lowest cost)" --> P
-    V -- "valid" --> PA(["PendingApproval"])
-    V -- "other violations" --> RR(["RevisionRequested"])
-    P & I & R & V -. "error / timeout" .-> F(["FailedSafely"])
+    V -- "valid, or still over budget<br/>after the re-plans" --> PA(["API: quotation sent<br/>(trip QuotationSent)"])
+    V -- "Hard rule" --> RR(["API: trip NeedsOperator"])
+    P & I & R & V -. "error / timeout" .-> F(["agents fail safely:<br/>trip NeedsOperator"])
 ```
 
 | Agent | Tools (allow-list) | Output |
@@ -269,7 +269,7 @@ lists the API's names; each component has its own example file.
 | Component | Variables |
 |-----------|-----------|
 | API | `DATABASE_URL`, `JWT_SECRET`, `JWT_ISSUER`, `ALLOWED_ORIGINS`, `INTERNAL_AGENT_KEY`, `AGENT_SERVICE_URL`, `AGENT_CALLBACK_BASE_URL`, `RUN_MIGRATIONS`, `ORS_API_KEY`, `OWM_API_KEY`, `FX_FALLBACK_LKR_PER_USD`, `UPLOADS_DIR`, optional `FX_API_BASE_URL` / `ORS_API_BASE_URL` / `OWM_API_BASE_URL`; v1.1: `VOUCHER_SIGNING_KEY`, `CANCELLATION_CUTOFF_DAYS`, `OPERATOR_CONTACT`, `OPERATOR_TIME_ZONE`, `MAILTRAP_API_TOKEN`, `MAILTRAP_INBOX_ID`, `MAIL_FROM`, optional `SMTP_*`, `EMAIL_PICKUP_DIR`, `MAILTRAP_API_BASE_URL` (the Admin Settings page overrides the cut-off, contact, deposit % and LLM provider at run time) |
-| Agent service ([agents/.env.example](agents/.env.example)) | `INTERNAL_AGENT_KEY`, `API_BASE_URL`, `LLM_PROVIDER`, `OLLAMA_MODEL`, `OLLAMA_BASE_URL`, `GROQ_API_KEY`, `GROQ_MODEL`, `NODE_TIMEOUT_SECONDS`, `MAX_RETRIES`, `MAX_REPLANS` |
+| Agent service ([agents/.env.example](agents/.env.example)) | `INTERNAL_AGENT_KEY`, `API_BASE_URL`, `LLM_PROVIDER`, `OLLAMA_MODEL`, `OLLAMA_BASE_URL`, `OLLAMA_NUM_PREDICT`, `GROQ_API_KEY`, `GROQ_MODEL`, `NODE_TIMEOUT_SECONDS`, `MAX_RETRIES`, `MAX_REPLANS` |
 | Web ([web/.env.example](web/.env.example)) | `VITE_API_URL`, `VITE_APK_URL`, `VITE_GROUP_NUMBER` |
 | Mobile | `API_URL` (`--dart-define`) |
 | Tests | `TEST_DATABASE_URL` (backend DB tests), `BASE_URL`, `API_URL`, `E2E_DATABASE_URL` (Playwright), `API_URL` (k6) |
@@ -417,7 +417,7 @@ Agent service (internal, `http://127.0.0.1:8001`): `POST /run-workflow`, `POST /
 |-------|---------|--------------------|
 | Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 467 passed |
 | Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 64 passed |
-| React | `cd web && npm run lint && npm test && npm run build` | 203 passed (36 files) |
+| React | `cd web && npm run lint && npm test && npm run build` | 204 passed (36 files) |
 | Flutter | `cd mobile && flutter analyze && flutter test` | 186 passed |
 | End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 6 passed (4 roles, over-budget → sent at the best price, demo → auto-sent → accepted → Confirmed) |
 | Performance | `k6 run tests/perf/list-load.js` (and `auth-load.js`, `agent-latency.js`) from the repo root | `list-load.js`: 610,814 requests, p95 9.56 ms, 0 % errors; others in [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md) |

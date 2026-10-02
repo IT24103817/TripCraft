@@ -12,9 +12,9 @@ flowchart TD
     R["Resource & Action<br/>tools: check_guide/vehicle/room_availability, get_rate_card<br/>proposes, never holds; lists gaps"]
     V["Validation & Safety<br/>tools: validate_schema, get_fx_rate, calculate_quotation, check_business_rules<br/>LLM may add concerns, never remove violations"]
     RP["prepare_replan<br/>replans + 1"]
-    FAIL([FailedSafely<br/>error_summary])
-    PA([PendingApproval])
-    RR([RevisionRequested])
+    FAIL([failed safely<br/>error_summary → trip NeedsOperator])
+    PA([valid → API sends the quotation])
+    RR([violations remain → API: best price if only over budget, else NeedsOperator])
     POST[["POST …/proposal<br/>{plan, days, resources, quotation, violations, status, replans}"]]
 
     P -- ok --> I

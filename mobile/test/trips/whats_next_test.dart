@@ -40,7 +40,7 @@ void main() {
 
     test('an unknown status gets the general line', () {
       expect(
-        whatsNextLine(trip('PendingReview'), today: today),
+        whatsNextLine(trip('SomethingNew'), today: today),
         'We will let you know when something changes',
       );
     });

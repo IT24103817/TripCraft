@@ -41,7 +41,10 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
             )}
           >
             <span
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs font-bold"
+              className={cn(
+                'flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                toast.kind === 'success' ? 'bg-green-800' : 'bg-red-800',
+              )}
               aria-hidden="true"
             >
               {toast.kind === 'success' ? '✓' : '!'}
@@ -49,7 +52,10 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
             <span className="flex-1">{toast.message}</span>
             <button
               type="button"
-              className="-m-1 rounded p-1 leading-none hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className={cn(
+                '-m-1 rounded p-1 leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white',
+                toast.kind === 'success' ? 'hover:bg-green-800' : 'hover:bg-red-800',
+              )}
               aria-label="Dismiss notification"
               onClick={() => dismiss(toast.id)}
             >

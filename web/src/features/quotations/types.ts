@@ -199,11 +199,10 @@ export interface TripSummary {
 
 /**
  * QuotationStatus in C#. Pending = priced but not sent yet (a manager's re-price); Approved = sent to the client;
- * Declined = the client said no (with a reason); Superseded = replaced by a re-priced version. Rejected and
- * RevisionRequested only exist on versions made before v1.1.
+ * Declined = the client said no (with a reason); Superseded = replaced by a re-priced version. Rejected only exists
+ * on versions made before v1.1.
  */
-export type QuotationStatus =
-  'Pending' | 'Approved' | 'Rejected' | 'RevisionRequested' | 'Declined' | 'Superseded';
+export type QuotationStatus = 'Pending' | 'Approved' | 'Rejected' | 'Declined' | 'Superseded';
 
 /** What one quotation version priced (quotations.proposal_snapshot, agent snake_case inside). */
 export interface ProposalSnapshot {

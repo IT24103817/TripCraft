@@ -28,7 +28,7 @@ class TripDetailScreen extends ConsumerWidget {
     final trip = ref.watch(tripDetailProvider(tripId));
     final workflow = ref.watch(tripWorkflowProvider(tripId));
 
-    // When the workflow moves on (e.g. Planning -> PendingApproval), refresh the trip status too.
+    // When the workflow moves on (e.g. Planning -> Approved: the quote was sent), refresh the trip status too.
     ref.listen(tripWorkflowProvider(tripId), (previous, next) {
       if (previous?.value?.status != next.value?.status) {
         ref.invalidate(tripDetailProvider(tripId));

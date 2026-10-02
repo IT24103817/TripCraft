@@ -83,7 +83,7 @@ describe('Manager dashboard', () => {
     );
     expect(await link('Needs operator: 3')).toHaveAttribute('href', '/dashboard?attention=NeedsOperator');
     expect(await link('Guide change requests: 2')).toHaveAttribute('href', '#guide-change-requests');
-    expect(await link('Cancellations (7 days): 0')).toHaveAttribute('href', '/trips?status=Cancelled');
+    expect(await link('Cancellations: 0')).toHaveAttribute('href', '/trips?status=Cancelled');
     expect(within(section).getAllByRole('link')).toHaveLength(5);
     // The guide change link lands on the panel further down this page.
     expect(document.getElementById('guide-change-requests')).toContainElement(
@@ -129,7 +129,7 @@ describe('Manager dashboard', () => {
     givenActions();
     const { user, location } = renderApp('/dashboard');
 
-    await user.click(await screen.findByRole('link', { name: 'Cancellations (7 days): 0' }));
+    await user.click(await screen.findByRole('link', { name: 'Cancellations: 0' }));
 
     await waitFor(() => expect(location()).toBe('/trips?status=Cancelled'));
     expect(await screen.findByLabelText('Status')).toHaveValue('Cancelled');

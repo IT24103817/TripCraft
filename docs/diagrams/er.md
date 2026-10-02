@@ -172,7 +172,7 @@ erDiagram
         numeric fx_rate "numeric(12,4); check > 0"
         timestamptz fx_as_of
         boolean fx_stale
-        varchar(24) status "Pending | Approved | Rejected | RevisionRequested; index (status, created_at)"
+        varchar(24) status "Pending | Approved | Rejected | Declined | Superseded; index (status, created_at)"
         timestamptz accepted_at
     }
     quotation_lines {
@@ -188,7 +188,7 @@ erDiagram
         uuid id PK
         uuid quotation_id FK "indexed"
         uuid decided_by FK "users.id"
-        varchar(24) decision "Approved | Rejected | RevisionRequested"
+        varchar(24) decision "Approved | Rejected | Declined | Accepted | Confirmed (v1.0 rows may hold a revision request)"
         varchar(1000) comment
         timestamptz decided_at
     }

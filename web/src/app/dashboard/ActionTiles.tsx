@@ -42,8 +42,8 @@ const ACTION_TILES: Tile[] = [
   },
   {
     key: 'recentCancellations',
-    label: 'Cancellations (7 days)',
-    hint: 'Trips cancelled this week',
+    label: 'Cancellations',
+    hint: 'Cancelled in the last 7 days',
     to: '/trips?status=Cancelled',
   },
 ];

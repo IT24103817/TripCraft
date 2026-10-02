@@ -13,6 +13,7 @@ class Settings:
     llm_provider: str
     ollama_model: str
     ollama_base_url: str
+    ollama_num_predict: int
     groq_api_key: str
     groq_model: str
     node_timeout_seconds: float
@@ -31,6 +32,9 @@ def get_settings() -> Settings:
         ollama_model=os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
         # In Docker, Ollama on the host is e.g. http://host.docker.internal:11434.
         ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+        # Most answers are under 1,000 tokens; in JSON mode the local model sometimes never stops. The cap ends such
+        # an answer early, so the repair retry still fits inside the node timeout.
+        ollama_num_predict=int(os.getenv("OLLAMA_NUM_PREDICT", "1536")),
         groq_api_key=os.getenv("GROQ_API_KEY", ""),
         groq_model=os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
         node_timeout_seconds=float(os.getenv("NODE_TIMEOUT_SECONDS", "30")),

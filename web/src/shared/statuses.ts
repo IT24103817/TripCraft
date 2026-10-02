@@ -16,11 +16,10 @@ export const TRIP_STATUSES = [
 ] as const;
 export type TripRequestStatus = (typeof TRIP_STATUSES)[number];
 
-/** AgentWorkflowStatus in C# (unchanged in v1.1). */
+/** AgentWorkflowStatus in C#. RevisionRequested was retired in v1.1: a re-plan is simply Planning again. */
 export const WORKFLOW_STATUSES = [
   'Planning',
   'PendingApproval',
-  'RevisionRequested',
   'Approved',
   'Rejected',
   'Completed',
@@ -44,7 +43,6 @@ const TONE_BY_STATUS: Record<string, Tone> = {
   Cancelled: 'grey',
   // Workflow and quotation statuses
   PendingApproval: 'amber',
-  RevisionRequested: 'purple',
   FailedSafely: 'red',
   Approved: 'green',
   Rejected: 'red',

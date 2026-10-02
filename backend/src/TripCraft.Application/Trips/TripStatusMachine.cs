@@ -56,7 +56,7 @@ public static class TripStatusMachine
             new { Status = from.ToString() }, new { Status = to.ToString(), Reason = reason });
     }
 
-    /// <summary>"PendingReview" → "pending review", for messages.</summary>
+    /// <summary>"ClientAccepted" → "client accepted", for messages.</summary>
     public static string Describe(TripRequestStatus status) =>
         string.Concat(status.ToString().Select((c, i) => i > 0 && char.IsUpper(c) ? " " + char.ToLowerInvariant(c) : char.ToLowerInvariant(c).ToString()));
 }

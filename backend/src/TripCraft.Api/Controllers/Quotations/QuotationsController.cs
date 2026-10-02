@@ -55,7 +55,7 @@ public class QuotationsController(IQuotationService quotations) : ControllerBase
         CancellationToken ct) =>
         Ok(await client.AcceptAsync(User.GetCurrentUser(), id, ct));
 
-    /// <summary>The tourist declines with a reason: QuotationSent → PendingReview, the reason is shown to the manager.</summary>
+    /// <summary>The tourist declines with a reason: QuotationSent → ClientDeclined, the reason is shown to the manager.</summary>
     [HttpPost("{id:guid}/decline")]
     [Authorize(Roles = Roles.Tourist)]
     [ProducesResponseType(StatusCodes.Status200OK)]

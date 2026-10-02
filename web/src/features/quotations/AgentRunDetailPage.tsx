@@ -33,7 +33,6 @@ export default function AgentRunDetailPage() {
                 </Link>
                 {/* The review page explains a proposal, so it is linked once the agents produced one. */}
                 {(workflow.data.status === 'PendingApproval' ||
-                  workflow.data.status === 'RevisionRequested' ||
                   workflow.data.status === 'Approved' ||
                   workflow.data.status === 'Completed') && (
                   <Link to={`/approvals/${id}`} className="btn-primary">

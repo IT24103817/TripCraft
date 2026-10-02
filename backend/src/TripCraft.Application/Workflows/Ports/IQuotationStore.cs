@@ -18,7 +18,7 @@ public interface IQuotationStore
     Task<QuotationSummary?> GetLatestForTripAsync(Guid tripRequestId, CancellationToken ct);
 
     /// <summary>
-    /// Approved / Rejected / RevisionRequested / Declined / Superseded set that status; Accepted sets AcceptedAt
+    /// Approved / Rejected / Declined / Superseded set that status; Accepted sets AcceptedAt
     /// (the quotation stays Approved); Confirmed changes nothing (the decision row is the record).
     /// </summary>
     Task SetStatusAsync(Guid quotationId, QuotationDecision status, CancellationToken ct);
@@ -34,6 +34,8 @@ public enum QuotationDecision
 {
     Approved,
     Rejected,
+
+    /// <summary>History only: a v1.0 manager asked the agents for a revision. Never recorded since v1.1.</summary>
     RevisionRequested,
     Declined,
     Accepted,

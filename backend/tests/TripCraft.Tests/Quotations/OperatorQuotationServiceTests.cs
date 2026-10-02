@@ -114,7 +114,7 @@ public class OperatorQuotationServiceTests
         var result = await Service().ReplanAsync(Manager, _trip.Id, "Swap a temple for the lake", CancellationToken.None);
 
         result.TripStatus.Should().Be("Planning");
-        _workflow.Status.Should().Be(AgentWorkflowStatus.RevisionRequested);
+        _workflow.Status.Should().Be(AgentWorkflowStatus.Planning, "the agents work on it again");
         comment.Should().Be("Swap a temple for the lake\nThe client declined the last quote: Too many temples");
         sent!.Cities.Should().Equal("Kandy", "Ella");
         sent.LlmProvider.Should().Be("groq");

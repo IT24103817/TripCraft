@@ -90,7 +90,8 @@ public class OperatorQuotationService(
         var declined = await quotations.GetLatestForTripAsync(trip.Id, ct);
         var reason = declined is null ? null : await quotations.GetDeclineReasonAsync(declined.Id, ct);
 
-        workflow.Status = AgentWorkflowStatus.RevisionRequested;
+        var statusBefore = workflow.Status;
+        workflow.Status = AgentWorkflowStatus.Planning; // the agents work on it again
         workflow.CurrentStep = "replanning";
         workflow.FinishedAt = null;
         TripStatusMachine.Move(trip, TripRequestStatus.Planning, user.Id, $"Replanning after the client declined: {note.Trim()}", audit);
@@ -107,7 +108,7 @@ public class OperatorQuotationService(
             TripStatusMachine.Move(trip, TripRequestStatus.NeedsOperator, user.Id,
                 workflow.ErrorSummary ?? "The agent service could not re-plan.", audit);
             audit.Record(user.Id, "AgentWorkflowFailedSafely", nameof(AgentWorkflow), workflow.Id,
-                new { Status = nameof(AgentWorkflowStatus.RevisionRequested) },
+                new { Status = statusBefore.ToString() },
                 new { Status = workflow.Status.ToString(), workflow.ErrorSummary });
             await unitOfWork.SaveChangesAsync(ct);
         }

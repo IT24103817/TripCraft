@@ -40,8 +40,11 @@ Every change is an audit row. `GET /api/trip-requests/{id}/history` returns
 `[{at, action, entity, actor, fromStatus, toStatus, reason}]`. `actor` is a role or `System`; the auto-send is
 `System`.
 
-The agent workflow status (`GET /api/trip-requests/{id}/workflow`, `.status`) is unchanged. It is Approved once
-the quotation was sent and Completed after Confirm. `finalOutcome.editedSinceQuotation = true` means the proposal
+The agent workflow status (`GET /api/trip-requests/{id}/workflow`, `.status`) is one of Planning (also while the
+agents re-plan after a declined quote), PendingApproval (re-priced by a manager, not sent yet), Approved (the
+quotation was sent), Completed (after Confirm), Rejected or FailedSafely. RevisionRequested is no longer a workflow
+or quotation status: the migration `RetireRevisionRequested` turned old workflows into Planning or FailedSafely and
+old quotation versions into Superseded. `finalOutcome.editedSinceQuotation = true` means the proposal
 was edited after it was priced.
 
 ## Cities

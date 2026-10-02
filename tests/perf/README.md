@@ -22,7 +22,7 @@ k6 run tests/perf/agent-latency.js                # 5 sequential workflow runs (
 | `list-load.js` | p95 `http_req_duration` < 800 ms, error rate < 1 % |
 | `auth-load.js` | p95 < 800 ms, no errors other than 200/429, at least one successful login. The API limits logins to 5 per minute per IP (PLAN.md section 10), so from one machine most answers are 429 **by design** — the script checks the limiter stays fast. |
 | `db-response.js` | p95 `db_latency_ms` (one database round trip, from `/health`) < 100 ms, error rate < 1 % |
-| `agent-latency.js` | every run reaches `PendingApproval`; reports `time_to_pending_approval` (avg/p95) and the final status of each run |
+| `agent-latency.js` | every run's quotation is sent to the client (workflow `Approved`, v1.1); reports `time_to_quotation_sent` (avg/p95) and the final status of each run |
 
 **Evidence for the report:** keep the generated `docs/evidence/perf/*-summary.json` and put a screenshot of each
 terminal summary in `docs/evidence/perf/` (e.g. `list-load.png`).

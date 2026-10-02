@@ -52,14 +52,13 @@ public class Quotation : BaseEntity
 /// <summary>
 /// Pending = made but not sent yet (a manager re-priced it); Approved = sent to the tourist (automatically or by a
 /// manager); Declined = the tourist said no;
-/// RevisionRequested / Superseded = replaced by a newer version; Rejected = the operator turned the trip down.
+/// Superseded = replaced by a newer version; Rejected = the operator turned the trip down.
 /// </summary>
 public enum QuotationStatus
 {
     Pending,
     Approved,
     Rejected,
-    RevisionRequested,
     Declined,
     Superseded
 }

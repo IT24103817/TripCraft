@@ -356,7 +356,7 @@ describe('Trip page actions: Needs operator', () => {
 
   const failed = () =>
     workflow({
-      status: 'RevisionRequested',
+      status: 'FailedSafely',
       errorSummary: 'A Hard rule failed: no free vehicle with 6 seats on 2026-10-11.',
       validationResult: {
         isValid: false,

@@ -38,14 +38,16 @@ Vercel setup: [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md).
 Tourist  POST /api/trip-requests/{id}/start-planning ──► API creates agent_workflows (Planning) ──► agent POST /run-workflow
 agent    GET  /api/internal/... tools                 ◄── internal API (X-Internal-Key)
 agent    POST /api/internal/workflows/{id}/steps       ──► agent_steps row per agent
-agent    POST /api/internal/workflows/{id}/proposal    ──► ProposalValidator ──► PendingApproval | RevisionRequested | FailedSafely
-Manager  POST /api/quotations/{id}/approve             ──► one transaction: holds, quotation, trip Confirmed, workflow Completed, decision, audit
+agent    POST /api/internal/workflows/{id}/proposal    ──► ProposalValidator ──► quotation sent (trip QuotationSent) | trip NeedsOperator
+Tourist  POST /api/quotations/{id}/accept              ──► trip ClientAccepted
+Manager  POST /api/trip-requests/{id}/confirm          ──► one transaction: holds, itinerary, vouchers, trip Confirmed, workflow Completed, decision, audit
 ```
 
 `ProposalValidator` (Application/Workflows) is a pure class. **Hard** violations (unknown attraction/guide/
 vehicle/hotel/room type, overlapping guide or vehicle hold, rooms < pax on a night, seats < pax, guide language,
 day with 0 or > 3 stops, quotation total off by more than 1 LKR from the server recomputation, incomplete JSON)
-end the workflow `FailedSafely`. The only **Soft** violation, `OVER_BUDGET`, gives `RevisionRequested`.
+end the workflow `FailedSafely` and the trip NeedsOperator; nothing is sent. The only **Soft** violation,
+`OVER_BUDGET`, is still sent after the agents' lowest-cost re-plans, flagged "Best price we can offer".
 
 ## Public workflow endpoints (JWT)
 

@@ -32,17 +32,22 @@ colour, font size or radius in a screen: use a token, a component class or a the
 | **brand-700** | **`#0F766E`** | `brand-700` | `brand` | primary buttons, links, active items (5.5:1 on white) |
 | brand-800 / 900 / 950 | `#115E59` / `#134E4A` / `#042F2E` | `brand-800…950` | `brandDeep` (`#042F2E`) | sidebar, hero, headings on light |
 | accent | `#D97706` (amber-600) | `accent` / `amber-600` | `accent` | highlights, "Get the app", map pins — never for text on white below 18 px |
-| ink | `#0F172A` (slate-900) | `slate-900` | `ink` | primary text |
+| ink | `#0F172A` (slate-900) | `slate-900` (text); `ink` = always-dark backdrop | `ink` | primary text; `bg-ink/50` behind dialogs |
 | muted | `#475569` (slate-600) | `slate-600` | `muted` | secondary text (7.6:1) |
 | subtle | `#64748B` (slate-500) | `slate-500` | — | captions, table headers (4.8:1) |
 | border | `#E2E8F0` (slate-200) | `slate-200` | `border` | card and table borders |
 | canvas | `#F8FAFC` (slate-50) | `slate-50` | `canvas` | page background |
-| surface | `#FFFFFF` | `white` | `surface` | cards, inputs |
+| surface | `#FFFFFF` (dark: slate-900) | `surface` | `surface` | cards, inputs, dialogs, top bar — never `bg-white` |
 | success | `#15803D` | `green-700` / bg `green-50` | `success` | Confirmed, Approved, Completed, passed checks |
 | warning | `#B45309` | `amber-700` / bg `amber-50` | `warning` | Pending approval, Revision requested, stale FX |
-| danger | `#B91C1C` | `red-700` / bg `red-50` | `danger` | Rejected, Failed safely, errors, delete |
+| danger | `#B91C1C` (dark: red-400) | `red-700` / bg `red-50`; `danger` for invalid-field borders | `danger` | Rejected, Failed safely, errors, delete |
 | info | `#1D4ED8` | `blue-700` / bg `blue-50` | `info` | Planning, In progress |
 | neutral | `#475569` | `slate-600` / bg `slate-100` | `neutral` | Submitted, Cancelled, Released |
+
+**Dark mode** — the `dark` class on `<html>` (`ThemeToggle` in the top bar; saved in localStorage, else the OS
+setting). `tailwind.config.ts` defines the slate scale, `surface` and `danger` as CSS variables and turns them round
+under `.dark`, so screens keep the same class names; `index.css` deepens the status-tone backgrounds. In components
+use `bg-surface` (never `bg-white`) and tokens only, no raw hex.
 
 Status → tone is defined once: `web/src/shared/statuses.ts` (`toneFor`) and `mobile/lib/shared/utils/statuses.dart`.
 
@@ -78,16 +83,20 @@ Numbers in tables and money use tabular figures (`tabular-nums`).
 |-----------|-------|---------|-------|
 | Button | `Button` (`variant` primary / secondary / danger, `size`, `isLoading` + `loadingText`, forwards its ref); a `Link` styled as a button uses the same `.btn-*` class | `FilledButton` / `OutlinedButton` | `type` defaults to `button`; while loading it is disabled and `aria-busy` |
 | Primary button | `.btn-primary` (brand-700, white text, 40 px high, `rounded-md`) | `FilledButton` (theme: brand, 48 dp, radius 10) | one per view region; verb label ("Approve", "Submit trip request") |
-| Secondary button | `.btn-secondary` (white, slate-300 border) | `OutlinedButton` | |
+| Secondary button | `.btn-secondary` (`bg-surface`, slate-300 border) | `OutlinedButton` | |
 | Danger button | `.btn-danger` (red-700) | `FilledButton` with `danger` background | only for destructive actions, always behind a confirmation |
 | Input | `.input` (40 px, `rounded-md`, brand focus ring) + `FormField` label/hint/error | `AppTextField` (filled surface, radius 10, label above value) | label always visible; error text in danger below the field |
 | Card | `Card` (`title` → h2 on the left, `actions` on the right) or `.card` on a semantic element (`section`, `form`) | `SectionCard` | |
-| Card (class) | `.card` (white, `rounded-lg`, border, `shadow-card`, p-5) | `SectionCard` (`Card` from the theme) | title row: card title left, status badge right |
-| Status badge | `StatusBadge` (pill, tone background 50, text 700, ring 300) | `StatusChip` | text label always present |
+| Card (class) | `.card` (`bg-surface`, `rounded-lg`, border, `shadow-card`, p-5) | `SectionCard` (`Card` from the theme) | title row: card title left, status badge right |
+| Status badge | `StatusBadge` (pill, tone background 50, text 700, ring 300, `aria-hidden` dot in `bg-current`; `label` overrides the text) | `StatusChip` | text label always present |
 | Data table | `DataTable` (header on `slate-50`, `text-xs` uppercase subtle headers, row hover `brand-50/40`) | `ListTile`s in cards | sortable headers show ▲/▼; pagination bottom right |
 | Page header | `PageHeader` (title + description left, actions right) | `AppBar` (large title, no centre) | |
-| Sidebar | deep brand `brand-950`, items `text-brand-100`, active `bg-brand-800 text-white` | bottom `NavigationBar` with brand indicator | |
+| Sidebar | `Sidebar`: deep brand `brand-950`, four titled groups (Operations, Resources, Insights, Admin) filtered by role; items `text-brand-100`, active `bg-brand-800 text-white` with an accent left border (`border-l-4 border-accent`) | bottom `NavigationBar` with brand indicator | a group with no link for the role is hidden |
 | Timeline | `StepTimeline` / `StatusTimeline`: 24 px dots, done = success, current = brand, todo = slate-300 | `StatusTimeline` widget, same tones | |
+| Top bar | `Topbar`: menu button (mobile), `NotificationBell`, `ThemeToggle`, user name + initials avatar, Log out | — | |
+| Dialog | `Dialog` (`size="wide"`, `placement="side"`), `ConfirmDialog`, `ReasonDialog` (asks a reason/comment) | — | Escape closes; focus moves in and back |
+| Tabs | `TabList` (`tab-{id}` controls `panel-{id}`; the tab lives in the URL, e.g. `?tab=quotation`) | — | |
+| Day stops form | `DayStopsForm` (1–3 attractions of a day + notes), shared by the itinerary and proposal editors | — | |
 | Toast / snackbar | `Toast` (success = green, error = red) | `SnackBar` (floating, ink background) | |
 | States | `PageState`: skeleton, empty (title + description + action), error (message + Retry) | `AsyncView`, `EmptyState` | never a blank screen |
 
@@ -98,6 +107,10 @@ Every shared component lives in its own folder under `web/src/shared/components/
 - `<Name>.tsx` — the component: an arrow function, a named export, props typed with its interface.
 - `<Name>.types.ts` — `interface <Name>Props` (and any related types); every component accepts `className`.
 - `index.ts` — re-exports the component and its types. `web/src/shared/components/index.ts` re-exports every folder.
+
+The folders: Button, Card, ConfirmDialog, DataTable, DayStopsForm, Dialog, FormField, KpiCard, Logo, PageHeader,
+PageState, PlaceholderPage, ReasonDialog, SearchFilterBar, Sidebar, StatusBadge, TabList, ThemeToggle, Toast, Topbar.
+Import a component from its folder (`@/shared/components/Button`).
 
 Components that wrap one native element (`Button`, `Card`) use `forwardRef`. Styling is Tailwind only: tokens from
 `tailwind.config.ts` and the component classes in `index.css`, joined with `cn()`. Tests live in
@@ -113,7 +126,8 @@ Components that wrap one native element (`Button`, `Card`) use `forwardRef`. Sty
 
 ## Checklist before merging UI
 
-- [ ] Only tokens / component classes / theme values used (no raw hex outside the config and `app_theme.dart`).
+- [ ] Only tokens / component classes / theme values used (no raw hex outside the config and `app_theme.dart`, no `bg-white`).
+- [ ] Checked in light and dark mode.
 - [ ] Loading, empty, error and success states present.
 - [ ] Keyboard and screen-reader pass; Lighthouse accessibility ≥ 90 on public pages.
 - [ ] Looks right at 360 px wide and on a desktop.

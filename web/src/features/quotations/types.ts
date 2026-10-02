@@ -237,6 +237,19 @@ export interface QuotationDto {
   depositPaidAt: string | null;
   createdAt: string;
   proposalSnapshot?: ProposalSnapshot | null;
+  /** The trip this version is for: its objective and current status (filled in by the list endpoint). */
+  tripObjective?: string | null;
+  tripStatus?: string | null;
+}
+
+/** GET /api/quotations?latestOnly=true&…: the Trips page's Quotations tab (newest version of each trip). */
+export interface LatestQuotationsQuery {
+  status?: string;
+  minTotalUsd?: string;
+  search?: string;
+  sort?: string;
+  page: number;
+  pageSize: number;
 }
 
 /** POST /api/quotations/{id}/calculate: Re-price makes a new version; the old one becomes Superseded. */

@@ -1,48 +1,23 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { DataTable, type Column } from '@/shared/components/DataTable';
+import type { ReactNode } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/shared/components/PageHeader';
-import { PageState } from '@/shared/components/PageState';
-import { SearchFilterBar } from '@/shared/components/SearchFilterBar';
-import { StatusBadge } from '@/shared/components/StatusBadge';
-import { useListParams } from '@/shared/hooks/useListParams';
-import { statusLabel, TRIP_STATUSES } from '@/shared/statuses';
-import { formatDate, formatUsd } from '@/shared/utils/format';
-import { useTrips } from './api';
-import { CityFilter } from './CityFilter';
-import type { TripRequestDto } from './types';
+import { TabList } from '@/shared/components/TabList';
+import { TripRequestsList } from './TripRequestsList';
 
-const columns: Column<TripRequestDto>[] = [
-  {
-    key: 'objective',
-    header: 'Objective',
-    render: (t) => t.objective,
-    className: 'max-w-xs truncate px-4 py-2 text-slate-900',
-  },
-  { key: 'cities', header: 'Cities', render: (t) => t.cities.join(', ') || '—' },
-  { key: 'startDate', header: 'Start', sortKey: 'startDate', render: (t) => formatDate(t.startDate) },
-  { key: 'endDate', header: 'End', render: (t) => formatDate(t.endDate) },
-  { key: 'pax', header: 'Pax', sortKey: 'pax', render: (t) => t.pax },
-  { key: 'budgetUsd', header: 'Budget', sortKey: 'budgetUsd', render: (t) => formatUsd(t.budgetUsd) },
-  { key: 'status', header: 'Status', sortKey: 'status', render: (t) => <StatusBadge status={t.status} /> },
-  { key: 'createdAt', header: 'Submitted', sortKey: 'createdAt', render: (t) => formatDate(t.createdAt) },
+const TABS = [
+  { id: 'trips', label: 'Trips' },
+  { id: 'quotations', label: 'Quotations' },
 ];
 
-export default function TripsListPage() {
-  const navigate = useNavigate();
-  const list = useListParams({ sort: '-createdAt' });
-  // The ticked cities live in the URL as "Kandy,Ella", like every other filter.
-  const cities = list.get('cities') ? list.get('cities').split(',') : [];
-  const query = {
-    status: list.get('status'),
-    cities,
-    from: list.get('from'),
-    to: list.get('to'),
-    search: list.search,
-    sort: list.sort,
-    page: list.page,
-    pageSize: list.pageSize,
-  };
-  const trips = useTrips(query);
+interface Props {
+  /** The Quotations tab's content; the app passes it in (features never import each other). */
+  quotationsTab?: () => ReactNode;
+}
+
+/** The Trips page: a Trips tab (every trip request) and a Quotations tab (?tab=quotations). */
+export default function TripsListPage({ quotationsTab }: Props) {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') === 'quotations' && quotationsTab ? 'quotations' : 'trips';
 
   return (
     <section className="space-y-4">
@@ -55,65 +30,22 @@ export default function TripsListPage() {
           </Link>
         }
       />
-      <SearchFilterBar
-        search={{
-          value: list.search,
-          placeholder: 'Search the objective',
-          onChange: (search) => list.set({ search }),
-        }}
-        filters={[
-          {
-            name: 'status',
-            label: 'Status',
-            value: query.status,
-            options: TRIP_STATUSES.map((s) => ({ value: s, label: statusLabel(s) })),
-            onChange: (status) => list.set({ status }),
-          },
-        ]}
-        dateRange={{
-          label: 'Start date',
-          from: query.from,
-          to: query.to,
-          onChange: (from, to) => list.set({ from, to }),
-        }}
+      {quotationsTab && (
+        <TabList
+          label="Trips page sections"
+          tabs={TABS}
+          selected={tab}
+          // A new tab starts without the other tab's filters, sort and page.
+          onSelect={(next) => setParams(next === 'trips' ? {} : { tab: next }, { replace: true })}
+        />
+      )}
+      <div
+        role={quotationsTab ? 'tabpanel' : undefined}
+        id={`panel-${tab}`}
+        aria-labelledby={quotationsTab ? `tab-${tab}` : undefined}
       >
-        <CityFilter value={cities} onChange={(next) => list.set({ cities: next.join(',') })} />
-      </SearchFilterBar>
-      <PageState
-        isLoading={trips.isLoading}
-        isError={trips.isError}
-        error={trips.error}
-        onRetry={() => trips.refetch()}
-        isEmpty={trips.data?.total === 0}
-        emptyTitle="No trip requests match these filters"
-        emptyAction={
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => list.set({ status: '', cities: '', from: '', to: '', search: '' })}
-          >
-            Clear filters
-          </button>
-        }
-      >
-        {trips.data && (
-          <DataTable
-            caption="Trip requests"
-            columns={columns}
-            rows={trips.data.items}
-            getRowId={(t) => t.id}
-            rowLabel={(t) => `trip ${t.objective}`}
-            total={trips.data.total}
-            page={trips.data.page}
-            pageSize={trips.data.pageSize}
-            sort={list.sort}
-            onSortChange={(sort) => list.set({ sort })}
-            onPageChange={(page) => list.set({ page })}
-            onPageSizeChange={(pageSize) => list.set({ pageSize })}
-            onRowClick={(t) => navigate(`/trips/${t.id}`)}
-          />
-        )}
-      </PageState>
+        {tab === 'quotations' && quotationsTab ? quotationsTab() : <TripRequestsList />}
+      </div>
     </section>
   );
 }

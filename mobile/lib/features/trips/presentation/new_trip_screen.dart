@@ -16,6 +16,7 @@ import '../application/trips_providers.dart';
 import '../data/trip_models.dart';
 import '../data/trips_repository.dart';
 import 'city_picker.dart';
+import 'passport_photo_picker.dart';
 import 'travellers_field.dart';
 import 'trip_form_rules.dart';
 import 'trip_prefill.dart';
@@ -114,12 +115,9 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
   }
 
   Future<void> _pickPhoto(ImageSource source) async {
-    final picker = widget.imagePicker ?? ImagePicker();
-    final photo = await picker.pickImage(
-      source: source,
-      maxWidth: 1600,
-      imageQuality: 85,
-    );
+    final ImagePicker picker =
+        widget.imagePicker ?? ref.read(imagePickerProvider);
+    final photo = await pickPassportPhoto(picker, source);
     if (photo == null) return;
     setState(() {
       _photo = photo;
@@ -310,7 +308,7 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
                 validator: TripFormRules.passportNumber,
               ),
               const SizedBox(height: 16),
-              _PhotoPicker(
+              PassportPhotoPicker(
                 photo: _photo,
                 missing: _photoMissing,
                 onCamera: () => _pickPhoto(ImageSource.camera),
@@ -326,67 +324,6 @@ class _NewTripScreenState extends ConsumerState<NewTripScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _PhotoPicker extends StatelessWidget {
-  const _PhotoPicker({
-    required this.photo,
-    required this.missing,
-    required this.onCamera,
-    required this.onGallery,
-  });
-
-  final XFile? photo;
-  final bool missing;
-  final VoidCallback onCamera;
-  final VoidCallback onGallery;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Passport photo', style: theme.textTheme.titleSmall),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: onCamera,
-                icon: const Icon(Icons.photo_camera),
-                label: const Text('Camera'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: onGallery,
-                icon: const Icon(Icons.photo_library),
-                label: const Text('Gallery'),
-              ),
-            ),
-          ],
-        ),
-        if (photo != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'Selected: ${photo!.name}',
-              semanticsLabel: 'Passport photo selected',
-            ),
-          ),
-        if (missing)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'Add a photo of your passport.',
-              style: TextStyle(color: theme.colorScheme.error),
-            ),
-          ),
-      ],
     );
   }
 }

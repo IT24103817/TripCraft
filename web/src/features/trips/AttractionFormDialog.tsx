@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { getErrorMessage } from '@/shared/api/errors';
+import { Button } from '@/shared/components/Button';
 import { Dialog } from '@/shared/components/Dialog';
 import { FormField } from '@/shared/components/FormField';
 import { useToast } from '@/shared/components/Toast';
@@ -93,12 +94,12 @@ export function AttractionFormDialog({ open, attraction, onClose }: Props) {
           label={watch('name') || 'the attraction'}
         />
         <div className="flex justify-end gap-2">
-          <button type="button" className="btn-secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
-          </button>
-          <button type="submit" className="btn-primary" disabled={save.isPending}>
-            {save.isPending ? 'Saving…' : 'Save'}
-          </button>
+          </Button>
+          <Button type="submit" isLoading={save.isPending} loadingText="Saving…">
+            Save
+          </Button>
         </div>
       </form>
     </Dialog>

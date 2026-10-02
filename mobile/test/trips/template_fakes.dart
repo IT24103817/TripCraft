@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tripcraft_mobile/features/trips/data/template_models.dart';
+import 'package:tripcraft_mobile/features/trips/data/tourist_profile.dart';
+import 'package:tripcraft_mobile/features/trips/data/tourist_profile_repository.dart';
 import 'package:tripcraft_mobile/features/trips/data/trip_templates_repository.dart';
 
 import '../helpers.dart';
@@ -57,11 +59,13 @@ Map<String, dynamic> templateJson({
 };
 
 /// Serves fixed packages and records a booking instead of calling the API.
+/// When [calls] is given, "book" is added to it, so a test can check the order of the calls.
 class FakeTripTemplatesRepository extends Fake
     implements TripTemplatesRepository {
-  FakeTripTemplatesRepository({this.list});
+  FakeTripTemplatesRepository({this.list, this.calls});
 
   final List<Map<String, dynamic>>? list;
+  final List<String>? calls;
   BookTemplateRequest? booked;
 
   @override
@@ -78,6 +82,7 @@ class FakeTripTemplatesRepository extends Fake
     String templateId,
     BookTemplateRequest request,
   ) async {
+    calls?.add('book');
     booked = request;
     return BookTemplateResult.fromJson({
       'trip': tripJson(id: 'trip-9', status: 'Planning'),
@@ -87,5 +92,41 @@ class FakeTripTemplatesRepository extends Fake
         'tripStatus': 'Planning',
       },
     });
+  }
+}
+
+/// Serves the tourist's profile (GET /api/tourists/me) and records the passport photo upload.
+/// Set [uploadError] to make the upload fail like the API would; "upload" is added to [calls].
+class FakeTouristProfileRepository extends Fake
+    implements TouristProfileRepository {
+  FakeTouristProfileRepository({
+    this.hasPassportPhoto = false,
+    this.nationality = '',
+    this.calls,
+  });
+
+  bool hasPassportPhoto;
+  final String nationality;
+  final List<String>? calls;
+  String? uploadedPhotoPath;
+  Object? uploadError;
+
+  TouristProfile get _profile => TouristProfile(
+    nationality: nationality,
+    passportNumberMasked: nationality.isEmpty ? '' : '****4567',
+    hasPassportPhoto: hasPassportPhoto,
+  );
+
+  @override
+  Future<TouristProfile> me() async => _profile;
+
+  @override
+  Future<TouristProfile> uploadPassportPhoto(String filePath) async {
+    calls?.add('upload');
+    final error = uploadError;
+    if (error != null) throw error;
+    uploadedPhotoPath = filePath;
+    hasPassportPhoto = true;
+    return _profile;
   }
 }

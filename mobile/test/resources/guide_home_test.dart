@@ -13,6 +13,9 @@ Map<String, dynamic> trip(
   String status, {
   String start = '2026-10-10',
   String end = '2026-10-11',
+  String city = 'Kandy',
+  String vehicle = 'CAB-1234',
+  String firstStop = 'Temple of the Tooth',
 }) => {
   'tripRequestId': 't-$objective',
   'objective': objective,
@@ -20,20 +23,20 @@ Map<String, dynamic> trip(
   'endDate': end,
   'pax': 4,
   'status': status,
-  'vehicleRegistrationNo': 'CAB-1234',
+  'vehicleRegistrationNo': vehicle,
   'vehicleType': 'Van',
   'vehicleSeats': 9,
   'days': [
     {
       'dayNumber': 1,
       'date': start,
-      'city': 'Kandy',
+      'city': city,
       'hotelName': 'Kandy Hills',
       'stops': [
         {
           'stopId': 's1',
           'sequence': 1,
-          'attractionName': 'Temple of the Tooth',
+          'attractionName': firstStop,
           'latitude': 7.29,
           'longitude': 80.64,
           'checkedInAt': '2026-10-10T05:00:00Z',
@@ -221,6 +224,124 @@ void main() {
     await tester.tap(find.widgetWithText(ChoiceChip, 'All'));
     await tester.pumpAndSettle();
     expect(find.text('Kandy and Ella'), findsOneWidget);
+  });
+
+  group('schedule search', () {
+    // Three past trips, so none of them is the focus trip and all are in "Your schedule".
+    final pastTrips = [
+      trip(
+        'Kandy and Ella',
+        'InProgress',
+        start: '2026-09-01',
+        end: '2026-09-02',
+      ),
+      trip(
+        'Galle coast',
+        'Completed',
+        start: '2026-09-05',
+        end: '2026-09-06',
+        city: 'Galle',
+        vehicle: 'WP-7788',
+        firstStop: 'Galle Fort',
+      ),
+      trip(
+        'Cultural triangle',
+        'Completed',
+        start: '2026-09-10',
+        end: '2026-09-11',
+        city: 'Sigiriya',
+        vehicle: 'NC-4455',
+        firstStop: 'Sigiriya Rock',
+      ),
+    ];
+
+    // A tall screen, so all three schedule cards are built at once.
+    Future<void> pumpTall(WidgetTester tester) async {
+      usePhoneSize(tester, const Size(412, 2400));
+      await pumpHome(tester, pastTrips, now: DateTime(2026, 10, 20));
+    }
+
+    Future<void> search(WidgetTester tester, String text) async {
+      await tester.enterText(find.byType(TextField), text);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('typing filters the list by objective, city, stop or vehicle', (
+      tester,
+    ) async {
+      await pumpTall(tester);
+      expect(find.text('Kandy and Ella'), findsOneWidget);
+      expect(find.text('Galle coast'), findsOneWidget);
+      expect(find.text('Cultural triangle'), findsOneWidget);
+
+      await search(tester, 'GALLE');
+      expect(find.text('Galle coast'), findsOneWidget);
+      expect(find.text('Kandy and Ella'), findsNothing);
+      expect(find.text('Cultural triangle'), findsNothing);
+
+      await search(tester, 'sigiriya rock');
+      expect(find.text('Cultural triangle'), findsOneWidget);
+      expect(find.text('Galle coast'), findsNothing);
+
+      await search(tester, 'wp-77');
+      expect(find.text('Galle coast'), findsOneWidget);
+      expect(find.text('Cultural triangle'), findsNothing);
+
+      await search(tester, 'ella');
+      expect(find.text('Kandy and Ella'), findsOneWidget);
+      expect(find.text('Galle coast'), findsNothing);
+    });
+
+    testWidgets('no match shows the empty state; clearing restores the list', (
+      tester,
+    ) async {
+      await pumpTall(tester);
+
+      await search(tester, 'Jaffna');
+      expect(find.text('No trips match your search'), findsOneWidget);
+      expect(find.text('Kandy and Ella'), findsNothing);
+
+      await tester.tap(find.byTooltip('Clear search'));
+      await tester.pumpAndSettle();
+      expect(find.text('No trips match your search'), findsNothing);
+      expect(find.text('Kandy and Ella'), findsOneWidget);
+      expect(find.text('Galle coast'), findsOneWidget);
+      expect(find.text('Cultural triangle'), findsOneWidget);
+      expect(find.byTooltip('Clear search'), findsNothing);
+    });
+
+    testWidgets('search and the status filter work together', (tester) async {
+      await pumpTall(tester);
+
+      // "Kandy" is the city of the first trip only.
+      await search(tester, 'kandy');
+      // The status chips scroll sideways on a phone.
+      final completed = find.widgetWithText(ChoiceChip, 'Completed');
+      await tester.scrollUntilVisible(
+        completed,
+        100,
+        scrollable: find
+            .ancestor(
+              of: find.widgetWithText(ChoiceChip, 'All'),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.ensureVisible(completed);
+      await tester.pumpAndSettle();
+      await tester.tap(completed);
+      await tester.pumpAndSettle();
+      expect(find.text('No trips match your search'), findsOneWidget);
+
+      await search(tester, 'galle');
+      expect(find.text('Galle coast'), findsOneWidget);
+      expect(find.text('Cultural triangle'), findsNothing);
+
+      await search(tester, '');
+      expect(find.text('Galle coast'), findsOneWidget);
+      expect(find.text('Cultural triangle'), findsOneWidget);
+      expect(find.text('Kandy and Ella'), findsNothing);
+    });
   });
 
   testWidgets('no assigned trips shows the empty state', (tester) async {

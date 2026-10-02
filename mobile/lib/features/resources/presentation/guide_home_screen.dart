@@ -8,15 +8,17 @@ import '../../../shared/utils/statuses.dart';
 import '../../../shared/widgets/async_view.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../application/guide_focus.dart';
+import '../application/schedule_search.dart';
 import '../data/guide_models.dart';
 import '../data/resources_repository.dart';
 import 'focus_trip_card.dart';
+import 'schedule_search_field.dart';
 import 'schedule_trip_card.dart';
 import 'today_check_in_card.dart';
 import 'vehicle_card.dart';
 
 /// The guide's home: today's trip first (or the next one), its vehicle, the check-in panel for today's stops,
-/// then the rest of the schedule with a status filter.
+/// then the rest of the schedule with a search box and a status filter.
 class GuideHomeScreen extends ConsumerStatefulWidget {
   const GuideHomeScreen({super.key});
 
@@ -26,7 +28,14 @@ class GuideHomeScreen extends ConsumerStatefulWidget {
 
 class _GuideHomeScreenState extends ConsumerState<GuideHomeScreen> {
   static const _filters = ['', 'Confirmed', 'InProgress', 'Completed'];
+  final _search = TextEditingController();
   String _status = '';
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,9 +70,12 @@ class _GuideHomeScreenState extends ConsumerState<GuideHomeScreen> {
     final focus = focusTrip(schedule.trips, today);
     final rest = [
       for (final trip in schedule.trips)
-        if (trip != focus?.trip && (_status.isEmpty || trip.status == _status))
+        if (trip != focus?.trip &&
+            (_status.isEmpty || trip.status == _status) &&
+            matchesScheduleSearch(trip, _search.text))
           trip,
     ];
+    final searching = _search.text.trim().isNotEmpty;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -78,6 +90,11 @@ class _GuideHomeScreenState extends ConsumerState<GuideHomeScreen> {
           ],
         ],
         Text('Your schedule', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 12),
+        ScheduleSearchField(
+          controller: _search,
+          onChanged: (_) => setState(() {}),
+        ),
         SizedBox(
           height: 52,
           child: ListView(
@@ -96,7 +113,13 @@ class _GuideHomeScreenState extends ConsumerState<GuideHomeScreen> {
             ],
           ),
         ),
-        if (rest.isEmpty)
+        if (rest.isEmpty && searching)
+          const EmptyState(
+            icon: Icons.search_off,
+            title: 'No trips match your search',
+            message: 'Try a trip name, a city, a stop or a vehicle number.',
+          )
+        else if (rest.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Text('No other trips.'),

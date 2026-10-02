@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { getErrorMessage } from '@/shared/api/errors';
+import { Button } from '@/shared/components/Button';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { DataTable, type Column } from '@/shared/components/DataTable';
 import { PageHeader } from '@/shared/components/PageHeader';
@@ -72,11 +73,7 @@ export default function AttractionsPage() {
       <PageHeader
         title="Attractions"
         description="Places the Itinerary agent can choose from."
-        actions={
-          <button type="button" className="btn-primary" onClick={() => openForm(null)}>
-            Add attraction
-          </button>
-        }
+        actions={<Button onClick={() => openForm(null)}>Add attraction</Button>}
       />
       <SearchFilterBar
         search={{
@@ -108,11 +105,7 @@ export default function AttractionsPage() {
         onRetry={() => attractions.refetch()}
         isEmpty={attractions.data?.total === 0}
         emptyTitle="No attractions found"
-        emptyAction={
-          <button type="button" className="btn-primary" onClick={() => openForm(null)}>
-            Add attraction
-          </button>
-        }
+        emptyAction={<Button onClick={() => openForm(null)}>Add attraction</Button>}
       >
         {attractions.data && (
           <DataTable

@@ -6,6 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:tripcraft_mobile/core/api/api_providers.dart';
 import 'package:tripcraft_mobile/core/storage/session_storage.dart';
 import 'package:tripcraft_mobile/features/trips/data/template_models.dart';
+import 'package:tripcraft_mobile/features/trips/data/tourist_profile_repository.dart';
 import 'package:tripcraft_mobile/features/trips/data/trip_templates_repository.dart';
 import 'package:tripcraft_mobile/features/trips/presentation/new_trip_screen.dart';
 import 'package:tripcraft_mobile/features/trips/presentation/package_detail_screen.dart';
@@ -55,6 +56,11 @@ void main() {
           apiClientProvider.overrideWithValue(api),
           sessionStorageProvider.overrideWithValue(InMemorySessionStorage()),
           tripTemplatesRepositoryProvider.overrideWithValue(templates),
+          // A passport photo is already on file, so the sheet does not ask for one
+          // (book_package_photo_test.dart covers the photo step).
+          touristProfileRepositoryProvider.overrideWithValue(
+            FakeTouristProfileRepository(hasPassportPhoto: true),
+          ),
           fixedClock(today),
         ],
         child: MaterialApp.router(theme: buildAppTheme(), routerConfig: router),

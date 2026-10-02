@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useAuthStore } from '@/auth/authStore';
+import { Button } from '@/shared/components/Button';
+import { Card } from '@/shared/components/Card';
 import { PageState } from '@/shared/components/PageState';
 import { StatusBadge } from '@/shared/components/StatusBadge';
 import { formatDate, formatDateTime, formatUsd } from '@/shared/utils/format';
@@ -23,8 +25,7 @@ export function TripOverview({ trip }: { trip: TripRequestDto }) {
 
   return (
     <div className="space-y-4">
-      <div className="card">
-        <h2 className="mb-3 font-semibold text-slate-900">Status</h2>
+      <Card title="Status">
         <StatusTimeline status={trip.status} />
         {/* e.g. Submitted: only the tourist may start planning (API rule), from the mobile app. */}
         <p className="mt-3 text-sm text-slate-600">{STATUS_NOTES[trip.status]}</p>
@@ -38,10 +39,9 @@ export function TripOverview({ trip }: { trip: TripRequestDto }) {
             />
           </div>
         )}
-      </div>
+      </Card>
 
-      <div className="card">
-        <h2 className="mb-3 font-semibold text-slate-900">Request details</h2>
+      <Card title="Request details">
         <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <Detail label="Status" value={<StatusBadge status={trip.status} />} />
           <Detail label="Dates" value={`${formatDate(trip.startDate)} – ${formatDate(trip.endDate)}`} />
@@ -59,17 +59,18 @@ export function TripOverview({ trip }: { trip: TripRequestDto }) {
           <Detail label="Submitted" value={formatDateTime(trip.createdAt)} />
           <Detail label="Last updated" value={formatDateTime(trip.updatedAt)} />
         </dl>
-      </div>
+      </Card>
 
-      <div className="card">
-        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-semibold text-slate-900">Itinerary</h2>
-          {itinerary.data && (
+      <Card
+        title="Itinerary"
+        actions={
+          itinerary.data && (
             <p className="text-xs text-slate-500">
               Version {itinerary.data.version} · {itinerary.data.generatedBy}
             </p>
-          )}
-        </div>
+          )
+        }
+      >
         <PageState
           isLoading={itinerary.isLoading}
           isError={itinerary.isError}
@@ -81,20 +82,20 @@ export function TripOverview({ trip }: { trip: TripRequestDto }) {
         >
           <ol className="space-y-3">
             {itinerary.data?.days.map((day) => (
-              <li key={day.dayNumber} className="rounded border border-slate-200 p-3">
+              <li key={day.dayNumber} className="rounded-md border border-slate-200 bg-slate-50/50 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="font-medium text-slate-900">
                     Day {day.dayNumber} — {day.city}
                   </h3>
                   {canEditItinerary && (
-                    <button
-                      type="button"
-                      className="btn-secondary"
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       aria-label={`Edit day ${day.dayNumber}`}
                       onClick={() => setEditingDay(day)}
                     >
                       Edit day
-                    </button>
+                    </Button>
                   )}
                 </div>
                 {day.notes && <p className="text-sm text-slate-600">{day.notes}</p>}
@@ -109,14 +110,13 @@ export function TripOverview({ trip }: { trip: TripRequestDto }) {
             ))}
           </ol>
         </PageState>
-      </div>
+      </Card>
 
       {editingDay && <ItineraryDayEditor tripId={trip.id} day={editingDay} onClose={closeEditor} />}
 
-      <div className="card">
-        <h2 className="mb-3 font-semibold text-slate-900">History</h2>
+      <Card title="History">
         <TripHistory tripId={trip.id} />
-      </div>
+      </Card>
     </div>
   );
 }

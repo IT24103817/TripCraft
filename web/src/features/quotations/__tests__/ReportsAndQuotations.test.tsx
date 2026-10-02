@@ -30,9 +30,9 @@ const QUOTATION = {
 describe('Reports, quotations and re-pricing (Component C)', () => {
   beforeEach(() => signInAs('OperationsManager'));
 
-  it("sends old Quotations links to the trips list, or to the trip's Quotation tab", async () => {
+  it("sends old Quotations links to the Trips page's Quotations tab, or to the trip's Quotation tab", async () => {
     const plain = renderApp('/quotations');
-    await waitFor(() => expect(plain.location()).toBe('/trips'));
+    await waitFor(() => expect(plain.location()).toBe('/trips?tab=quotations'));
     plain.unmount();
 
     server.use(

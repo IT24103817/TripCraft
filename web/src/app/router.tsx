@@ -15,7 +15,7 @@ const MobileAppPage = lazy(() => import('@/auth/MobileAppPage'));
 const UsersPage = lazy(() => import('@/auth/users/UsersPage'));
 const AuditLogPage = lazy(() => import('@/auth/audit/AuditLogPage'));
 const SettingsPage = lazy(() => import('@/auth/settings/SettingsPage'));
-const TripsListPage = lazy(() => import('@/features/trips/TripsListPage'));
+const TripsListRoute = lazy(() => import('./trips/TripsListRoute'));
 const TripDetailRoute = lazy(() => import('./trips/TripDetailRoute'));
 const AttractionsPage = lazy(() => import('@/features/trips/AttractionsPage'));
 const GuidesPage = lazy(() => import('@/features/resources/GuidesPage'));
@@ -62,7 +62,7 @@ export const routes: RouteObject[] = [
         children: [
           // Operations
           { path: 'dashboard', element: guard(STAFF, <DashboardPage />) },
-          { path: 'trips', element: guard(MANAGER, <TripsListPage />) },
+          { path: 'trips', element: guard(MANAGER, <TripsListRoute />) },
           { path: 'trips/:id', element: guard(MANAGER, <TripDetailRoute />) },
           { path: 'attractions', element: guard(MANAGER, <AttractionsPage />) },
           { path: 'approvals', element: guard(MANAGER, <ApprovalsPage />) },

@@ -56,6 +56,11 @@ public class QuotationService(
         }
         if (query.MinTotalUsd.HasValue)
             q = q.Where(x => x.TotalUsd >= query.MinTotalUsd.Value);
+        if (query.LatestOnly)
+        {
+            var all = quotations.Query();
+            q = q.Where(x => !all.Any(other => other.TripRequestId == x.TripRequestId && other.Version > x.Version));
+        }
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             // Search the trip objective (quotations have no text of their own worth searching).
@@ -64,8 +69,19 @@ public class QuotationService(
             q = q.Where(x => tripIds.Contains(x.TripRequestId));
         }
 
-        return await q.ApplySort(query.Sort, SortableFields, "-createdAt")
+        var page = await q.ApplySort(query.Sort, SortableFields, "-createdAt")
             .ToPagedResultAsync(query.Page, query.PageSize, x => QuotationDto.FromEntity(x), ct);
+
+        // The list shows which trip each quotation is for (objective and current status).
+        var listedTrips = page.Items.Select(i => i.TripRequestId).Distinct().ToList();
+        var tripInfo = await trips.Query().Where(t => listedTrips.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, t => new { t.Objective, Status = t.Status.ToString() }, ct);
+        return page with
+        {
+            Items = page.Items.Select(i => tripInfo.TryGetValue(i.TripRequestId, out var t)
+                ? i with { TripObjective = t.Objective, TripStatus = t.Status }
+                : i).ToList()
+        };
     }
 
     public async Task<QuotationDto> GetAsync(CurrentUser user, Guid id, CancellationToken ct)

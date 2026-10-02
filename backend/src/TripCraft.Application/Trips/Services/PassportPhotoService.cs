@@ -31,6 +31,34 @@ public class PassportPhotoService(
         if (!user.IsTourist || trip.Tourist?.UserId != user.Id)
             throw new ForbiddenException("Only the tourist who owns this trip can upload the passport photo.");
 
+        var (extension, size) = await SaveToProfileAsync(user, trip.Tourist!, content, length, trip.Id, ct);
+        return new PassportPhotoResponse(trip.Id, extension == ".png" ? "image/png" : "image/jpeg", size, DateTime.UtcNow);
+    }
+
+    public async Task<TouristProfileDto> UploadForProfileAsync(CurrentUser user, Stream content, long length, CancellationToken ct)
+    {
+        if (!user.IsTourist)
+            throw new ForbiddenException("Only a tourist has a passport photo.");
+        var tourist = await trips.GetTouristByUserIdAsync(user.Id, ct);
+        if (tourist is null)
+        {
+            tourist = new Tourist { UserId = user.Id };
+            trips.AddTourist(tourist);
+        }
+        await SaveToProfileAsync(user, tourist, content, length, null, ct);
+        return ToProfile(tourist);
+    }
+
+    public async Task<TouristProfileDto> GetProfileAsync(CurrentUser user, CancellationToken ct)
+    {
+        var tourist = await trips.GetTouristByUserIdAsync(user.Id, ct);
+        return tourist is null ? new TouristProfileDto("", "", false) : ToProfile(tourist);
+    }
+
+    /// <summary>Checks the file (size, JPEG/PNG signature), stores it and puts it on the tourist profile; one save.</summary>
+    private async Task<(string Extension, long Size)> SaveToProfileAsync(CurrentUser user, Tourist tourist, Stream content,
+        long length, Guid? tripRequestId, CancellationToken ct)
+    {
         if (length is <= 0 or > MaxBytes)
             throw Invalid("The photo must be between 1 byte and 5 MB.");
 
@@ -44,18 +72,18 @@ public class PassportPhotoService(
 
         buffer.Position = 0;
         var key = await store.SaveAsync(buffer, extension, ct);
-        var tourist = trip.Tourist!;
         var hadPhoto = tourist.PassportPhotoUrl is not null;
         tourist.PassportPhotoUrl = key;
 
         // The storage key is not written to the audit log; only the fact and the size.
         audit.Record(user.Id, "PassportPhotoUploaded", nameof(Tourist), tourist.Id,
-            new { HadPhoto = hadPhoto }, new { HadPhoto = true, SizeBytes = buffer.Length, TripRequestId = trip.Id });
+            new { HadPhoto = hadPhoto }, new { HadPhoto = true, SizeBytes = buffer.Length, TripRequestId = tripRequestId });
         await unitOfWork.SaveChangesAsync(ct);
-
-        return new PassportPhotoResponse(trip.Id, extension == ".png" ? "image/png" : "image/jpeg", buffer.Length,
-            DateTime.UtcNow);
+        return (extension, buffer.Length);
     }
+
+    private static TouristProfileDto ToProfile(Tourist t) =>
+        new(t.Nationality, t.PassportNumberMasked, t.PassportPhotoUrl is not null);
 
     /// <summary>".jpg" or ".png" from the file signature; null for anything else.</summary>
     public static string? DetectExtension(ReadOnlySpan<byte> bytes) =>

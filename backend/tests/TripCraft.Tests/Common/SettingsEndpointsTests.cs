@@ -14,7 +14,8 @@ namespace TripCraft.Tests.Common;
 /// <summary>The Admin Settings page (v1.1): stored in the database and read on every request.</summary>
 public class SettingsEndpointsTests
 {
-    private static SaveSettingsRequest Saved(string provider = "groq") => new(provider, 10, 20, 25, "desk@tripcraft.test");
+    private static SaveSettingsRequest Saved(string provider = "groq", decimal marginPct = 20) =>
+        new(provider, 10, marginPct, 25, "desk@tripcraft.test");
 
     [Fact]
     public async Task Defaults_come_from_configuration_until_an_admin_saves()
@@ -60,6 +61,8 @@ public class SettingsEndpointsTests
             await db.AuditLogs.AnyAsync(a => a.Action == "SettingsUpdated")));
         margin.Should().Be(20);
         audited.Should().BeTrue();
+        // A saved margin applies at once to pricing (same UTC-dated rate card the catalog reads).
+        (await admin.GetFromJsonAsync<SettingsDto>("/api/admin/settings", TestJson.Options))!.MarginPct.Should().Be(20);
         (await admin.GetFromJsonAsync<SettingsDto>("/api/admin/settings", TestJson.Options))!.UpdatedAt.Should().NotBeNull();
     }
 
@@ -68,8 +71,10 @@ public class SettingsEndpointsTests
     {
         await using var factory = new RealComponentsFactory();
         var admin = await factory.CreateClientAsAsync("admin1@tripcraft.test");
-        await admin.PutAsJsonAsync("/api/admin/settings", Saved("ollama"));
+        // Margin unchanged (15 %): the golden proposal is priced at 15 %, so a new margin would reject it.
+        await admin.PutAsJsonAsync("/api/admin/settings", Saved("ollama", marginPct: 15));
         var (_, outcome) = await factory.RunToProposalAsync();
+        outcome.QuotationId.Should().NotBeNull();
         var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
 
         var quotation = await manager.GetFromJsonAsync<QuotationDto>($"/api/quotations/{outcome.QuotationId}", TestJson.Options);

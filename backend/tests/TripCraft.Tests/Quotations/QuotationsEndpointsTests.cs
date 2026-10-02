@@ -74,6 +74,26 @@ public class QuotationsEndpointsTests
     }
 
     [Fact]
+    public async Task The_quotations_tab_lists_the_newest_version_per_trip_with_the_trip_and_a_minimum_total()
+    {
+        await using var factory = new RealComponentsFactory();
+        var (trip, outcome) = await factory.RunToProposalAsync();
+        var manager = await factory.CreateClientAsAsync(WorkflowFlow.Manager);
+        await manager.PostAsync($"/api/quotations/{outcome.QuotationId}/calculate", null); // version 2
+
+        var all = await manager.GetFromJsonAsync<PagedResult<QuotationDto>>($"/api/quotations?tripRequestId={trip.Id}", TestJson.Options);
+        var latest = await manager.GetFromJsonAsync<PagedResult<QuotationDto>>($"/api/quotations?tripRequestId={trip.Id}&latestOnly=true", TestJson.Options);
+        var tooExpensive = await manager.GetFromJsonAsync<PagedResult<QuotationDto>>("/api/quotations?latestOnly=true&minTotalUsd=100000", TestJson.Options);
+
+        all!.Items.Should().HaveCount(2);
+        var row = latest!.Items.Should().ContainSingle().Subject;
+        row.Version.Should().Be(2);
+        row.TripObjective.Should().Be(trip.Objective);
+        row.TripStatus.Should().Be("PendingReview");
+        tooExpensive!.Items.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Accept_is_only_possible_after_the_quotation_was_sent_and_only_once()
     {
         await using var factory = new RealComponentsFactory();

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { getErrorMessage } from '@/shared/api/errors';
+import { Button } from '@/shared/components/Button';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { PageState } from '@/shared/components/PageState';
 import { ReasonDialog } from '@/shared/components/ReasonDialog';
@@ -67,9 +68,9 @@ export default function TripDetailPage({ quotationTab }: Props) {
                   />
                 )}
                 {CANCELLABLE.includes(trip.data.status) && (
-                  <button type="button" className="btn-danger" onClick={() => setConfirmCancel(true)}>
+                  <Button variant="danger" onClick={() => setConfirmCancel(true)}>
                     Cancel request
-                  </button>
+                  </Button>
                 )}
               </>
             }

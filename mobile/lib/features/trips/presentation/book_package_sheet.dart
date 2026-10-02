@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/auth/auth_repository.dart';
 import '../../../core/router/routes.dart';
@@ -12,13 +13,17 @@ import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../application/trips_providers.dart';
 import '../data/template_models.dart';
+import '../data/tourist_profile.dart';
+import '../data/tourist_profile_repository.dart';
 import '../data/trip_templates_repository.dart';
+import 'passport_photo_picker.dart';
 import 'travellers_field.dart';
 import 'trip_form_rules.dart';
 import 'trip_prefill.dart';
 
 /// "Book as is": a bottom sheet with the few details a package still needs (start date, travellers, budget,
-/// nationality and passport). Booking creates the trip, starts planning and opens the new trip.
+/// nationality, passport and — when the profile has none yet — a passport photo). Booking uploads the photo
+/// first, then creates the trip, starts planning and opens the new trip.
 Future<void> showBookPackageSheet(
   BuildContext context,
   TripTemplate template,
@@ -48,17 +53,51 @@ class _BookPackageSheetState extends ConsumerState<BookPackageSheet> {
   bool _saving = false;
   String? _error;
 
+  /// GET /api/tourists/me; null while it loads.
+  TouristProfile? _profile;
+  XFile? _photo;
+  bool _photoMissing = false;
+
   DateTime get _today => dateOnly(ref.read(clockProvider)());
 
   @override
   void initState() {
     super.initState();
     _budget.text = _suggestedBudget(2);
-    // Pre-fill the nationality given at registration.
-    ref.read(authRepositoryProvider).savedNationality().then((n) {
-      if (mounted && n != null && _nationality.text.isEmpty) {
-        _nationality.text = n;
-      }
+    _loadProfile();
+  }
+
+  /// Loads the tourist's profile to know whether a passport photo is on file, and pre-fills the nationality
+  /// (from the profile, else the one given at registration). If the profile cannot be loaded, the sheet
+  /// simply asks for the photo: uploading it again does no harm.
+  Future<void> _loadProfile() async {
+    TouristProfile profile;
+    try {
+      profile = await ref.read(touristProfileRepositoryProvider).me();
+    } catch (_) {
+      profile = const TouristProfile();
+    }
+    final nationality = profile.nationality.isNotEmpty
+        ? profile.nationality
+        : await ref.read(authRepositoryProvider).savedNationality();
+    if (!mounted) return;
+    setState(() => _profile = profile);
+    if (nationality != null && _nationality.text.isEmpty) {
+      _nationality.text = nationality;
+    }
+  }
+
+  bool get _needsPhoto => _profile != null && !_profile!.hasPassportPhoto;
+
+  Future<void> _pickPhoto(ImageSource source) async {
+    final photo = await pickPassportPhoto(
+      ref.read(imagePickerProvider),
+      source,
+    );
+    if (photo == null || !mounted) return;
+    setState(() {
+      _photo = photo;
+      _photoMissing = false;
     });
   }
 
@@ -82,7 +121,9 @@ class _BookPackageSheetState extends ConsumerState<BookPackageSheet> {
         );
 
   Future<void> _book() async {
-    if (!_form.currentState!.validate()) return;
+    final formValid = _form.currentState!.validate();
+    setState(() => _photoMissing = _needsPhoto && _photo == null);
+    if (!formValid || _photoMissing) return;
     setState(() {
       _saving = true;
       _error = null;
@@ -92,6 +133,13 @@ class _BookPackageSheetState extends ConsumerState<BookPackageSheet> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
+      // The photo goes to the profile first; if that fails nothing is booked.
+      if (_needsPhoto) {
+        final profile = await ref
+            .read(touristProfileRepositoryProvider)
+            .uploadPassportPhoto(_photo!.path);
+        if (mounted) setState(() => _profile = profile);
+      }
       final result = await ref
           .read(tripTemplatesRepositoryProvider)
           .book(
@@ -121,6 +169,30 @@ class _BookPackageSheetState extends ConsumerState<BookPackageSheet> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  /// The passport photo step: checking, already on file, or the Camera / Gallery picker.
+  Widget _photoSection() {
+    if (_profile == null) {
+      return const Row(
+        children: [
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(width: 8),
+          Expanded(child: Text('Checking your passport photo…')),
+        ],
+      );
+    }
+    if (!_needsPhoto) return const PassportPhotoOnFile();
+    return PassportPhotoPicker(
+      photo: _photo,
+      missing: _photoMissing,
+      onCamera: _saving ? null : () => _pickPhoto(ImageSource.camera),
+      onGallery: _saving ? null : () => _pickPhoto(ImageSource.gallery),
+    );
   }
 
   @override
@@ -221,6 +293,8 @@ class _BookPackageSheetState extends ConsumerState<BookPackageSheet> {
                 controller: _passport,
                 validator: TripFormRules.passportNumber,
               ),
+              const SizedBox(height: 16),
+              _photoSection(),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
@@ -229,7 +303,8 @@ class _BookPackageSheetState extends ConsumerState<BookPackageSheet> {
               PrimaryButton(
                 label: 'Book this trip',
                 loading: _saving,
-                onPressed: _book,
+                // Wait for the profile, so we know whether to ask for the passport photo.
+                onPressed: _profile == null ? null : _book,
               ),
             ],
           ),

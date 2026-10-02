@@ -13,8 +13,8 @@ cp .env.example .env.local     # then set VITE_API_URL
 npm run dev                    # http://localhost:5173
 ```
 
-| Variable | Example | Purpose |
-|----------|---------|---------|
+| Variable       | Example                 | Purpose                                             |
+| -------------- | ----------------------- | --------------------------------------------------- |
 | `VITE_API_URL` | `http://localhost:5080` | Base URL of the ASP.NET Core API, no trailing slash |
 
 The API must allow this origin: `ALLOWED_ORIGINS=http://localhost:5173` (see the root README). If port
@@ -23,22 +23,22 @@ run `npm run dev -- --port 5199 --strictPort`.
 
 ## Scripts
 
-| Script | What it does |
-|--------|--------------|
-| `npm run dev` | Vite dev server on port 5173 |
-| `npm run build` | `tsc -b` (strict, zero errors) then a production build into `dist/` |
-| `npm run preview` | Serves the production build |
-| `npm run lint` | ESLint (TypeScript, React hooks, jsx-a11y, feature boundaries), zero warnings allowed |
-| `npm run format` / `format:check` | Prettier |
-| `npm test` | Vitest + React Testing Library + MSW (no API needed) |
+| Script                            | What it does                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------- |
+| `npm run dev`                     | Vite dev server on port 5173                                                          |
+| `npm run build`                   | `tsc -b` (strict, zero errors) then a production build into `dist/`                   |
+| `npm run preview`                 | Serves the production build                                                           |
+| `npm run lint`                    | ESLint (TypeScript, React hooks, jsx-a11y, feature boundaries), zero warnings allowed |
+| `npm run format` / `format:check` | Prettier                                                                              |
+| `npm test`                        | Vitest + React Testing Library + MSW (no API needed)                                  |
 
 ## Test accounts (seeded by the API, password `Passw0rd!`)
 
-| Role | Email | Sees |
-|------|-------|------|
-| Operations Manager | `manager1@tripcraft.test` | Everything except Users |
-| Admin | `admin1@tripcraft.test` | Dashboard, Agent workflows, Users |
-| Tourist / Guide | `tourist1@…`, `guide1@…` | "Use the mobile app" page |
+| Role               | Email                     | Sees                              |
+| ------------------ | ------------------------- | --------------------------------- |
+| Operations Manager | `manager1@tripcraft.test` | Everything except Users           |
+| Admin              | `admin1@tripcraft.test`   | Dashboard, Agent workflows, Users |
+| Tourist / Guide    | `tourist1@…`, `guide1@…`  | "Use the mobile app" page         |
 
 ## Folder structure
 
@@ -64,17 +64,17 @@ Types in each feature's `types.ts` are copied from the C# DTOs named in the file
 
 ## Routes and roles
 
-| Route | Roles | API |
-|-------|-------|-----|
-| `/` landing page | anyone (public, no login) | none; `VITE_APK_URL` and `VITE_GROUP_NUMBER` at build time |
-| `/dashboard` | OperationsManager, Admin | `GET /api/workflows`, `GET /api/trip-requests` |
-| `/trips`, `/trips/:id` | OperationsManager | `GET /api/trip-requests`, `/{id}`, `/{id}/itinerary`, `POST /{id}/start-planning` |
-| `/attractions` | OperationsManager | `GET/POST/PUT/DELETE /api/attractions` |
-| `/approvals`, `/approvals/:workflowId` | OperationsManager | `GET /api/workflows?status=`, `GET /api/workflows/{id}`, `POST /api/quotations/{id}/approve \| reject \| request-revision` |
-| `/workflows`, `/workflows/:id` | OperationsManager, Admin | `GET /api/workflows`, `/{id}`, `/{id}/steps` (polls every 5 s while Planning) |
-| `/reports` | OperationsManager | requests by status from `GET /api/trip-requests` totals |
-| `/admin/users` | Admin | `GET/POST /api/admin/users`, `POST /{id}/deactivate` |
-| `/resources/*`, `/availability` | OperationsManager | not in the API yet |
+| Route                                  | Roles                     | API                                                                                                                        |
+| -------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `/` landing page                       | anyone (public, no login) | none; `VITE_APK_URL` and `VITE_GROUP_NUMBER` at build time                                                                 |
+| `/dashboard`                           | OperationsManager, Admin  | `GET /api/workflows`, `GET /api/trip-requests`                                                                             |
+| `/trips`, `/trips/:id`                 | OperationsManager         | `GET /api/trip-requests`, `/{id}`, `/{id}/itinerary`, `POST /{id}/start-planning`                                          |
+| `/attractions`                         | OperationsManager         | `GET/POST/PUT/DELETE /api/attractions`                                                                                     |
+| `/approvals`, `/approvals/:workflowId` | OperationsManager         | `GET /api/workflows?status=`, `GET /api/workflows/{id}`, `POST /api/quotations/{id}/approve \| reject \| request-revision` |
+| `/workflows`, `/workflows/:id`         | OperationsManager, Admin  | `GET /api/workflows`, `/{id}`, `/{id}/steps` (polls every 5 s while Planning)                                              |
+| `/reports`                             | OperationsManager         | requests by status from `GET /api/trip-requests` totals                                                                    |
+| `/admin/users`                         | Admin                     | `GET/POST /api/admin/users`, `POST /{id}/deactivate`                                                                       |
+| `/resources/*`, `/availability`        | OperationsManager         | not in the API yet                                                                                                         |
 
 The approval review page reads the itinerary, proposed resources, quotation (LKR, USD, FX rate and
 as-of time) and the deterministic `ValidationResult` from the workflow's `finalOutcome` and

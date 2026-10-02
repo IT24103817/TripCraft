@@ -25,9 +25,15 @@ public class SettingsService(
     {
         var row = await settings.FindAsync(ct);
         return new SettingsDto(row?.LlmProvider ?? current.LlmProvider ?? "ollama", current.CancellationCutoffDays,
-            await resources.CurrentMarginPctAsync(current.Today(), ct), current.DepositPct, current.OperatorContact,
+            await resources.CurrentMarginPctAsync(RateCardToday(), ct), current.DepositPct, current.OperatorContact,
             row?.UpdatedAt);
     }
+
+    /// <summary>
+    /// Rate cards are dated by the UTC date, as pricing reads them (ResourceCatalog); using the operator's local date
+    /// here would make a margin saved between 00:00 and 05:30 in Colombo wait until UTC midnight to apply.
+    /// </summary>
+    private static DateOnly RateCardToday() => DateOnly.FromDateTime(DateTime.UtcNow);
 
     public async Task<SettingsDto> SaveAsync(CurrentUser user, SaveSettingsRequest request, CancellationToken ct)
     {
@@ -45,7 +51,7 @@ public class SettingsService(
 
         if (request.MarginPct != before.MarginPct)
         {
-            var today = current.Today();
+            var today = RateCardToday();
             var card = await settings.FindRateCardAsync(today, ct);
             if (card is null)
                 settings.Add(new RateCardEntry { MarginPct = request.MarginPct, EffectiveFrom = today });

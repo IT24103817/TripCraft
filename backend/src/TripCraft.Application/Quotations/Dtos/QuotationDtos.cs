@@ -13,7 +13,7 @@ public record QuotationDto(Guid Id, Guid TripRequestId, Guid? WorkflowId, int Ve
     DateTime FxAsOf, bool FxStale, DateTime? AcceptedAt, IReadOnlyList<QuotationLineDto> Lines,
     IReadOnlyList<ApprovalDecisionDto> Decisions, DateTime CreatedAt, DateTime UpdatedAt,
     JsonElement? ProposalSnapshot = null, decimal DepositPct = 0, decimal DepositLkr = 0, decimal DepositUsd = 0,
-    bool DepositPaid = false, DateTime? DepositPaidAt = null)
+    bool DepositPaid = false, DateTime? DepositPaidAt = null, string? TripObjective = null, string? TripStatus = null)
 {
     public static QuotationDto FromEntity(Quotation q, IEnumerable<ApprovalDecision>? decisions = null) => new(
         q.Id, q.TripRequestId, q.WorkflowId, q.Version, q.Status.ToString(), q.SubtotalLkr, q.MarginPct,
@@ -39,6 +39,9 @@ public class QuotationListQuery : PagedQuery
     public DateOnly? To { get; set; }
 
     public decimal? MinTotalUsd { get; set; }
+
+    /// <summary>v1.1 Trips → Quotations tab: only the newest version of each trip.</summary>
+    public bool LatestOnly { get; set; }
 }
 
 /// <summary>POST /api/quotations/{id}/payment: the manager records whether the client paid the deposit.</summary>

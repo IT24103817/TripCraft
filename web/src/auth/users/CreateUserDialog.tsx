@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { getErrorMessage } from '@/shared/api/errors';
 import { ROLES, type Role } from '@/shared/api/types';
+import { Button } from '@/shared/components/Button';
 import { Dialog } from '@/shared/components/Dialog';
 import { FormField } from '@/shared/components/FormField';
 import { useToast } from '@/shared/components/Toast';
@@ -61,12 +62,12 @@ export function CreateUserDialog({ open, onClose }: { open: boolean; onClose: ()
           error={formState.errors.role?.message}
         />
         <div className="flex justify-end gap-2">
-          <button type="button" className="btn-secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
-          </button>
-          <button type="submit" className="btn-primary" disabled={create.isPending}>
-            {create.isPending ? 'Creating…' : 'Create user'}
-          </button>
+          </Button>
+          <Button type="submit" isLoading={create.isPending} loadingText="Creating…">
+            Create user
+          </Button>
         </div>
       </form>
     </Dialog>

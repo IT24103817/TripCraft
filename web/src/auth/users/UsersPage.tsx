@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { getErrorMessage } from '@/shared/api/errors';
 import { ROLES } from '@/shared/api/types';
+import { Button } from '@/shared/components/Button';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { DataTable, type Column } from '@/shared/components/DataTable';
 import { PageHeader } from '@/shared/components/PageHeader';
@@ -78,11 +79,7 @@ export default function UsersPage() {
       <PageHeader
         title="Users"
         description="Create staff accounts and deactivate users."
-        actions={
-          <button type="button" className="btn-primary" onClick={() => setCreating(true)}>
-            Create user
-          </button>
-        }
+        actions={<Button onClick={() => setCreating(true)}>Create user</Button>}
       />
       <SearchFilterBar
         search={{

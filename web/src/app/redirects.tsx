@@ -10,10 +10,10 @@ export function WorkflowsRedirect() {
 
 /**
  * The Quotations page is now the Quotation tab of each trip. /quotations?tripRequestId=… opens that tab;
- * a plain /quotations opens the trips list.
+ * a plain /quotations opens the Quotations tab of the Trips page.
  */
 export function QuotationsRedirect() {
   const [params] = useSearchParams();
   const tripId = params.get('tripRequestId');
-  return <Navigate to={tripId ? `/trips/${tripId}?tab=quotation` : '/trips'} replace />;
+  return <Navigate to={tripId ? `/trips/${tripId}?tab=quotation` : '/trips?tab=quotations'} replace />;
 }

@@ -1,3 +1,4 @@
+import { Button } from '@/shared/components/Button';
 import { useAuthStore } from './authStore';
 
 /** Tourists and Guides are signed in but use the Flutter app (PLAN.md section 2). */
@@ -11,9 +12,9 @@ export default function MobileAppPage() {
           Hi {user?.fullName ?? 'there'} — this website is for operations staff. Tourists and guides manage
           trips in the TripCraft app for Android.
         </p>
-        <button type="button" className="btn-secondary" onClick={logout}>
+        <Button variant="secondary" onClick={logout}>
           Log out
-        </button>
+        </Button>
       </section>
     </main>
   );

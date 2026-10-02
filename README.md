@@ -269,6 +269,20 @@ lists the API's names; each component has its own example file.
 | Mobile | `API_URL` (`--dart-define`) |
 | Tests | `TEST_DATABASE_URL` (backend DB tests), `BASE_URL`, `API_URL`, `E2E_DATABASE_URL` (Playwright), `API_URL` (k6) |
 
+#### Email: Mailtrap sandbox with a pickup-folder fallback (v1.1)
+
+The tourist gets an email when a quotation is sent and when the trip is confirmed. Emails are first written to the
+`email_outbox` table in the same transaction as the business change, then sent after the commit:
+
+| Setting | Effect |
+|---------|--------|
+| `MAILTRAP_API_TOKEN` + `MAILTRAP_INBOX_ID` | Sent through the [Mailtrap](https://mailtrap.io) email sandbox HTTP API. The sandbox inbox catches every message, so nothing reaches a real person. It uses the same retry/timeout wrapper as the FX, distance and weather APIs. |
+| neither set, or Mailtrap fails (5xx, 429, 401, timeout) | **Fallback:** each email is written as a plain `.eml` file to `EMAIL_PICKUP_DIR` (default: the system temp folder `tripcraft-mail/`). Open it with any mail app or a text editor. A booking never fails because of email. |
+| `SMTP_HOST` (+ `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`) | Optional: send through your own SMTP server instead of Mailtrap. |
+
+`MAIL_FROM` sets the sender address. `MAILTRAP_API_BASE_URL` only exists to test the fallback against an unreachable
+host. The `email_outbox` table keeps each email's `sent_at`, or its `error` when sending failed.
+
 ### 1. Database
 
 ```bash

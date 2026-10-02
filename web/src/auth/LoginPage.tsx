@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { getErrorMessage, getErrorStatus } from '@/shared/api/errors';
+import { Button } from '@/shared/components/Button';
 import { FormField } from '@/shared/components/FormField';
 import { Logo } from '@/shared/components/Logo';
 import { login } from './authApi';
@@ -85,9 +86,9 @@ export default function LoginPage() {
             registration={register('password')}
             error={formState.errors.password?.message}
           />
-          <button type="submit" className="btn-primary w-full" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Signing in…' : 'Sign in'}
-          </button>
+          <Button type="submit" className="w-full" isLoading={mutation.isPending} loadingText="Signing in…">
+            Sign in
+          </Button>
         </form>
         <Link to="/" className="text-sm font-medium text-brand-700 hover:underline">
           Back to the TripCraft home page

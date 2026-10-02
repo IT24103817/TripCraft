@@ -1,8 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { http } from '@/shared/api/http';
 import { queryRoots } from '@/shared/api/queryKeys';
 import type { PagedResult } from '@/shared/api/types';
 import type {
+  LatestQuotationsQuery,
   ProposalQuotation,
   QuotationDto,
   RepriceResponse,
@@ -18,6 +19,24 @@ export function useQuotation(id: string | null | undefined) {
     queryKey: [QUOTATIONS, 'detail', id],
     queryFn: async () => (await http.get<QuotationDto>(`/api/quotations/${id}`)).data,
     enabled: Boolean(id),
+  });
+}
+
+/**
+ * The newest quotation version of every trip (GET /api/quotations?latestOnly=true), with the trip's objective
+ * and status, for the Quotations tab of the Trips page. Empty filters are not sent.
+ */
+export function useLatestQuotations(query: LatestQuotationsQuery) {
+  const params = Object.fromEntries(Object.entries(query).filter(([, v]) => v !== '' && v !== undefined));
+  return useQuery({
+    queryKey: [QUOTATIONS, 'latest', params],
+    queryFn: async () =>
+      (
+        await http.get<PagedResult<QuotationDto>>('/api/quotations', {
+          params: { latestOnly: true, ...params },
+        })
+      ).data,
+    placeholderData: keepPreviousData,
   });
 }
 

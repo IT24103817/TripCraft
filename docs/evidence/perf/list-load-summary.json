@@ -193,7 +193,7 @@
     }
   },
   "setup_data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3MDA4ZmU5Ni04NzU3LTQ3ZWItYjg4ZC1jYTU0MTBjNzY3YjkiLCJlbWFpbCI6Im1hbmFnZXIxQHRyaXBjcmFmdC50ZXN0Iiwicm9sZSI6Ik9wZXJhdGlvbnNNYW5hZ2VyIiwiYXVkIjoidHJpcGNyYWZ0LWxvY2FsIiwiaXNzIjoidHJpcGNyYWZ0LWxvY2FsIiwiZXhwIjoxNzkwNTQwMzk1LCJpYXQiOjE3OTA1MzY3OTUsIm5iZiI6MTc5MDUzNjc5NX0.c62RUc4WlPxXEIIW6OEUtyp1dutMZgRQf8kRkDSM5ho"
+    "token": "<redacted>"
   },
   "root_group": {
     "name": "",

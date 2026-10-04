@@ -277,6 +277,6 @@
     }
   },
   "setup_data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1ZTI4MzZiZS0yNjhlLTQwYTctODI2Yi1kY2ZhMzdlNjZhOTIiLCJlbWFpbCI6InRvdXJpc3QxQHRyaXBjcmFmdC50ZXN0Iiwicm9sZSI6IlRvdXJpc3QiLCJhdWQiOiJ0cmlwY3JhZnQtbG9jYWwiLCJpc3MiOiJ0cmlwY3JhZnQtbG9jYWwiLCJleHAiOjE3OTA0MDY1NDEsImlhdCI6MTc5MDQwMjk0MSwibmJmIjoxNzkwNDAyOTQxfQ.AGxN5Vnjy6JsGSdfeoahK9rQLHYEs_fs1wYQRoVYP7k"
+    "token": "<redacted>"
   }
 }

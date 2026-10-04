@@ -23,6 +23,7 @@ repository. `TODO` marks every screenshot, URL, measured number or hand-written 
 | 15 | [15-group-ai-declaration.md](15-group-ai-declaration.md) |
 | Individual reports | [individual-A.md](individual-A.md), [individual-B.md](individual-B.md), [individual-C.md](individual-C.md) |
 | Appendix | [99-appendix.md](99-appendix.md) |
+| Addendum (after submission; not in the built report) | [addendum-v1.1.md](addendum-v1.1.md): what changed in v1.1 and why, with the v1.1 test results. v1.0 is the submitted state. |
 
 **Build:** `./build.sh` (optionally `GROUP=<nn> ./build.sh`) writes `report.md` and, if pandoc is installed,
 `SE3090_G<nn>_Report.pdf`. Without pandoc: open `report.md` in VS Code and print the preview to PDF. Both outputs

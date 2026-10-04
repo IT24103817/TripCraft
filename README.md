@@ -50,6 +50,9 @@ approval inbox gets **403**.
 
 ## What's new in v1.1
 
+**v1.0 (tag `v1.0`, 28 September 2026) is the submitted state.** What changed afterwards, why, and the v1.1 test
+results are in [docs/report/addendum-v1.1.md](docs/report/addendum-v1.1.md).
+
 - **One trip lifecycle** in `TripStatusMachine`: Submitted → Planning → QuotationSent → ClientAccepted → Confirmed →
   InProgress → Completed, plus ClientDeclined, NeedsOperator and Cancelled. An illegal move returns 409, and every
   change goes into the trip history with its actor and reason.

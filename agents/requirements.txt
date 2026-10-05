@@ -4,6 +4,7 @@ langgraph
 langchain-core
 langchain-ollama
 langchain-groq
+langchain-google-genai
 pydantic>=2
 httpx
 python-dotenv

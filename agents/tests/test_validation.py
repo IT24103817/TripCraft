@@ -52,6 +52,33 @@ async def test_validation_flags_rule_breaks_even_if_llm_says_valid(fake_llm, api
     assert update["steps"][0]["validation_result"]["valid"] is False
 
 
+async def test_concerns_the_model_invents_are_advisory_and_never_block_a_valid_proposal(fake_llm, api, demo_state):
+    state = await proposal_ready(demo_state)
+    # What llama3.1:8b really answered in the live suite: a rule code already checked, restated wrongly.
+    fake_llm.queue("validation", {"valid": False, "quotation_final": None, "violations": [
+        {"code": "DAY_STOPS", "message": "Day 3 has 3 stops, which is more than the allowed 3."}]})
+
+    update = await validation_node(state)
+
+    assert update["status"] == PENDING_APPROVAL
+    assert update["violations"] == []
+    assert update["steps"][0]["validation_result"]["concerns"] == [
+        "Day 3 has 3 stops, which is more than the allowed 3."]
+
+
+async def test_an_invented_concern_cannot_stop_the_budget_re_plan(fake_llm, api):
+    state = await proposal_ready(dict(initial_state(demo_request(budget_usd=400))))
+    fake_llm.queue("validation", {"valid": False, "quotation_final": None, "violations": [
+        {"code": "OVER_BUDGET", "message": "over budget"},
+        {"code": "COMPLIANCE_CONCERN", "message": "Total quotation is $378.73, exceeding the budget of $1500.0"}]})
+
+    update = await validation_node(state)
+
+    assert [v["code"] for v in update["violations"]] == ["OVER_BUDGET"], "budget-only, so the graph re-plans"
+    assert update["steps"][0]["validation_result"]["concerns"] == [
+        "Total quotation is $378.73, exceeding the budget of $1500.0"]
+
+
 async def test_validation_over_budget(fake_llm, api):
     state = dict(initial_state(demo_request(budget_usd=400)))
     state = await proposal_ready(state)

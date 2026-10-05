@@ -47,12 +47,13 @@ describe('SettingsPage', () => {
     await user.clear(within(form).getByLabelText('Deposit (%)'));
     await user.type(within(form).getByLabelText('Deposit (%)'), '25');
     await user.type(within(form).getByLabelText('Operator contact'), 'ops@tripcraft.test');
-    await user.click(within(form).getByLabelText(/Groq/));
+    expect(within(form).getAllByRole('radio')).toHaveLength(3);
+    await user.click(within(form).getByLabelText(/Gemini/));
     await user.click(within(form).getByRole('button', { name: 'Save settings' }));
 
     expect(await screen.findByText('Settings saved.')).toBeInTheDocument();
     expect(body).toEqual({
-      llmProvider: 'groq',
+      llmProvider: 'gemini',
       cancellationCutoffDays: 5,
       marginPct: 15,
       depositPct: 25,

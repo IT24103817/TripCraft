@@ -1,0 +1,3 @@
+
+# Raw model replies from the live suite (pytest -m live)
+tests/live/output/

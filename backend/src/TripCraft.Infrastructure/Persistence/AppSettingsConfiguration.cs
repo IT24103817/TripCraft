@@ -10,7 +10,7 @@ public class AppSettingsConfiguration : IEntityTypeConfiguration<AppSettings>
     {
         builder.ToTable("app_settings", t =>
         {
-            t.HasCheckConstraint("ck_app_settings_llm_provider", "llm_provider IN ('ollama', 'groq')");
+            t.HasCheckConstraint("ck_app_settings_llm_provider", "llm_provider IN ('ollama', 'gemini', 'groq')");
             t.HasCheckConstraint("ck_app_settings_ranges",
                 "cancellation_cutoff_days BETWEEN 0 AND 30 AND deposit_pct BETWEEN 0 AND 100");
         });

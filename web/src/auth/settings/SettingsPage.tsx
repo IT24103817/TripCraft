@@ -70,11 +70,20 @@ export default function SettingsPage() {
             <label className="flex items-center gap-2 text-sm text-slate-700">
               <input
                 type="radio"
+                value="gemini"
+                className="h-4 w-4 accent-brand-700"
+                {...register('llmProvider')}
+              />
+              Gemini Flash (Google cloud API, optional)
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="radio"
                 value="groq"
                 className="h-4 w-4 accent-brand-700"
                 {...register('llmProvider')}
               />
-              Groq (cloud API)
+              Groq (cloud API, used when hosted)
             </label>
             {errors.llmProvider && (
               <p role="alert" className="text-xs text-red-700">

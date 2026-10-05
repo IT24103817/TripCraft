@@ -8,7 +8,7 @@ namespace TripCraft.Application.Common.Settings;
 /// </summary>
 public class AppSettings : BaseEntity
 {
-    /// <summary>"ollama" or "groq", sent to the agent service with each new workflow.</summary>
+    /// <summary>"ollama", "gemini" or "groq", sent to the agent service with each new workflow.</summary>
     public string LlmProvider { get; set; } = "ollama";
 
     public int CancellationCutoffDays { get; set; } = TripSettings.DefaultCancellationCutoffDays;

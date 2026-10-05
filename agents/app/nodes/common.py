@@ -30,6 +30,11 @@ def elapsed_ms(started: float) -> int:
 def step_report(agent: str, calls: list[ToolCall], started: float, retries: int, status: str,
                 input_summary: dict[str, Any], output_summary: dict[str, Any],
                 validation_result: dict[str, Any]) -> dict[str, Any]:
+    from app.llm import take_step_warnings
+
+    warnings = take_step_warnings()
+    if warnings:  # e.g. the hosted model was rate limited and the call was retried
+        validation_result = {**validation_result, "warnings": warnings}
     return StepReport(
         agent_name=agent, tool_calls=calls, input_summary=input_summary, output_summary=output_summary,
         validation_result=validation_result, duration_ms=elapsed_ms(started), retries=retries, status=status,

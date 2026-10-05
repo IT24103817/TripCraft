@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using TripCraft.Application.Common.Settings;
 using TripCraft.Application.Quotations.Dtos;
@@ -84,8 +85,53 @@ public class SettingsEndpointsTests
         quotation.DepositPaid.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task An_admin_can_choose_gemini_and_new_runs_use_it()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        var admin = await factory.CreateClientAsAsync("admin1@tripcraft.test");
+
+        var saved = await admin.PutAsJsonAsync("/api/admin/settings", Saved("gemini"));
+        var tourist = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
+        var trip = (await (await tourist.PostAsJsonAsync("/api/trip-requests", TripRequestsEndpointsTests.NewTrip()))
+            .Content.ReadFromJsonAsync<TripRequestDto>(TestJson.Options))!;
+        await tourist.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
+
+        saved.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await saved.Content.ReadFromJsonAsync<SettingsDto>(TestJson.Options))!.LlmProvider.Should().Be("gemini");
+        factory.State<FakeAgentState>().Requests.Last().LlmProvider.Should().Be("gemini");
+    }
+
+    /// <summary>A hosted API sets LLM_PROVIDER=groq, so the Settings page never shows Ollama by default.</summary>
+    private sealed class HostedFactory : TestWebApplicationFactory
+    {
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            base.ConfigureWebHost(builder);
+            builder.UseSetting("LLM_PROVIDER", "groq");
+        }
+    }
+
+    [Fact]
+    public async Task On_a_hosted_api_the_default_provider_comes_from_LLM_PROVIDER()
+    {
+        await using var factory = new HostedFactory();
+        var admin = await factory.CreateClientAsAsync("admin1@tripcraft.test");
+        var tourist = await factory.CreateClientAsAsync("tourist1@tripcraft.test");
+        var trip = (await (await tourist.PostAsJsonAsync("/api/trip-requests", TripRequestsEndpointsTests.NewTrip()))
+            .Content.ReadFromJsonAsync<TripRequestDto>(TestJson.Options))!;
+
+        var settings = await admin.GetFromJsonAsync<SettingsDto>("/api/admin/settings", TestJson.Options);
+        await tourist.PostAsync($"/api/trip-requests/{trip.Id}/start-planning", null);
+
+        settings!.LlmProvider.Should().Be("groq");
+        settings.UpdatedAt.Should().BeNull("nothing was saved");
+        factory.State<FakeAgentState>().Requests.Last().LlmProvider.Should().Be("groq");
+    }
+
     [Theory]
     [InlineData("openai", 3, 15, 30)]
+    [InlineData("Gemini", 3, 15, 30)]
     [InlineData("groq", 31, 15, 30)]
     [InlineData("groq", 3, 101, 30)]
     [InlineData("groq", 3, 15, -1)]

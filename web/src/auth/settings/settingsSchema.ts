@@ -7,7 +7,7 @@ const percent = z.coerce
 
 /** Mirrors the API's settings validator (docs/API-V11-WEB.md, "Settings"). */
 export const settingsSchema = z.object({
-  llmProvider: z.enum(['ollama', 'groq'], { message: 'Choose Ollama or Groq.' }),
+  llmProvider: z.enum(['ollama', 'gemini', 'groq'], { message: 'Choose Ollama, Gemini or Groq.' }),
   cancellationCutoffDays: z.coerce
     .number({ invalid_type_error: 'Enter a number.' })
     .int('Whole days only.')

@@ -5,11 +5,13 @@
 | PostgreSQL | **Neon** (free) | — (migrations run from the API) |
 | ASP.NET Core API | **Render** web service, Docker (free) | `render.yaml`, `backend/Dockerfile` |
 | React staff app | **Vercel** (Hobby) | `web/vercel.json` |
-| Agent service | **your laptop with Ollama** (demo default) or **Render with Groq** (optional) | `agents/Dockerfile`, `render.yaml` (commented block) |
+| Agent service | **Render with Groq** (hosted) or **your laptop with Ollama** | `agents/Dockerfile`, `render.yaml` (`tripcraft-agents`) |
 | Android app | **GitHub Release** `v1.0` | `mobile/scripts/build-release-apk.sh`, `docs/APK-INSTALL.md` |
 
 **Order:** Neon → Render API → Vercel web → agent service → APK. The startup order when running is
 PostgreSQL → Ollama → agents → API → web → mobile (see `agents/README.md`).
+
+**Step-by-step checklist with the smoke tests:** [DEPLOY-CHECKLIST.md](DEPLOY-CHECKLIST.md).
 
 **Secrets:** every value below is entered in the platform's dashboard. Never commit them; the repo only has
 names (`.env.example`, `render.yaml` with `sync: false`).
@@ -31,7 +33,7 @@ After the first API start: `[screenshot: docs/evidence/screenshots/deploy-neon-t
 ## 2. API on Render
 
 1. render.com → **New → Blueprint** → connect the GitHub repo → Render reads `render.yaml` and proposes
-   `tripcraft-api` (Docker, free, health check `/health`).
+   `tripcraft-api` and `tripcraft-agents` (Docker, free, health check `/health`).
 2. Fill in the blank environment variables (table below). Set `RUN_MIGRATIONS=true`.
 3. **Apply**. The first build takes ~5 minutes. Watch the logs (JSON lines) for
    `RUN_MIGRATIONS=true: applying database migrations` and `Seeded 12 demo users`.
@@ -58,19 +60,24 @@ free tier (lost on redeploy); fine for the demo, use object storage for real use
 
 ## 4. Agent service
 
-**Mode A — laptop + Ollama (default for the demo, allowed by PLAN.md section 12).**
-Run it as in `agents/README.md`. The Render API must reach it over HTTPS, so expose it with a tunnel:
-`cloudflared tunnel --url http://localhost:8001` → set the API's `AGENT_SERVICE_URL` to the printed
-`https://…trycloudflare.com` URL (it changes every run) and redeploy. The agent's `API_BASE_URL` is the Render
-API URL. Alternative: run the API locally for the agent part of the demo.
-
-**Mode B — Render + Groq (optional, always online).** Uncomment the `tripcraft-agents` block in `render.yaml`,
-sync the Blueprint, fill `GROQ_API_KEY`, `INTERNAL_AGENT_KEY` (same as the API's) and
+**Hosted — Render + Groq (default).** The Blueprint creates `tripcraft-agents` with `LLM_PROVIDER=groq`,
+`GROQ_MODEL=qwen/qwen3.8-27b`, `NODE_TIMEOUT_SECONDS=90` and `RATE_LIMIT_MAX_WAIT_SECONDS=60`. Fill in
+`GROQ_API_KEY` (console.groq.com; free tier), `INTERNAL_AGENT_KEY` (same as the API's) and
 `API_BASE_URL=https://tripcraft-api.onrender.com`. Then set the API's
-`AGENT_SERVICE_URL=https://tripcraft-agents.onrender.com`.
+`AGENT_SERVICE_URL=https://tripcraft-agents.onrender.com` and redeploy the API. If `LLM_PROVIDER` is left unset on
+Render, the agent service picks Groq by itself (`RENDER=true`). Groq's free tier allows 1,000 requests a day,
+8,000 tokens a minute and 200,000 tokens a day; one planning run uses about 7,000 tokens, so back-to-back runs wait
+for Groq's `retry-after` (shown as a warning on that agent's step), and about 28 trips fit in a day. Model choice and limits: `agents/README.md`, "Groq free tier".
+
+**Local — laptop + Ollama.** Run it as in `agents/README.md`. A Render API must reach it over HTTPS, so expose it
+with a tunnel: `cloudflared tunnel --url http://localhost:8001` → set the API's `AGENT_SERVICE_URL` to the printed
+`https://…trycloudflare.com` URL (it changes every run) and redeploy. Alternative: run the API locally too.
+
+Gemini (`LLM_PROVIDER=gemini`, `GEMINI_API_KEY`) also works, but its free tier allows only 20 requests a day.
 
 In both modes the API calls the agents with a 10 s timeout (one retry); if the agent service is asleep or
-down, planning ends `FailedSafely` and the tourist can retry — so wake it first (section 7).
+down, planning ends safely (the trip shows **Needs operator**) and a manager can retry — so wake it first
+(section 7).
 
 ## 5. Android APK
 
@@ -91,6 +98,7 @@ with the APK — full steps in `docs/APK-INSTALL.md`.
 | `ALLOWED_ORIGINS` | yes | Browser origins allowed by CORS: the Vercel URL(s), comma-separated. |
 | `INTERNAL_AGENT_KEY` | yes | Shared secret between API and agent service (`X-Internal-Key`), both directions. **Secret.** |
 | `AGENT_SERVICE_URL` | yes | Base URL of the agent service. Missing → planning ends `FailedSafely`. |
+| `LLM_PROVIDER` | set in `render.yaml` | `groq`: what the Admin Settings page shows and sends until an Admin saves a choice. |
 | `RUN_MIGRATIONS` | yes on Render | `true`: apply EF migrations and seed demo data on start (idempotent). |
 | `ORS_API_KEY` | no | OpenRouteService key; without it the seeded `city_distances` table is used. **Secret.** |
 | `OWM_API_KEY` | no | OpenWeatherMap key; without it weather is skipped. **Secret.** |
@@ -107,10 +115,12 @@ with the APK — full steps in `docs/APK-INSTALL.md`.
 |------|----------|---------|
 | `INTERNAL_AGENT_KEY` | yes | Same value as the API's. **Secret.** |
 | `API_BASE_URL` | yes | The API, for tool calls and callbacks, e.g. `https://tripcraft-api.onrender.com`. |
-| `LLM_PROVIDER` | yes | `ollama` (Mode A) or `groq` (Mode B). |
-| `OLLAMA_MODEL`, `OLLAMA_BASE_URL` | Mode A | `llama3.1:8b`, `http://localhost:11434` (from Docker: `http://host.docker.internal:11434`). |
-| `GROQ_API_KEY`, `GROQ_MODEL` | Mode B | Groq key (**secret**) and `llama-3.1-8b-instant`. |
-| `NODE_TIMEOUT_SECONDS`, `MAX_RETRIES`, `MAX_REPLANS` | no | 30 / 2 / 3 by default. Use 60–120 s for a slow laptop. |
+| `LLM_PROVIDER` | set in `render.yaml` | `groq` (hosted) or `ollama` (local); unset → `groq` on Render, `ollama` elsewhere. `gemini` is optional. |
+| `GROQ_API_KEY`, `GROQ_MODEL` | hosted | console.groq.com key (**secret**) and `qwen/qwen3.8-27b`. |
+| `RATE_LIMIT_RETRIES`, `RATE_LIMIT_BACKOFF_SECONDS`, `RATE_LIMIT_MAX_WAIT_SECONDS` | no | 3 / 2 / 20 (hosted Groq: 60): on a 429 or 503 wait Groq's `retry-after` (or 2, 4, 8 s) and retry, then fail safely. |
+| `OLLAMA_MODEL`, `OLLAMA_BASE_URL` | local | `llama3.1:8b`, `http://localhost:11434` (from Docker: `http://host.docker.internal:11434`). |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | no | Optional provider; free tier 20 requests a day. |
+| `NODE_TIMEOUT_SECONDS`, `MAX_RETRIES`, `MAX_REPLANS` | no | 30 / 2 / 3 by default; hosted Groq 90 s (waits for the token limit). Use 60–120 s for Ollama on a slow laptop. |
 
 ### Web (Vercel) and mobile
 
@@ -124,7 +134,7 @@ with the APK — full steps in `docs/APK-INSTALL.md`.
 Free web services sleep after 15 minutes without traffic; the first request then takes ~50 s.
 
 1. **5 minutes before** the demo (and before submitting links), open `https://tripcraft-api.onrender.com/health`
-   and wait for `"db":"ok"`. Do the same for `https://tripcraft-agents.onrender.com/health` in Mode B.
+   and wait for `"db":"ok"`. Do the same for `https://tripcraft-agents.onrender.com/health`.
    Neon's free compute also suspends when idle; this same request wakes it (the first `db` may take a few seconds).
 2. Keep one browser tab on Swagger or the dashboard during the demo; each click keeps it awake.
 3. Optional: a free uptime monitor (e.g. UptimeRobot) pinging `/health` every 10 minutes during the demo day only.
@@ -144,22 +154,8 @@ history is not enough — the old value must be revoked.
 
 ## 9. Smoke-test checklist
 
-Run after every deploy and before the demo. Record screenshots in `docs/evidence/screenshots/`.
-
-| # | Check | Expected |
-|---|-------|----------|
-| 1 | `GET https://<api>/health` | `200` `{"status":"ok","version":"1.0.0+…","db":"ok"}` |
-| 2 | `https://<api>/swagger` | Swagger UI loads; **Authorize** accepts a token |
-| 3 | `POST /api/auth/login` as `manager1@tripcraft.test` / `Passw0rd!` | `200` with `accessToken`; wrong password → `401` |
-| 4 | `GET /api/trip-requests` with the token | `200` paged list (seeded completed trip included) |
-| 5 | Web: `https://<vercel>/login` as the manager | Dashboard loads with KPI cards, no CORS error in the console |
-| 6 | Tourist submits a trip (APK or Swagger) → **Start planning** | `202`; `GET /api/workflows/{id}` moves from `Planning` to a final status; agent steps appear in `/workflows/{id}` |
-| 7 | Manager: **Approvals** → open the proposal → **Approve** | Toast "Approved. Trip is now confirmed"; trip status `Confirmed` |
-| 8 | Tourist on the phone pulls to refresh | Trip shows **Confirmed** |
-| 9 | Security: tourist token on `POST /api/quotations/{id}/approve` | `403` |
-
-Until Resource Management (Student B) and Quotations (Student C) are merged, step 6 ends `FailedSafely` at the
-Resource agent (their endpoints answer 503) and steps 7–8 cannot be done; steps 1–6 and 9 work.
+The smoke tests for the v1.1 flow (quotation sent automatically, client accepts, manager confirms) are in
+[DEPLOY-CHECKLIST.md](DEPLOY-CHECKLIST.md), section 5. Run them after every deploy and before the demo.
 
 ## Local rehearsal with Docker
 

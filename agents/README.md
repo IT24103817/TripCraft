@@ -27,22 +27,25 @@ cp .env.example .env        # then fill in the values
 |------|---------|---------|
 | `INTERNAL_AGENT_KEY` | _(none — required)_ | Shared secret. Requests without it get 401; if it is empty, every request gets 401. |
 | `API_BASE_URL` | `http://localhost:5080` | ASP.NET Core API the tools call (`/api/internal/...`). |
-| `LLM_PROVIDER` | `ollama` | `ollama` or `groq`. |
+| `LLM_PROVIDER` | `groq` when hosted on Render (`RENDER=true`), else `ollama` | `ollama` (local), `groq` (hosted) or `gemini` (optional). The Admin Settings page can override it per run. |
 | `OLLAMA_MODEL` | `llama3.1:8b` | Model used with Ollama. |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Where Ollama listens (from Docker: `http://host.docker.internal:11434`). |
 | `OLLAMA_NUM_PREDICT` | `1536` | Most tokens one Ollama answer may use. Normal answers stay under about 1,000; a runaway JSON answer is cut off and repaired instead of hitting the node timeout. |
-| `GROQ_API_KEY` | _(none)_ | Only needed when `LLM_PROVIDER=groq`. |
-| `GROQ_MODEL` | `llama-3.1-8b-instant` | Model used with Groq. |
+| `GROQ_API_KEY` | _(none)_ | console.groq.com key; needed when the provider is `groq`. **Secret.** |
+| `GROQ_MODEL` | `qwen/qwen3.8-27b` | Model used with Groq (see "Groq free tier" below). |
+| `RATE_LIMIT_RETRIES`, `RATE_LIMIT_BACKOFF_SECONDS` | `3`, `2` | On 429 (rate limit) or 503 (overloaded) the call waits the provider's `retry-after`, or 2, 4, 8 s, and retries; each retry is a step warning; then the node fails safely. |
+| `RATE_LIMIT_MAX_WAIT_SECONDS` | `20` | Longest single wait. A longer `retry-after` (a daily limit) fails at once. Hosted Groq: `60`, with `NODE_TIMEOUT_SECONDS=90`. |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | _(none)_, `gemini-3.8-flash` | Optional provider `gemini` (Google AI Studio). Free tier: 20 requests per day per model, so not for hosting. |
 | `NODE_TIMEOUT_SECONDS` | `30` | Timeout per agent node. |
 | `MAX_RETRIES` | `2` | Repair attempts when the LLM returns invalid JSON. |
 | `MAX_REPLANS` | `3` | Max budget re-plans per run. |
 
 ## Two ways to run it
 
-| | Mode A — local with Ollama (demo default) | Mode B — Render with Groq (optional) |
+| | Mode A — local with Ollama | Mode B — hosted on Render with Groq |
 |---|---|---|
-| Model | `llama3.1:8b` on your laptop, free, no key | `llama-3.1-8b-instant` on Groq's free tier |
-| Where | your laptop, `http://127.0.0.1:8001` | a free Render web service (`render.yaml`, commented block) |
+| Model | `llama3.1:8b` on your laptop, free, no key | `qwen/qwen3.8-27b` on Groq's free tier (`GROQ_API_KEY`) |
+| Where | your laptop, `http://127.0.0.1:8001` | the `tripcraft-agents` Render web service (`render.yaml`) |
 | API setting | `AGENT_SERVICE_URL` = a URL the API can reach (see below) | `AGENT_SERVICE_URL=https://tripcraft-agents.onrender.com` |
 | Callbacks | `API_BASE_URL` = the API (local or Render) | `API_BASE_URL=https://tripcraft-api.onrender.com` |
 
@@ -61,7 +64,7 @@ INTERNAL_AGENT_KEY=<same as the API> API_BASE_URL=http://localhost:5080 LLM_PROV
   uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
-### Mode B — Groq (on Render, or locally on a slow laptop)
+### Mode B — Groq (hosted on Render, or locally without Ollama)
 
 Create a free key at console.groq.com. Locally put it in `agents/.env` (never in a committed file):
 
@@ -70,9 +73,42 @@ LLM_PROVIDER=groq
 GROQ_API_KEY=<your key>
 ```
 
-On Render, uncomment the `tripcraft-agents` service in `render.yaml` and enter `GROQ_API_KEY`,
-`INTERNAL_AGENT_KEY` and `API_BASE_URL` in the dashboard. Groq's free tier has rate limits; one workflow makes
-about four LLM calls (more when a repair is needed).
+On Render, the `tripcraft-agents` service in `render.yaml` already sets `LLM_PROVIDER=groq`, `GROQ_MODEL`,
+`NODE_TIMEOUT_SECONDS=90` and `RATE_LIMIT_MAX_WAIT_SECONDS=60`; enter `GROQ_API_KEY`, `INTERNAL_AGENT_KEY` and
+`API_BASE_URL` in the dashboard. On Render `LLM_PROVIDER` may also be left unset: the service then picks Groq.
+
+#### Groq free tier (checked 5 Oct 2026)
+
+- **Model.** Groq's docs list `llama-3.1-8b-instant` as a production model, but our key gets
+  `404 model_not_found` for it: `GET /openai/v1/models` offers this account `openai/gpt-oss-20b`,
+  `openai/gpt-oss-120b`, `qwen/qwen3.8-27b` and `allam-2-7b` (4k context, too small) as chat models. All three
+  larger ones answer in JSON mode; `qwen/qwen3.8-27b` was the fastest (0.27 s) and used the fewest tokens (the
+  gpt-oss models spend extra tokens on hidden reasoning), so it is the default. Override with `GROQ_MODEL`.
+- **Limits.** Groq's rate-limit page does not list this model's numbers. The API returns two of them on every
+  response (`x-ratelimit-limit-requests`, `x-ratelimit-limit-tokens`) and the third in its 429 message: **1,000
+  requests per day, 8,000 tokens per minute and 200,000 tokens per day** per model on the free tier. The daily
+  token budget refills gradually (about 2.3 tokens a second). A 429 carries `retry-after` in seconds.
+- **What that means.** One planning run uses about 7,000 tokens (planner ≈ 1.1k, itinerary ≈ 1.5k, resources
+  ≈ 2.5k, validation ≈ 2.0k), just under one minute's budget. A second run within the same minute, or an
+  over-budget trip (up to four passes, ≈ 28k tokens), waits for Groq's `retry-after`; that is why hosted Groq allows
+  waits of up to 60 s and a 90 s node timeout. The daily token budget is the real ceiling: about 28 normal planning
+  runs a day (or 7 over-budget trips with their four passes). When it is used up, Groq asks for a wait longer than
+  60 s and the run fails safely with "quota used up … retry in N s"; **Retry planning** later.
+
+Gemini (`LLM_PROVIDER=gemini`, `GEMINI_API_KEY`) also works, but its free tier allows only 20 requests per day
+per model (`gemini-3.8-flash`), about four trips, so it is not used for hosting.
+
+### Live suite (real model)
+
+The golden cases also run against a real model; this is never part of CI:
+
+```bash
+LIVE_LLM_PROVIDER=groq LIVE_NODE_TIMEOUT_SECONDS=90 RATE_LIMIT_MAX_WAIT_SECONDS=60 \
+  .venv/bin/python -m pytest -m live tests/live   # GROQ_API_KEY from agents/.env or the environment
+LIVE_LLM_PROVIDER=ollama LIVE_NODE_TIMEOUT_SECONDS=120 .venv/bin/python -m pytest -m live tests/live
+```
+
+Each test writes the raw model replies to `tests/live/output/` (git-ignored) to compare providers.
 
 ### Docker
 

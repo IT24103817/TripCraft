@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { http } from '@/shared/api/http';
 import { queryRoots } from '@/shared/api/queryKeys';
 
-export type LlmProvider = 'ollama' | 'groq';
+export type LlmProvider = 'ollama' | 'gemini' | 'groq';
 
 /** GET /api/admin/settings (Admin): the operator settings the API reads on every request. */
 export interface SettingsDto {

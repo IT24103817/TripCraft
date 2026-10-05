@@ -76,7 +76,7 @@ results are in [docs/report/addendum-v1.1.md](docs/report/addendum-v1.1.md).
   - a review page with "Why this plan", v1/v2 comparison, Edit directly and Re-price;
   - an availability grid with manual blocks;
   - a hotel form with its room types, and guide accounts with a temporary password;
-  - an Admin Settings page (Ollama/Groq, cancellation notice, margin, deposit);
+  - an Admin Settings page (Ollama/Gemini/Groq, cancellation notice, margin, deposit);
   - dark mode, audit-log filters, deposit paid/unpaid, and PDF export.
 - **Emails** go to the tourist when a quotation is sent and when the trip is confirmed. They use the **Mailtrap
   sandbox** (the fourth third-party integration) and fall back to a pickup folder. In-app notifications appear on
@@ -139,8 +139,9 @@ See [ADR-002](docs/adr/ADR-002-flutter-state-management.md).
 each agent and makes the over-budget re-plan loop an explicit edge; Pydantic validates every LLM answer; FastAPI
 exposes the internal `/run-workflow` endpoint. See [ADR-003](docs/adr/ADR-003-agentic-ai-framework.md).
 
-**Ollama llama3.1:8b, Groq as fallback** — free, offline-capable and the spec's reference model; Groq's hosted
-`llama-3.1-8b-instant` is one environment variable away. See [ADR-006](docs/adr/ADR-006-llm-provider.md).
+**Ollama llama3.1:8b locally, Groq when hosted** — Ollama is free, offline-capable and the spec's reference
+model; on Render (where Ollama cannot run) the agents use Groq's free tier (`qwen/qwen3.8-27b`), with the same
+prompts, schemas and tests. Gemini Flash also works but its free tier is too small to host on. See [ADR-006](docs/adr/ADR-006-llm-provider.md).
 
 **Render (Docker) + Neon + Vercel** — free tiers with no card; see [ADR-005](docs/adr/ADR-005-cloud-deployment-platform.md).
 
@@ -156,7 +157,7 @@ flowchart LR
     API["ASP.NET Core API (backend/)"] --> DB[("PostgreSQL / Neon")]
     API -- "X-Internal-Key" --> AG["Agent service (agents/)<br/>LangGraph"]
     AG -- "tools: GET /api/internal/*<br/>callbacks: steps, proposal" --> API
-    AG --> LLM["Ollama / Groq"]
+    AG --> LLM["Ollama (local) / Groq (hosted)"]
     API --> FX["open.er-api.com"]
     API --> ORS["OpenRouteService"]
     API --> OWM["OpenWeatherMap"]
@@ -254,7 +255,7 @@ Full table: [docs/diagrams/er.md → Seed data](docs/diagrams/er.md#seed-data).
 | .NET SDK | 8 | API, tests; EF CLI: `dotnet tool install --global dotnet-ef --version "8.*"` |
 | PostgreSQL | 16 (local) or Neon | database |
 | Python | 3.11 | agent service |
-| Ollama | with `llama3.1:8b` (~5 GB) | local LLM (or a Groq key) |
+| Ollama | with `llama3.1:8b` (~5 GB) | local LLM (or a Groq key from console.groq.com) |
 | Node.js | 20 | web, e2e |
 | Flutter | 3 stable (3.47.5 used), Android SDK, JDK 17 | mobile |
 | Docker (optional) | colima or Docker Desktop | Testcontainers, container images |
@@ -271,8 +272,8 @@ lists the API's names; each component has its own example file.
 
 | Component | Variables |
 |-----------|-----------|
-| API | `DATABASE_URL`, `JWT_SECRET`, `JWT_ISSUER`, `ALLOWED_ORIGINS`, `INTERNAL_AGENT_KEY`, `AGENT_SERVICE_URL`, `AGENT_CALLBACK_BASE_URL`, `RUN_MIGRATIONS`, `ORS_API_KEY`, `OWM_API_KEY`, `FX_FALLBACK_LKR_PER_USD`, `UPLOADS_DIR`, optional `FX_API_BASE_URL` / `ORS_API_BASE_URL` / `OWM_API_BASE_URL`; v1.1: `VOUCHER_SIGNING_KEY`, `CANCELLATION_CUTOFF_DAYS`, `OPERATOR_CONTACT`, `OPERATOR_TIME_ZONE`, `MAILTRAP_API_TOKEN`, `MAILTRAP_INBOX_ID`, `MAIL_FROM`, optional `SMTP_*`, `EMAIL_PICKUP_DIR`, `MAILTRAP_API_BASE_URL` (the Admin Settings page overrides the cut-off, contact, deposit % and LLM provider at run time) |
-| Agent service ([agents/.env.example](agents/.env.example)) | `INTERNAL_AGENT_KEY`, `API_BASE_URL`, `LLM_PROVIDER`, `OLLAMA_MODEL`, `OLLAMA_BASE_URL`, `OLLAMA_NUM_PREDICT`, `GROQ_API_KEY`, `GROQ_MODEL`, `NODE_TIMEOUT_SECONDS`, `MAX_RETRIES`, `MAX_REPLANS` |
+| API | `DATABASE_URL`, `JWT_SECRET`, `JWT_ISSUER`, `ALLOWED_ORIGINS`, `INTERNAL_AGENT_KEY`, `AGENT_SERVICE_URL`, `AGENT_CALLBACK_BASE_URL`, `RUN_MIGRATIONS`, `ORS_API_KEY`, `OWM_API_KEY`, `FX_FALLBACK_LKR_PER_USD`, `UPLOADS_DIR`, optional `FX_API_BASE_URL` / `ORS_API_BASE_URL` / `OWM_API_BASE_URL`; v1.1: `VOUCHER_SIGNING_KEY`, `CANCELLATION_CUTOFF_DAYS`, `OPERATOR_CONTACT`, `OPERATOR_TIME_ZONE`, optional `LLM_PROVIDER` (Settings default; `groq` on Render), `MAILTRAP_API_TOKEN`, `MAILTRAP_INBOX_ID`, `MAIL_FROM`, optional `SMTP_*`, `EMAIL_PICKUP_DIR`, `MAILTRAP_API_BASE_URL` (the Admin Settings page overrides the cut-off, contact, deposit % and LLM provider at run time) |
+| Agent service ([agents/.env.example](agents/.env.example)) | `INTERNAL_AGENT_KEY`, `API_BASE_URL`, `LLM_PROVIDER`, `OLLAMA_MODEL`, `OLLAMA_BASE_URL`, `OLLAMA_NUM_PREDICT`, `GROQ_API_KEY`, `GROQ_MODEL`, `RATE_LIMIT_RETRIES`, `RATE_LIMIT_BACKOFF_SECONDS`, `RATE_LIMIT_MAX_WAIT_SECONDS`, optional `GEMINI_API_KEY`, `GEMINI_MODEL`, `NODE_TIMEOUT_SECONDS`, `MAX_RETRIES`, `MAX_REPLANS` |
 | Web ([web/.env.example](web/.env.example)) | `VITE_API_URL`, `VITE_APK_URL`, `VITE_GROUP_NUMBER` |
 | Mobile | `API_URL` (`--dart-define`) |
 | Tests | `TEST_DATABASE_URL` (backend DB tests), `BASE_URL`, `API_URL`, `E2E_DATABASE_URL` (Playwright), `API_URL` (k6) |
@@ -327,7 +328,7 @@ INTERNAL_AGENT_KEY=<same as the API> API_BASE_URL=http://localhost:5080 LLM_PROV
   uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
-Groq mode and Docker: [agents/README.md](agents/README.md).
+Groq (hosted) mode and its free-tier limits, the live real-model suite and Docker: [agents/README.md](agents/README.md).
 
 ### 4. Web (`web/`)
 

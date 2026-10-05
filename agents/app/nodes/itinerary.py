@@ -110,7 +110,8 @@ def _build_days(output: ItineraryOutput, dates: list[date], cities: list[str],
 def fewer_paid_entries(days: list[ItineraryDay], attractions: dict[str, list[Attraction]]) -> list[ItineraryDay]:
     """
     Lowest-cost strategy, enforced in code: each paid stop is swapped for a free attraction of the same city that
-    the day does not visit yet. A paid stop stays when the city has no free alternative left.
+    the day does not visit yet. A paid stop with no free alternative left is dropped, as long as the day keeps at
+    least one stop (a day needs 1 to 3 stops); only then does it stay.
     """
     for day in days:
         used = {s.attraction_id for s in day.stops}
@@ -122,6 +123,8 @@ def fewer_paid_entries(days: list[ItineraryDay], attractions: dict[str, list[Att
             if swap is not None:
                 day.stops[index] = Stop(attraction_id=swap.id, name=swap.name, entry_fee_lkr=swap.entry_fee_lkr)
                 used.add(swap.id)
+        while len(day.stops) > 1 and any(s.entry_fee_lkr > 0 for s in day.stops):
+            day.stops.remove(next(s for s in day.stops if s.entry_fee_lkr > 0))
     return days
 
 

@@ -73,7 +73,9 @@ public static class DependencyInjection
                 ? cutoff
                 : TripSettings.DefaultCancellationCutoffDays,
             configuration["OPERATOR_CONTACT"] is { Length: > 0 } contact ? contact : TripSettings.DefaultOperatorContact,
-            configuration["OPERATOR_TIME_ZONE"] is { Length: > 0 } zone ? zone : TripSettings.DefaultTimeZoneId);
+            configuration["OPERATOR_TIME_ZONE"] is { Length: > 0 } zone ? zone : TripSettings.DefaultTimeZoneId,
+            LlmProvider: configuration["LLM_PROVIDER"]?.Trim().ToLowerInvariant() is { } provider
+                         && TripSettings.IsLlmProvider(provider) ? provider : null);
         services.AddScoped(sp => SettingsRepository.Load(sp.GetRequiredService<AppDbContext>(), settingsDefaults));
         services.AddScoped<ISettingsRepository, SettingsRepository>();
 

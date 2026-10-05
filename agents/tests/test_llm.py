@@ -41,7 +41,8 @@ def test_factory_uses_json_mode_for_each_provider(monkeypatch):
     get_settings.cache_clear()
     groq = llm.get_chat_model()
     assert groq.kwargs["response_format"] == {"type": "json_object"}
-    assert groq.bound.model_name == "llama-3.1-8b-instant"
+    assert groq.bound.model_name == "qwen/qwen3.8-27b"
+    assert groq.bound.max_retries == 0, "call_json does the 429 / 503 backoff itself"
 
 
 def test_the_runs_provider_from_settings_overrides_the_environment(monkeypatch):
@@ -51,7 +52,7 @@ def test_the_runs_provider_from_settings_overrides_the_environment(monkeypatch):
     llm.use_provider_for_run("groq")
     try:
         assert llm.current_provider() == "groq"
-        assert llm.get_chat_model().bound.model_name == "llama-3.1-8b-instant"
+        assert llm.get_chat_model().bound.model_name == "qwen/qwen3.8-27b"
     finally:
         llm.use_provider_for_run(None)
     assert llm.current_provider() == "ollama"

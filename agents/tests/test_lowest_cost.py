@@ -21,8 +21,19 @@ def test_paid_stops_are_swapped_for_unused_free_ones_of_the_same_city():
 
     [result] = fewer_paid_entries([day], {"kandy": kandy})
 
-    # One free alternative left ("buddha"): the first paid stop is swapped, the second stays (nothing free remains).
-    assert [s.attraction_id for s in result.stops] == ["buddha", "lake", "gardens"]
+    # One free alternative left ("buddha"): the first paid stop is swapped; nothing free remains for the second, so
+    # it is dropped (the day still has two stops).
+    assert [s.attraction_id for s in result.stops] == ["buddha", "lake"]
+
+
+def test_a_day_keeps_its_only_stop_even_when_it_is_paid_and_nothing_is_free():
+    kandy = [attraction("temple", 2000), attraction("gardens", 3000)]
+    day = ItineraryDay(day=1, date=date(2026, 11, 1), city="Kandy", transport="road", transfer_km=0, driving_minutes=0,
+                       stops=[Stop(attraction_id="temple", name="temple", entry_fee_lkr=2000)])
+
+    [result] = fewer_paid_entries([day], {"kandy": kandy})
+
+    assert [s.attraction_id for s in result.stops] == ["temple"], "a day needs at least one stop"
 
 
 def test_the_cheapest_vehicle_by_km_rate_is_chosen():

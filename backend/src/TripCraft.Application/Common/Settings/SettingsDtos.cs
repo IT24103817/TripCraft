@@ -13,7 +13,7 @@ public class SaveSettingsRequestValidator : AbstractValidator<SaveSettingsReques
 {
     public SaveSettingsRequestValidator()
     {
-        RuleFor(x => x.LlmProvider).Must(p => p is "ollama" or "groq").WithMessage("Choose ollama or groq.");
+        RuleFor(x => x.LlmProvider).Must(TripSettings.IsLlmProvider).WithMessage("Choose ollama, gemini or groq.");
         RuleFor(x => x.CancellationCutoffDays).InclusiveBetween(0, 30);
         RuleFor(x => x.MarginPct).InclusiveBetween(0, 100);
         RuleFor(x => x.DepositPct).InclusiveBetween(0, 100);

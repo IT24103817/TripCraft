@@ -25,7 +25,8 @@ public class DistanceServiceTests
     }
 
     private DistanceService Service(StubHandler handler, string? key = "ors-test-key") =>
-        new(handler.Client(), _db, new AttractionRepository(_db),
+        new(handler.Client(ExternalServicesSetup.OrsBaseUrl(StubHandler.Config()).ToString()), _db,
+            new AttractionRepository(_db),
             key is null ? StubHandler.Config() : StubHandler.Config(("ORS_API_KEY", key)),
             NullLogger<DistanceService>.Instance);
 
@@ -87,6 +88,9 @@ public class DistanceServiceTests
         var result = await Service(handler).GetDistanceAsync("Kandy", "Ella", CancellationToken.None);
 
         result.Should().Be(new DistanceResult("Kandy", "Ella", 142.6m, 260, "openrouteservice"));
+        handler.Requests[0].Method.Should().Be(HttpMethod.Post);
+        handler.Requests[0].RequestUri!.ToString()
+            .Should().Be("https://api.heigit.org/openrouteservice/v2/matrix/driving-car");
         handler.Requests[0].Headers.GetValues("Authorization").Should().Equal("ors-test-key");
         handler.Requests[0].RequestUri!.ToString().Should().NotContain("ors-test-key");
     }

@@ -48,7 +48,12 @@ free tier (lost on redeploy); fine for the demo, use object storage for real use
 
 ## 3. React app on Vercel
 
-1. vercel.com → **Add New → Project** → import the repo → **Root Directory** `web` (framework Vite is detected;
+**Vercel deploys from the fork mirror** `https://github.com/IT24103817/TripCraft` (git remote `fork`), not from the
+group repository. The fork's `main` is a mirror of the group's `main`: after pushing to `origin`, run
+`scripts/sync-fork.sh` (`git push fork main`, a normal push) so Vercel builds the same commit. Never force-push
+`origin`; if the fork's `main` ever diverges, only the fork may be updated with `git push --force-with-lease fork main`.
+
+1. vercel.com → **Add New → Project** → import the **fork** repo → **Root Directory** `web` (framework Vite is detected;
    `web/vercel.json` sets the build, SPA rewrite and security headers).
 2. **Environment Variables:** `VITE_API_URL=https://tripcraft-api.onrender.com` (no trailing slash). It is baked in
    at build time: redeploy after changing it.
@@ -100,11 +105,12 @@ with the APK — full steps in `docs/APK-INSTALL.md`.
 | `AGENT_SERVICE_URL` | yes | Base URL of the agent service. Missing → planning ends `FailedSafely`. |
 | `LLM_PROVIDER` | set in `render.yaml` | `groq`: what the Admin Settings page shows and sends until an Admin saves a choice. |
 | `RUN_MIGRATIONS` | yes on Render | `true`: apply EF migrations and seed demo data on start (idempotent). |
-| `ORS_API_KEY` | no | OpenRouteService key; without it the seeded `city_distances` table is used. **Secret.** |
+| `ORS_API_KEY` | no | OpenRouteService key; without it the seeded `city_distances` table is used. Existing keys work on HeiGIT's new host unchanged. **Secret.** |
 | `OWM_API_KEY` | no | OpenWeatherMap key; without it weather is skipped. **Secret.** |
 | `AGENT_CALLBACK_BASE_URL` | no | URL the agents post results to, if different from the agent's own `API_BASE_URL`. |
 | `FX_FALLBACK_LKR_PER_USD` | no | Rate used (flagged stale) if the FX provider fails before any success; default 300. |
-| `FX_API_BASE_URL`, `ORS_API_BASE_URL`, `OWM_API_BASE_URL` | no | Override a provider's base URL; leave unset in production. Used to test the fallbacks by pointing a provider at an unreachable host. |
+| `ORS_BASE_URL` | no | OpenRouteService base URL; default `https://api.heigit.org/openrouteservice/` (`api.openrouteservice.org` is deprecated and shuts down on 2–6 Nov 2026). The older name `ORS_API_BASE_URL` still works. |
+| `FX_API_BASE_URL`, `OWM_API_BASE_URL` | no | Override a provider's base URL; leave unset in production. Used to test the fallbacks by pointing a provider at an unreachable host. |
 | `UPLOADS_DIR` | no | Passport photo folder; the image sets `/app/uploads`. |
 | `PORT` | set in `render.yaml` | `8080`, the port Render routes to. |
 | `ASPNETCORE_ENVIRONMENT` | set in `render.yaml` | `Production` (JSON logs; Swagger stays on at `/swagger` for the assessment). |

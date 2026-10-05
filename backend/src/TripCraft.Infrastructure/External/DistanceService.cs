@@ -10,7 +10,8 @@ using TripCraft.Infrastructure.Persistence;
 namespace TripCraft.Infrastructure.External;
 
 /// <summary>
-/// OpenRouteService distance matrix (ORS_API_KEY). City coordinates are the average of the city's
+/// OpenRouteService distance matrix (ORS_API_KEY) on api.heigit.org/openrouteservice (ORS_BASE_URL overrides it;
+/// see ExternalServicesSetup.OrsBaseUrl). City coordinates are the average of the city's
 /// active attractions. On any failure, or with no key, the seeded city_distances table is used (PLAN.md section 9).
 /// </summary>
 public class DistanceService(

@@ -2,7 +2,7 @@
 
 > **v1.0 is the submitted state.** The assessed submission is tag `v1.0` (commit `fab245e`, 28 September 2026),
 > and the consolidated report built by `build.sh` describes that state. This addendum is not part of the built
-> report. It records what changed afterwards in tag `v1.1` and why, so a reader of the repository can tell the two
+> report. It records what changed afterwards in tag `v1.1.1` and why, so a reader of the repository can tell the two
 > apart.
 
 ## What changed and why

@@ -425,7 +425,7 @@ Agent service (internal, `http://127.0.0.1:8001`): `POST /run-workflow`, `POST /
 | End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 6 passed (4 roles, over-budget → sent at the best price, demo → auto-sent → accepted → Confirmed) |
 | Performance | `k6 run tests/perf/list-load.js` (and `auth-load.js`, `agent-latency.js`) from the repo root | `list-load.js`: 610,814 requests, p95 9.56 ms, 0 % errors; others in [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md) |
 
-Latest run: 2 Oct 2026 on `feat/v1.1-web` (v1.1), with real Ollama agents for the e2e; evidence in
+Latest run: 5 October 2026 on `main` at `aae3ffd`, with real Ollama agents for the e2e; evidence in
 [docs/evidence/v1.1-e2e.md](docs/evidence/v1.1-e2e.md). The earlier v1.0 run (28 Sep 2026) also had `dotnet build -warnaserror` (0 warnings), `ruff check`,
 `flutter analyze` (no issues) and Lighthouse accessibility **100** on the landing page.
 

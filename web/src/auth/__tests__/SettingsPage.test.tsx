@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { renderApp, signInAs } from '@/test/render';
@@ -27,7 +27,8 @@ describe('SettingsPage', () => {
     const { user } = renderApp('/admin/settings');
 
     const form = await screen.findByRole('form', { name: 'Settings' });
-    expect(within(form).getByLabelText(/Ollama/)).toBeChecked();
+    // The form appears first and is filled from the loaded settings just after (reset in an effect).
+    await waitFor(() => expect(within(form).getByLabelText(/Ollama/)).toBeChecked());
     expect(within(form).getByLabelText('Margin (%)')).toHaveValue(15);
 
     await user.clear(within(form).getByLabelText('Cancellation notice (days)'));

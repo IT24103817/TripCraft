@@ -1,5 +1,9 @@
 # Deploy checklist (hosted with Groq; Ollama stays the local provider)
 
+**This deployment:** API https://tripcraft-api-h37l.onrender.com · agents https://tripcraft-agents.onrender.com ·
+web https://trip-craft-sepia.vercel.app · APK
+[Release v1.1.1-hosted](https://github.com/ilhamhilmy63/TripCraft/releases/tag/v1.1.1-hosted).
+
 Tick each box in order. The details behind every step are in [DEPLOYMENT.md](DEPLOYMENT.md). Never paste a secret
 into a file, a commit, a screenshot or a chat: every value marked **secret** goes only into the platform dashboard.
 
@@ -21,7 +25,7 @@ into a file, a commit, a screenshot or a chat: every value marked **secret** goe
 - [ ] render.com → **New → Blueprint** → this repo. Render proposes `tripcraft-api` and `tripcraft-agents`.
 - [ ] **tripcraft-agents**: `LLM_PROVIDER=groq`, `GROQ_MODEL=qwen/qwen3.8-27b`, `NODE_TIMEOUT_SECONDS=90` and
       `RATE_LIMIT_MAX_WAIT_SECONDS=60` come from `render.yaml`. Enter `GROQ_API_KEY`, `INTERNAL_AGENT_KEY`, and
-      `API_BASE_URL=https://tripcraft-api.onrender.com`.
+      `API_BASE_URL=https://tripcraft-api-h37l.onrender.com`.
 - [ ] **tripcraft-api**: `LLM_PROVIDER=groq` comes from `render.yaml`. Enter `DATABASE_URL`, `JWT_SECRET`,
       `JWT_ISSUER` (e.g. `tripcraft-prod`), the same `INTERNAL_AGENT_KEY`,
       `AGENT_SERVICE_URL=https://tripcraft-agents.onrender.com`, `VOUCHER_SIGNING_KEY`, `OPERATOR_CONTACT`,
@@ -31,22 +35,27 @@ into a file, a commit, a screenshot or a chat: every value marked **secret** goe
 
 ## 3. Vercel (React)
 
-- [ ] Root Directory `web`; `VITE_API_URL=https://tripcraft-api.onrender.com` (no trailing slash) → **Deploy**.
-- [ ] Put the Vercel URL into the API's `ALLOWED_ORIGINS` on Render → redeploy the API.
+Vercel deploys from the **fork mirror** `https://github.com/IT24103817/TripCraft` (git remote `fork`), not from the
+group repository. After every push to `origin/main`, run `scripts/sync-fork.sh` (a normal `git push fork main`) so
+Vercel builds the same commit; never force-push `origin`.
+
+- [ ] Import the **fork** repo in Vercel. Root Directory `web`; `VITE_API_URL=https://tripcraft-api-h37l.onrender.com` (no trailing slash) → **Deploy**.
+- [ ] Put the Vercel URL (`https://trip-craft-sepia.vercel.app`) into the API's `ALLOWED_ORIGINS` on Render →
+      redeploy the API.
 
 ## 4. Wake everything (5 minutes before testing or the demo)
 
-- [ ] `https://tripcraft-api.onrender.com/health` → wait for `"db":"ok"` (the first call can take about 50 s).
+- [ ] `https://tripcraft-api-h37l.onrender.com/health` → wait for `"db":"ok"` (the first call can take about 50 s).
 - [ ] `https://tripcraft-agents.onrender.com/health` → `{"status":"ok"}`.
 
 ## 5. Smoke tests
 
 | # | Check | Expected |
 |---|-------|----------|
-| 1 | `GET https://<api>/health` | `200`, `"status":"ok"`, `"db":"ok"` |
-| 2 | `https://<api>/swagger` | Swagger loads; **Authorize** accepts a token |
+| 1 | `GET https://tripcraft-api-h37l.onrender.com/health` | `200`, `"status":"ok"`, `"db":"ok"` |
+| 2 | `https://tripcraft-api-h37l.onrender.com/swagger` | Swagger loads; **Authorize** accepts a token |
 | 3 | `POST /api/auth/login` as `manager1@tripcraft.test` / `Passw0rd!`; then a wrong password | `200` with `accessToken`; `401` |
-| 4 | Web `https://<vercel>/login` as the manager | Dashboard with "Needs your action" tiles; no CORS error in the console |
+| 4 | Web `https://trip-craft-sepia.vercel.app/login` as the manager | Dashboard with "Needs your action" tiles; no CORS error in the console |
 | 5 | Web as `admin1@tripcraft.test` → **Settings** | LLM provider shows **Groq** selected |
 | 6 | Tourist (app or Swagger) submits a trip with cities Kandy, Ella → **Start planning** | `202`; the trip goes Planning → **Quotation sent** by itself (history actor `System`) |
 | 7 | Web: **Agent runs** → that run | Four steps Succeeded. A step warning "groq rate limited (429); retry 1 after N s" is acceptable (the per-minute token limit); a Failed step is not |

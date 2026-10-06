@@ -108,11 +108,17 @@ B and C, who still need to review them and own them. The full PLAN.md section 6 
 
 | | Student A (group leader) | Student B | Student C |
 |---|---|---|---|
+| **Student ID** | IT24103652 | IT24103817 | IT24103079 |
+| **GitHub** | `ilhamhilmy63` (branch `IT24103652`) | `IT24103817` (branch `IT24103817`) | `inzam2659-pixel` (branch `IT24103079`) |
 | **Component** | Trip Requests & Itinerary Management | Resource Management (guides, vehicles, hotels) | Quotation, Approval & Reporting |
 | **Entities** | Tourist, TripRequest, Itinerary, ItineraryDay, ItineraryStop, Attraction | Guide, GuideLanguage, Vehicle, Hotel, RoomType, ResourceHold, RateCard | Quotation, QuotationLine, ApprovalDecision, AgentWorkflow, AgentStep, AuditLog |
 | **Agent owned** | Planner / Coordinator | Resource & Action | Validation & Safety |
 | **Shared 4th agent** | Itinerary Analysis — A writes, B reviews | | |
-| **Third-party** | OpenWeatherMap | OpenRouteService | Exchange rate (open.er-api.com) |
+| **Third-party** | OpenWeatherMap | OpenRouteService (`api.heigit.org`) | Exchange rate (open.er-api.com) |
+| **ADRs** | ADR-002, ADR-003 | ADR-005, ADR-006 | ADR-001, ADR-004 |
+
+Files, endpoints, screens, device features and test counts per student, the agentic subsystem, the shared foundation
+and where the branches differ from this table: [docs/report/ownership-summary.md](docs/report/ownership-summary.md).
 
 ## Technology choices
 
@@ -142,6 +148,9 @@ exposes the internal `/run-workflow` endpoint. See [ADR-003](docs/adr/ADR-003-ag
 **Ollama llama3.1:8b locally, Groq when hosted** — Ollama is free, offline-capable and the spec's reference
 model; on Render (where Ollama cannot run) the agents use Groq's free tier (`qwen/qwen3.8-27b`), with the same
 prompts, schemas and tests. Gemini Flash also works but its free tier is too small to host on. See [ADR-006](docs/adr/ADR-006-llm-provider.md).
+Groq's free tier allows 1,000 requests, 8,000 tokens a minute and 200,000 tokens a day (a rolling 24-hour window
+that refills gradually). One planning run uses about 7,000 tokens, so about 28 trips a day fit; a used-up budget makes
+planning fail safely ("quota used up … retry in N s") until it refills. Details: [agents/README.md](agents/README.md).
 
 **Render (Docker) + Neon + Vercel** — free tiers with no card; see [ADR-005](docs/adr/ADR-005-cloud-deployment-platform.md).
 
@@ -354,7 +363,7 @@ Landing-page settings (build time, in Vercel): `VITE_APK_URL` (GitHub Release UR
 cd mobile && flutter pub get && flutter run    # emulator; talks to http://10.0.2.2:5080
 ```
 
-Build the APK for the deployed API: `./scripts/build-release-apk.sh https://<api>`. Details:
+Build the APK for the deployed API: `./scripts/build-release-apk.sh https://tripcraft-api-h37l.onrender.com`. Details:
 [mobile/README.md](mobile/README.md), install steps: [docs/APK-INSTALL.md](docs/APK-INSTALL.md).
 
 ### 6. iPhone (optional)
@@ -370,7 +379,7 @@ Free-account builds expire after 7 days. Step by step: [docs/RUN-ON-IPHONE.md](d
 
 ## API documentation
 
-Swagger UI: `http://localhost:5080/swagger` locally, `https://<api>/swagger` when deployed (**Authorize** with the
+Swagger UI: `http://localhost:5080/swagger` locally, `https://tripcraft-api-h37l.onrender.com/swagger` when deployed (**Authorize** with the
 `accessToken` from `POST /api/auth/login`). All responses are JSON; errors are RFC 7807 ProblemDetails.
 
 | Group | Method and path | Who | Notes |
@@ -419,8 +428,9 @@ Agent service (internal, `http://127.0.0.1:8001`): `POST /run-workflow`, `POST /
 
 | Layer | Command | Count (latest run) |
 |-------|---------|--------------------|
-| Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 467 passed |
-| Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 64 passed |
+| Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 475 passed |
+| Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 87 passed |
+| Agents with a real model (golden cases; not in CI) | `cd agents && LIVE_LLM_PROVIDER=groq … .venv/bin/python -m pytest -m live tests/live` (see [agents/README.md](agents/README.md)) | 6 passed with Groq, 6 passed with Ollama |
 | React | `cd web && npm run lint && npm test && npm run build` | 204 passed (36 files) |
 | Flutter | `cd mobile && flutter analyze && flutter test` | 186 passed |
 | End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 6 passed (4 roles, over-budget → sent at the best price, demo → auto-sent → accepted → Confirmed) |
@@ -457,10 +467,15 @@ variable, waking the free Render service, rotating secrets and the smoke-test ch
 
 | Service | URL |
 |---------|-----|
-| API health | TODO `https://<api>.onrender.com/health` |
-| Swagger | TODO `https://<api>.onrender.com/swagger` |
-| React web app (landing page `/`, staff `/login`) | TODO `https://<app>.vercel.app` |
-| Android APK (GitHub Release v1.0) | TODO `https://github.com/<owner>/<repo>/releases/tag/v1.0` |
+| API health | https://tripcraft-api-h37l.onrender.com/health |
+| Swagger | https://tripcraft-api-h37l.onrender.com/swagger |
+| Agent service health (Groq) | https://tripcraft-agents.onrender.com/health |
+| React web app (landing page `/`, staff `/login`) | https://trip-craft-sepia.vercel.app |
+| Android APK (built against the hosted API) | [Release v1.1.1-hosted](https://github.com/ilhamhilmy63/TripCraft/releases/tag/v1.1.1-hosted) · [direct download](https://github.com/ilhamhilmy63/TripCraft/releases/download/v1.1.1-hosted/tripcraft-v1.1.1-hosted.apk) |
+
+The free Render services sleep after 15 minutes: open the two health URLs first and wait for `"db":"ok"` (the first
+call can take about 50 s). Vercel builds the web app from the fork mirror `IT24103817/TripCraft`, kept in step with
+`scripts/sync-fork.sh` ([docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)).
 
 All seeded accounts use the password `Passw0rd!`.
 

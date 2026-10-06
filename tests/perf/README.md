@@ -9,6 +9,7 @@ k6 run tests/perf/list-load.js                    # 50 VUs, 60 s, GET /api/trip-
 k6 run tests/perf/auth-load.js                    # 20 VUs, 30 s, POST /api/auth/login
 k6 run tests/perf/db-response.js                  # 30 VUs, 30 s, database round trip via GET /health
 k6 run tests/perf/agent-latency.js                # 5 sequential workflow runs (agent service + LLM needed)
+k6 run -e PAUSE_SECONDS=120 tests/perf/agent-latency.js  # paced: one trip every ~2.5 min (hosted free-tier LLMs)
 ```
 
 | Variable | Default | Meaning |

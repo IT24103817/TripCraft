@@ -148,8 +148,9 @@ exposes the internal `/run-workflow` endpoint. See [ADR-003](docs/adr/ADR-003-ag
 **Ollama llama3.1:8b locally, Groq when hosted** — Ollama is free, offline-capable and the spec's reference
 model; on Render (where Ollama cannot run) the agents use Groq's free tier (`qwen/qwen3.8-27b`), with the same
 prompts, schemas and tests. Gemini Flash also works but its free tier is too small to host on. See [ADR-006](docs/adr/ADR-006-llm-provider.md).
-Groq's free tier allows 1,000 requests, 8,000 tokens a minute and 200,000 tokens a day (a rolling 24-hour window
-that refills gradually). One planning run uses about 7,000 tokens, so about 28 trips a day fit; a used-up budget makes
+Groq's free tier allows 1,000 requests, 8,000 tokens a minute and 200,000 tokens a day (a rolling 24-hour window).
+One planning run uses about 12,000 tokens, so trips should be about two minutes apart and about 16 fit in a day; a
+used-up budget makes
 planning fail safely ("quota used up … retry in N s") until it refills. Details: [agents/README.md](agents/README.md).
 
 **Render (Docker) + Neon + Vercel** — free tiers with no card; see [ADR-005](docs/adr/ADR-005-cloud-deployment-platform.md).
@@ -429,15 +430,16 @@ Agent service (internal, `http://127.0.0.1:8001`): `POST /run-workflow`, `POST /
 | Layer | Command | Count (latest run) |
 |-------|---------|--------------------|
 | Backend unit + integration + PostgreSQL | `cd backend && TEST_DATABASE_URL="Host=…;Database=postgres;Username=…;Password=…" dotnet test` (without it, the DB tests start a Testcontainers `postgres:16-alpine`; Docker needed) | 475 passed |
-| Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 87 passed |
+| Agent evaluation (FakeLLM, no model) | `cd agents && .venv/bin/python -m pytest -q` | 90 passed |
 | Agents with a real model (golden cases; not in CI) | `cd agents && LIVE_LLM_PROVIDER=groq … .venv/bin/python -m pytest -m live tests/live` (see [agents/README.md](agents/README.md)) | 6 passed with Groq, 6 passed with Ollama |
 | React | `cd web && npm run lint && npm test && npm run build` | 204 passed (36 files) |
 | Flutter | `cd mobile && flutter analyze && flutter test` | 186 passed |
 | End to end (full stack) | `cd tests/e2e && npm install && npx playwright install chromium && BASE_URL=… API_URL=… E2E_DATABASE_URL=… npx playwright test` | 6 passed (4 roles, over-budget → sent at the best price, demo → auto-sent → accepted → Confirmed) |
 | Performance | `k6 run tests/perf/list-load.js` (and `auth-load.js`, `agent-latency.js`) from the repo root | `list-load.js`: 610,814 requests, p95 9.56 ms, 0 % errors; others in [docs/TEST-EVIDENCE.md](docs/TEST-EVIDENCE.md) |
 
-Latest run: 5 October 2026 on `main` at `aae3ffd`, with real Ollama agents for the e2e; evidence in
-[docs/evidence/v1.1-e2e.md](docs/evidence/v1.1-e2e.md). The earlier v1.0 run (28 Sep 2026) also had `dotnet build -warnaserror` (0 warnings), `ruff check`,
+Latest run: 6 October 2026 on `main` (v1.1.2), with real agents: Playwright 6/6 on Groq; paced k6 trips 5/5 on both
+providers, median time to quotation **32.1 s on Groq** vs **98.8 s on Ollama**; evidence in
+[docs/evidence/groq-vs-ollama.md](docs/evidence/groq-vs-ollama.md) and [docs/evidence/v1.1-e2e.md](docs/evidence/v1.1-e2e.md). The earlier v1.0 run (28 Sep 2026) also had `dotnet build -warnaserror` (0 warnings), `ruff check`,
 `flutter analyze` (no issues) and Lighthouse accessibility **100** on the landing page.
 
 ### Screenshots

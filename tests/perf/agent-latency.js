@@ -2,6 +2,9 @@
 // starts planning and polls GET /api/workflows/{id} until it leaves Planning. In v1.1 a valid proposal is sent to
 // the client automatically (workflow Approved), so the time until the quotation is sent is the metric; any other
 // final status fails the check and is counted per status.
+// PAUSE_SECONDS (default 0) waits between runs, outside the measured time: on a hosted free tier with a per-minute
+// token limit (Groq: 8,000 tokens a minute; one trip uses about 12,000) a pause of 120 s measures one trip at a time,
+// as in a demo, instead of how fast back-to-back trips drain the quota.
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter, Trend } from 'k6/metrics';
@@ -10,6 +13,7 @@ import { API_URL, authHeaders, login, summaryTo } from './common.js';
 const timeToQuotationSent = new Trend('time_to_quotation_sent', true);
 const timeToFinalStatus = new Trend('time_to_final_status', true);
 const finalStatus = new Counter('final_status');
+const PAUSE_SECONDS = Number(__ENV.PAUSE_SECONDS || 0);
 
 export const options = {
   scenarios: { runs: { executor: 'per-vu-iterations', vus: 1, iterations: 5, maxDuration: '20m' } },
@@ -58,6 +62,7 @@ export default function ({ token }) {
   check(status, { 'quotation sent to the client (workflow Approved)': (s) => s === 'Approved' });
   console.log(`run ${__ITER + 1}: ${status} after ${(elapsed / 1000).toFixed(1)} s` +
     (workflow && workflow.json('errorSummary') ? ` — ${workflow.json('errorSummary')}` : ''));
+  if (PAUSE_SECONDS > 0 && __ITER < 4) sleep(PAUSE_SECONDS); // not part of the measured time
 }
 
 export const handleSummary = summaryTo('agent-latency');

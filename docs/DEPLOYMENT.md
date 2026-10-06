@@ -71,8 +71,9 @@ group repository. The fork's `main` is a mirror of the group's `main`: after pus
 `API_BASE_URL=https://tripcraft-api.onrender.com`. Then set the API's
 `AGENT_SERVICE_URL=https://tripcraft-agents.onrender.com` and redeploy the API. If `LLM_PROVIDER` is left unset on
 Render, the agent service picks Groq by itself (`RENDER=true`). Groq's free tier allows 1,000 requests a day,
-8,000 tokens a minute and 200,000 tokens a day; one planning run uses about 7,000 tokens, so back-to-back runs wait
-for Groq's `retry-after` (shown as a warning on that agent's step), and about 28 trips fit in a day. Model choice and limits: `agents/README.md`, "Groq free tier".
+8,000 tokens a minute and 200,000 tokens a day; one planning run uses about 12,000 tokens, so each trip waits once for
+Groq's `retry-after` (shown as a warning on that agent's step), trips should start about two minutes apart, and about
+16 fit in a day. Model choice and limits: `agents/README.md`, "Groq free tier".
 
 **Local — laptop + Ollama.** Run it as in `agents/README.md`. A Render API must reach it over HTTPS, so expose it
 with a tunnel: `cloudflared tunnel --url http://localhost:8001` → set the API's `AGENT_SERVICE_URL` to the printed

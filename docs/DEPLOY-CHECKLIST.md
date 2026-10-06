@@ -12,7 +12,8 @@ into a file, a commit, a screenshot or a chat: every value marked **secret** goe
 - [ ] **Groq key** (**secret**): console.groq.com → **API Keys** → create a key (free tier). Check that the key can
       use the model: `qwen/qwen3.8-27b` must appear in `GET https://api.groq.com/openai/v1/models` for that key.
       Free tier: 1,000 requests a day, 8,000 tokens a minute, 200,000 tokens a day (one planning run uses about
-      7,000, so about 28 trips a day). Do not run the live test suite against the demo key on the demo day.
+      12,000, so start trips about two minutes apart; about 16 trips a day). Do not run the live test suite or
+      k6 against the demo key on the demo day.
 - [ ] **Generate the shared secrets** (**secret**), once:
       `openssl rand -base64 48` for `JWT_SECRET`, `openssl rand -hex 32` for `INTERNAL_AGENT_KEY` and for
       `VOUCHER_SIGNING_KEY`.

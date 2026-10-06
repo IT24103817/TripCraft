@@ -15,7 +15,7 @@ All secrets must stay out of the repo.
 | Option | Pros | Cons |
 |--------|------|------|
 | **Ollama, llama3.1:8b, local** | Free, no key, works offline; the spec's reference stack; JSON output mode (`format="json"`). | Needs ~5 GB of disk and a capable laptop; slower than hosted models (about 40 s for Planner + Itinerary on our Apple Silicon laptop); cannot run on Render's free tier. |
-| **Groq free tier** (`qwen/qwen3.8-27b`; planned `llama-3.1-8b-instant`) | Very fast hosted inference (≈ 1 s per agent call); JSON mode; 1,000 requests a day. | Needs an API key and internet; free tier 8,000 tokens a minute (a second run within a minute waits) and 200,000 tokens a day (about 28 trips). |
+| **Groq free tier** (`qwen/qwen3.8-27b`; planned `llama-3.1-8b-instant`) | Very fast hosted inference (≈ 1 s per agent call); JSON mode; 1,000 requests a day. | Needs an API key and internet; free tier 8,000 tokens a minute and 200,000 tokens a day; one trip uses about 12,000 tokens, so trips wait for the budget and about 16 fit in a day. |
 | **Gemini Flash free tier, `gemini-3.8-flash`** (tried 2026-10-05) | Google's current stable Flash model; native JSON output mode; fast. | Free tier allows only **20 requests per day per model** (about four trips), and it often answered 503 "high demand". |
 | **OpenAI** | Strongest models and tooling. | Needs a paid account and card — breaks the no-cost rule. |
 
@@ -28,7 +28,7 @@ run from the Admin Settings page). When `LLM_PROVIDER` is unset the agent servic
 **Why Groq for hosting, and which model (2026-10-05).** Ollama cannot run on Render's free tier, so the hosted agent
 service needs an API provider. Gemini was tried first: its free tier allows 20 requests per day per model, which
 a single quality-gate run used up, so it cannot carry a demo. Groq's free tier allows 1,000 requests and 200,000
-tokens a day, about 28 planning runs. The
+tokens a day, about 16 planning runs. The
 planned model `llama-3.1-8b-instant` is listed in Groq's docs, but our key gets `404 model_not_found` for it; of
 the models the key can use, `qwen/qwen3.8-27b` answered fastest and with the fewest tokens, which matters under
 the 8,000-tokens-per-minute limit, so it is the default (`GROQ_MODEL` overrides it). The same prompts, Pydantic
@@ -46,8 +46,8 @@ schemas and tests are used for every provider; no provider-specific prompt was n
 - A hosted model can answer 429 (rate limit) or 503 (overloaded): the call waits the provider's `retry-after` (or
   2, 4, 8 s) and retries, each retry shown as a warning on that agent's step; after three retries, or when the
   provider asks for a longer wait than `RATE_LIMIT_MAX_WAIT_SECONDS` (a daily limit), the node fails safely and the
-  trip goes to Needs operator. One planning run uses about 7,000 tokens, so hosted Groq allows 60 s waits and a 90 s
-  node timeout to ride out its per-minute token limit.
+  trip goes to Needs operator. One planning run uses about 12,000 tokens, more than a minute's budget, so hosted Groq allows 60 s
+  waits and a 90 s node timeout to ride out its per-minute token limit.
 - The live suite showed that a real model sometimes invents a "concern" that restates a code-checked rule wrongly
   ("3 stops is more than 3"). Such concerns are now advisory notes on the step; only code violations set the status.
 

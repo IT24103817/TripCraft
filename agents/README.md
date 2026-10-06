@@ -87,12 +87,14 @@ On Render, the `tripcraft-agents` service in `render.yaml` already sets `LLM_PRO
 - **Limits.** Groq's rate-limit page does not list this model's numbers. The API returns two of them on every
   response (`x-ratelimit-limit-requests`, `x-ratelimit-limit-tokens`) and the third in its 429 message: **1,000
   requests per day, 8,000 tokens per minute and 200,000 tokens per day** per model on the free tier. The daily
-  token budget refills gradually (about 2.3 tokens a second). A 429 carries `retry-after` in seconds.
-- **What that means.** One planning run uses about 7,000 tokens (planner ≈ 1.1k, itinerary ≈ 1.5k, resources
-  ≈ 2.5k, validation ≈ 2.0k), just under one minute's budget. A second run within the same minute, or an
-  over-budget trip (up to four passes, ≈ 28k tokens), waits for Groq's `retry-after`; that is why hosted Groq allows
-  waits of up to 60 s and a 90 s node timeout. The daily token budget is the real ceiling: about 28 normal planning
-  runs a day (or 7 over-budget trips with their four passes). When it is used up, Groq asks for a wait longer than
+  budget is a rolling 24-hour window: in our runs most of a used-up budget only came back about a day later, not
+  at midnight. A 429 carries `retry-after` in seconds.
+- **What that means.** With the seeded database one planning run uses about **12,000 tokens** (measured 6 Oct
+  2026: planner 1.1k, itinerary 1.9k, resources 5.1k, validation 3.7k; the test fixtures are smaller, about 7,000),
+  more than one minute's budget. So even a single trip waits once for Groq's `retry-after` (about 25 s), and the next
+  trip should start about 90–120 s after the previous one; an over-budget trip (up to four passes) waits longer.
+  That is why hosted Groq allows waits of up to 60 s and a 90 s node timeout. The daily token budget is the real
+  ceiling: about 16 planning runs a day (fewer with over-budget trips). When it is used up, Groq asks for a wait longer than
   60 s and the run fails safely with "quota used up … retry in N s"; **Retry planning** later.
 
 Gemini (`LLM_PROVIDER=gemini`, `GEMINI_API_KEY`) also works, but its free tier allows only 20 requests per day

@@ -180,8 +180,9 @@ async def call_json(system: str, user: str, schema: type[T], check: RuleCheck | 
                     normalise: Callable[[T], T] | None = None) -> tuple[T, int]:
     """
     Calls the model and parses its reply into `schema`.
-    `normalise` (optional) may remove entries that are clearly outside the task before the rule check; it must
-    never add anything. If parsing (or the optional rule check) fails, sends one repair message with the error
+    `normalise` (optional) may remove entries that are clearly outside the task, or expand a reference the model
+    made to data code gave it (the Resource agent's "use_suggested_rooms"), before the rule check; it never
+    invents anything. If parsing (or the optional rule check) fails, sends one repair message with the error
     and tries again. Returns (parsed result, number of retries used). Raises AgentOutputError after MAX_RETRIES.
     """
     max_retries = get_settings().max_retries
@@ -192,6 +193,10 @@ async def call_json(system: str, user: str, schema: type[T], check: RuleCheck | 
     while True:
         reply = await _invoke(model, messages)
         text = reply_text(reply)
+        usage = getattr(reply, "usage_metadata", None) or {}
+        # Token counts only (never the prompt or the reply): hosted free tiers limit tokens per minute and per day.
+        log.info("LLM reply for %s: %s input tokens, %s output tokens", schema.__name__,
+                 usage.get("input_tokens"), usage.get("output_tokens"))
         try:
             result = schema.model_validate_json(text)
             if normalise:
@@ -207,6 +212,7 @@ async def call_json(system: str, user: str, schema: type[T], check: RuleCheck | 
             raise AgentOutputError(f"{schema.__name__} invalid after {retries} retries: {'; '.join(problems)[:500]}")
 
         retries += 1
+        log.info("%s needs a repair (%s): %s", schema.__name__, retries, "; ".join(problems)[:300])
         messages.append(AIMessage(content=text))
         messages.append(HumanMessage(content=(
             "Your JSON did not pass validation. Problems: " + "; ".join(problems)

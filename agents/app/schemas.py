@@ -165,6 +165,9 @@ class ResourceActionOutput(BaseModel):
     vehicle_id: str | None = None
     rooms: list[RoomNight] = Field(default_factory=list)
     gaps: list[str] = Field(default_factory=list)
+    # True = "use DATA.suggested_rooms as the room plan": code fills rooms in, so the model does not copy a long
+    # list of ids and dates (the most error-prone and token-heavy part of its answer).
+    use_suggested_rooms: bool = False
 
 
 class ResourceSelection(ResourceActionOutput):
@@ -173,6 +176,8 @@ class ResourceSelection(ResourceActionOutput):
     vehicle_seats: int | None = None
     room_capacity: dict[str, int] = Field(default_factory=dict)
     rate_card: RateCard
+    # Already expanded into rooms by the Resource agent; not part of the proposal sent to the API.
+    use_suggested_rooms: bool = Field(default=False, exclude=True)
 
 
 # ---------- Validation & Safety ----------

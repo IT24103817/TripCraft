@@ -36,8 +36,9 @@ RULES
 - vehicle_id must be the id of a vehicle in DATA.vehicles (they already have enough seats). null if the list is empty.
 - rooms: one entry per room per night, only from DATA.room_options for that night. Pick enough rooms so the
   total capacity each night is at least pax. Do not pick more rooms of a type than available_rooms.
-- DATA.suggested_rooms is a valid, cheapest room plan computed by code for exactly these nights. Copy it
-  unless the preferences clearly need other rooms that are also in DATA.room_options.
+- DATA.suggested_rooms is a valid, cheapest room plan computed by code for exactly these nights. To use it,
+  answer "use_suggested_rooms": true with an empty rooms list; code fills the rooms in. Do not copy it.
+  List rooms yourself only when the preferences clearly need other rooms that are also in DATA.room_options.
 - Prefer the cheapest options that meet the rules (rates are in DATA.rate_card, LKR).
 - gaps: one short sentence for every resource you could not find. Never invent ids.
 - Your allowed tools are check_guide_availability, check_vehicle_availability, check_room_availability and
@@ -45,8 +46,10 @@ RULES
 
 JSON SCHEMA TO RETURN
 {{"guide_id": "<id or null>", "vehicle_id": "<id or null>",
-  "rooms": [{{"hotel_id": "<id>", "room_type_id": "<id>", "night": "YYYY-MM-DD"}}],
+  "use_suggested_rooms": true,
+  "rooms": [],
   "gaps": ["<text>"]}}
+(or "use_suggested_rooms": false with "rooms": [{{"hotel_id": "<id>", "room_type_id": "<id>", "night": "YYYY-MM-DD"}}])
 
 {DATA_RULES}
 """.strip()
@@ -215,6 +218,7 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
         if constraints.hotel_tier == "budget":
             room_options = {night: cheapest_for_party(options, card, pax) for night, options in room_options.items()}
         suggested, guide_reason = pick_guide(guides, card, language)
+        suggested_rooms = suggest_rooms(room_options, pax, card)
 
         user = wrap_data({
             "input": agent_input.model_dump(mode="json"),
@@ -223,12 +227,17 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
             "room_options": {n.isoformat(): [o.model_dump(mode="json") for o in opts]
                              for n, opts in room_options.items()},
             "rate_card": card.model_dump(mode="json"),
-            "suggested_rooms": [r.model_dump(mode="json") for r in suggest_rooms(room_options, pax, card)],
+            "suggested_rooms": [r.model_dump(mode="json") for r in suggested_rooms],
             "suggested_guide_id": suggested.id if suggested else None,
         })
         dropped: list[int] = []
+        rooms_from: list[str] = []
 
         def normalise(o: ResourceActionOutput) -> ResourceActionOutput:
+            # The model may pick code's suggested plan by reference instead of copying it.
+            rooms_from.append("suggested" if o.use_suggested_rooms else "model")
+            if o.use_suggested_rooms:
+                o = o.model_copy(update={"rooms": list(suggested_rooms)})
             cleaned, count = drop_rooms_outside_stay(o, set(room_options))
             dropped.append(count)
             return cleaned
@@ -262,7 +271,8 @@ async def resources_node(state: WorkflowState) -> dict[str, Any]:
         {"guide_id": selection.guide_id, "guide_choice": guide_reason,
          "cost_strategy": constraints.cost_strategy, "model_guide_id": model_guide_id,
          "guide_overridden": model_guide_id != selection.guide_id, "vehicle_id": selection.vehicle_id,
-         "room_nights": len(selection.rooms), "gaps": gaps, "holds_created": 0,
+         "room_nights": len(selection.rooms), "rooms_from": rooms_from[-1] if rooms_from else "model",
+         "gaps": gaps, "holds_created": 0,
          "room_nights_dropped": dropped[-1] if dropped else 0},
         {"ok": True, "schema": "ResourceActionOutput"})
     return {"resources": selection.model_dump(mode="json"), "steps": [report]}

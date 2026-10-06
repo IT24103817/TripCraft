@@ -1,3 +1,5 @@
+import json
+
 from app.nodes.itinerary import itinerary_node
 from app.nodes.planner import planner_node
 from app.nodes.resources import cheapest_for_party, pick_guide, resources_node
@@ -66,6 +68,42 @@ async def test_resources_drops_rooms_booked_on_the_departure_day(fake_llm, api, 
     assert len(rooms) == 8 and all(r["night"] != departure for r in rooms)
     assert update["steps"][0]["output_summary"]["room_nights_dropped"] == 2
     assert update["steps"][0]["retries"] == 0  # cleaned in code, no repair round-trip needed
+
+
+def sent_data(messages) -> dict:
+    """The DATA block the agent sent to the model (the user message)."""
+    text = messages[1].content
+    return json.loads(text[text.index("<DATA>") + len("<DATA>"):text.rindex("</DATA>")])
+
+
+async def test_the_model_can_choose_the_suggested_rooms_by_reference(fake_llm, api, demo_state):
+    state = await itinerary_ready(demo_state)
+    by_reference = dict(load_fixture("resources"), rooms=[], use_suggested_rooms=True)
+    fake_llm.queue("resources", by_reference)
+
+    update = await resources_node(state)
+
+    suggested = sent_data(fake_llm.calls_for("resources")[0])["suggested_rooms"]
+    assert suggested, "code always sends its plan"
+    assert update["resources"]["rooms"] == suggested, "the rooms are exactly code's suggested plan"
+    assert update["steps"][0]["retries"] == 0, "no copying, so no repair round-trip"
+    assert update["steps"][0]["output_summary"]["rooms_from"] == "suggested"
+    assert "use_suggested_rooms" not in update["resources"], "the flag never reaches the API"
+
+
+async def test_rooms_listed_by_the_model_are_still_used_and_checked(fake_llm, api, demo_state):
+    state = await itinerary_ready(demo_state)
+
+    update = await resources_node(state)  # the fixture lists 8 rooms itself
+
+    assert len(update["resources"]["rooms"]) == 8
+    assert update["steps"][0]["output_summary"]["rooms_from"] == "model"
+
+
+def test_the_prompt_asks_to_choose_the_suggested_rooms_by_reference_not_copy_them():
+    from app.nodes.resources import SYSTEM_PROMPT
+
+    assert '"use_suggested_rooms": true' in SYSTEM_PROMPT and "Do not copy it." in SYSTEM_PROMPT
 
 
 async def test_resources_dropping_never_hides_a_real_shortfall(fake_llm, api, demo_state):
